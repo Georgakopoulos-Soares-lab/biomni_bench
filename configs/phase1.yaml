@@ -1,0 +1,82 @@
+# Shared defaults. Concrete experiments (smoke.yaml, phase1.yaml) copy and
+# override these. No cluster account, partition or absolute site path belongs
+# here - those live in cluster.example.yaml.
+
+experiment:
+  name: phase1
+  seed: 20260731
+  output_root: ${BIOMNI_UNC_OUTPUT_ROOT:-./runs}
+
+benchmark:
+  dataset: biomni/Eval1
+  parquet_uri: hf://datasets/biomni/Eval1/biomni_eval1_dataset.parquet
+  # Local cache of the identical file; preferred when present so runs work
+  # without internet access.
+  local_parquet: ${BIOMNI_UNC_EVAL1_PARQUET:-}
+  target_total_instances: 50
+  per_task_target: 5
+  # The biomni/Eval1 release ships a single split value ("val"). There is no
+  # separate held-out split; see DECISIONS.md D-02.
+  preferred_split: val
+  manifest_seed: 20260731
+  exclude_tasks: []
+  max_prompt_chars: null
+
+model:
+  identifier: biomni/Biomni-R0-32B-Preview
+  revision: 71432eb3d5e583bee757e0f9437a17e711e8e3d1
+  source: Custom
+  # Biomni's own default sampling temperature (biomni.config.BiomniConfig).
+  # The Biomni-R0 model card does not recommend a different value.
+  temperature: 0.7
+  max_tokens: 8192
+  request_timeout_seconds: 1800
+  # Native config.json max_position_embeddings is 40960, which measurement showed
+  # is NOT enough: Biomni's post-retrieval system prompt alone is 17k-41k tokens
+  # (DECISIONS.md D-04). Served with the model card's YaRN override at factor 1.0,
+  # which is an identity transform on the RoPE frequencies and only lifts the
+  # position ceiling.
+  context_length: 65536
+  # Weights ship as FP32 (131 GB). Must be cast at load time (DECISIONS.md D-03).
+  dtype: bfloat16
+  json_model_override_args: '{"rope_scaling":{"rope_type":"yarn","factor":1.0,"original_max_position_embeddings":32768}, "max_position_embeddings": 131072}'
+  request_seed_enabled: true
+
+confidence:
+  mode: final_only
+  open_delimiter: "<BIOMNI_CONFIDENCE>"
+  close_delimiter: "</BIOMNI_CONFIDENCE>"
+  epsilon: 0.001
+
+trajectories:
+  instrumented_k: 4
+  standard_k: 1
+  seed_base: 1000
+
+execution:
+  max_concurrency: 4
+  run_timeout_seconds: 3600
+  tool_timeout_seconds: 600
+  scratch_root: ${BIOMNI_UNC_SCRATCH:-/tmp/biomni_unc_scratch}
+  data_path: ${BIOMNI_PATH:-./biomni_data_root}
+  use_tool_retriever: true
+  retry_policy:
+    max_attempts: 2
+    retryable_failure_classes:
+      - model_server_failure
+      - model_timeout
+      - external_resource_failure
+    backoff_seconds: 20.0
+
+logging:
+  stdout_limit: 4000
+  stderr_limit: 4000
+  max_event_payload_chars: 20000
+
+analysis:
+  bootstrap_replicates: 2000
+  bootstrap_seed: 20260731
+  calibration_bins: 5
+  primary_length_field: total_output_tokens
+  binary_reward_threshold: 0.5
+  srlm_epsilon: 0.001

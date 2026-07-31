@@ -1,0 +1,31 @@
+{
+  "_comment": "Pinned upstream Biomni revision and the model revision this project targets. The Biomni source itself is NOT vendored: clone it and check out this commit (see README). external/ is otherwise gitignored.",
+  "biomni": {
+    "repository": "https://github.com/snap-stanford/Biomni.git",
+    "commit": "400c1f366b96a35ca253e13c9b06c5076af41d65",
+    "commit_date": "2026-01-14T20:23:42-08:00",
+    "commit_subject": "Merge pull request #259 from snap-stanford/protocols_database",
+    "package_version": "0.0.8",
+    "install": "pip install -e <clone>"
+  },
+  "model": {
+    "repo_id": "biomni/Biomni-R0-32B-Preview",
+    "revision": "71432eb3d5e583bee757e0f9437a17e711e8e3d1",
+    "base_model": "Qwen/Qwen3-32B",
+    "architecture": "Qwen3ForCausalLM",
+    "weights_dtype_on_disk": "float32",
+    "weights_total_size_bytes": 131048493056,
+    "native_max_position_embeddings": 40960,
+    "rope_scaling_in_config": null,
+    "serving_dtype": "bfloat16",
+    "notes": "Weights ship in FP32 (131 GB). --dtype bfloat16 must be passed explicitly; see DECISIONS.md D-03."
+  },
+  "benchmark": {
+    "dataset": "biomni/Eval1",
+    "file": "biomni_eval1_dataset.parquet",
+    "n_instances": 433,
+    "n_tasks": 10,
+    "splits_present": ["val"],
+    "notes": "Every row is split=val; there is no held-out split. See DECISIONS.md D-02."
+  }
+}

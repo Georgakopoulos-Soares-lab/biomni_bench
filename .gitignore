@@ -1,0 +1,42 @@
+# Generated experimental data
+runs/
+logs/
+results/**/raw/
+manifests/runs/
+*.parquet
+!results/tables/*.parquet
+
+# Model weights / caches / data lake
+models/
+hf_cache/
+*.safetensors
+biomni_data/
+data/
+
+# Secrets
+.env
+*.key
+endpoints.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+venv/
+.venv/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Upstream source is pinned by commit, not vendored
+external/*
+!external/BIOMNI_PIN.json
+
+# Site-specific cluster config (may contain a private allocation name)
+configs/cluster.yaml
