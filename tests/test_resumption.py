@@ -153,3 +153,50 @@ def test_resumption_is_idempotent(tmp_path):
     r2 = [s.run_dir for s in pending_specs(specs, retry_failed_classes=("model_timeout",))]
     assert r1 == r2
     assert len(r1) == 2
+
+
+# --------------------------------------------------------------------------
+# Failure classification
+# --------------------------------------------------------------------------
+
+
+def test_context_overflow_gets_its_own_non_retryable_class():
+    """Regression: a 400 "maximum context length" was classified unknown_failure.
+    It is a terminal outcome of a long trajectory - retrying reproduces it - so it
+    must be separable from transient infrastructure failures in the report."""
+    from biomni_uncertainty.config import Config
+    from biomni_uncertainty.instrumentation import TrajectoryStats
+    from biomni_uncertainty.runner import classify_exception
+
+    class BadRequestError(Exception):
+        pass
+
+    exc = BadRequestError(
+        "Error code: 400 - {'message': \"Requested token count exceeds the model's maximum "
+        'context length of 65536 tokens. You requested a total of 71939 tokens."}'
+    )
+    assert classify_exception(exc, TrajectoryStats()) == "model_context_overflow"
+
+    cfg = Config.model_validate({"experiment": {"name": "t", "seed": 1, "output_root": "/tmp/x"}})
+    assert "model_context_overflow" not in cfg.execution.retry_policy.retryable_failure_classes
+
+
+def test_transient_classes_are_still_recognised():
+    from biomni_uncertainty.instrumentation import TrajectoryStats
+    from biomni_uncertainty.runner import classify_exception
+
+    s = TrajectoryStats()
+
+    class APITimeoutError(Exception):
+        pass
+
+    class APIConnectionError(Exception):
+        pass
+
+    class ModuleNotFoundError_(ModuleNotFoundError):
+        pass
+
+    assert classify_exception(APITimeoutError("request timed out"), s) == "model_timeout"
+    assert classify_exception(APIConnectionError("connection refused"), s) == "model_server_failure"
+    assert classify_exception(ModuleNotFoundError("No module named 'Bio'"), s) == "dependency_failure"
+    assert classify_exception(RuntimeError("something odd"), s) == "unknown_failure"

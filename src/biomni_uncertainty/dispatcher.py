@@ -164,8 +164,8 @@ def dispatch(
     todo = pending_specs(specs, retry_failed_classes=retryable) if resume else list(specs)
     skipped = len(specs) - len(todo)
 
-    print(f"[dispatch] planned={len(specs)} pending={len(todo)} skipped(complete/non-retryable)={skipped}")
-    print(f"[dispatch] endpoints={[e.url for e in healthy]}")
+    print(f"[dispatch] planned={len(specs)} pending={len(todo)} skipped(complete/non-retryable)={skipped}", flush=True)
+    print(f"[dispatch] endpoints={[e.url for e in healthy]}", flush=True)
     if dry_run:
         return {
             "dry_run": True,
@@ -256,7 +256,7 @@ def dispatch(
         "failure_class_counts": _counts([r.failure_class for r in results]),
         "endpoints": [e.url for e in healthy],
     }
-    print("[dispatch] " + json.dumps(summary))
+    print("[dispatch] " + json.dumps(summary), flush=True)
     return summary
 
 

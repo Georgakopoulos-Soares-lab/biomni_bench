@@ -115,6 +115,61 @@ def test_secret_bearing_keys_are_redacted_wholesale():
     assert out["model"] == "biomni/Biomni-R0-32B-Preview"
 
 
+@pytest.mark.parametrize(
+    "key",
+    [
+        "input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "prompt_tokens",
+        "completion_tokens",
+        "reasoning_tokens",
+        "max_tokens",
+        "cached_tokens",
+        "total_output_tokens",
+        "tokens",
+    ],
+)
+def test_token_count_keys_are_never_redacted(key):
+    """Regression: a substring match on "token" redacted every token COUNT,
+    destroying the primary length signal (total_output_tokens). Credential names
+    are singular ("auth_token"); count names are plural ("input_tokens")."""
+    out = Redactor().payload({key: 137})
+    assert out[key] == 137, f"{key} must survive redaction"
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "token",
+        "api_key",
+        "key",
+        "HF_TOKEN",
+        "auth_token",
+        "access-token",
+        "Authorization",
+        "client_secret",
+        "db_password",
+    ],
+)
+def test_credential_keys_are_still_redacted(key):
+    assert Redactor().payload({key: "value-goes-here"})[key] == "[REDACTED]"
+
+
+def test_usage_block_survives_redaction_end_to_end(tmp_path):
+    """The exact payload shape the LLM callback emits must round-trip."""
+    log = EventLogger("run1", tmp_path / "events.jsonl")
+    log.emit(
+        "llm_request_end",
+        request_id="r0",
+        usage={"input_tokens": 1234, "output_tokens": 567, "total_tokens": 1801},
+        finish_reason="stop",
+    )
+    ev = read_events(tmp_path / "events.jsonl")[0]
+    assert ev["payload"]["usage"] == {"input_tokens": 1234, "output_tokens": 567, "total_tokens": 1801}
+    assert ev["payload"]["finish_reason"] == "stop"
+
+
 def test_environment_secret_values_are_redacted_even_without_a_pattern(monkeypatch):
     monkeypatch.setenv("MY_SERVICE_TOKEN", "zzzzz-unusual-value-9876")
     r = Redactor()

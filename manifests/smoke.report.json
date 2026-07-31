@@ -1,0 +1,64 @@
+{
+  "available_splits": [
+    "val"
+  ],
+  "counts_by_split": {
+    "val": 2
+  },
+  "counts_by_task": {
+    "gwas_causal_gene_opentargets": 1,
+    "lab_bench_dbqa": 1
+  },
+  "dataset_fingerprint": "287304c649b14166cce227a9f13239f104df1ca93ea53582c11b4d745b2c423f",
+  "exclusions": [
+    {
+      "n": 10,
+      "reason": "task 'crispr_delivery' excluded by config"
+    },
+    {
+      "n": 50,
+      "reason": "task 'gwas_causal_gene_gwas_catalog' excluded by config"
+    },
+    {
+      "n": 50,
+      "reason": "task 'gwas_causal_gene_pharmaprojects' excluded by config"
+    },
+    {
+      "n": 43,
+      "reason": "task 'gwas_variant_prioritization' excluded by config"
+    },
+    {
+      "n": 50,
+      "reason": "task 'lab_bench_seqqa' excluded by config"
+    },
+    {
+      "n": 50,
+      "reason": "task 'patient_gene_detection' excluded by config"
+    },
+    {
+      "n": 30,
+      "reason": "task 'rare_disease_diagnosis' excluded by config"
+    },
+    {
+      "n": 50,
+      "reason": "task 'screen_gene_retrieval' excluded by config"
+    }
+  ],
+  "final_total": 2,
+  "held_out_split_available": false,
+  "initial_total": 2,
+  "manifest_hash": "62abf8bc362d5cc10b4b1d30c4ae07ec41decd9a27fbcdbc40f9e6705357c0bd",
+  "manifest_seed": 20260731,
+  "n_entries": 2,
+  "prompt_length_chars": {
+    "max": 4140,
+    "mean": 2226.5,
+    "median": 4140,
+    "min": 313,
+    "p25": 313,
+    "p75": 4140
+  },
+  "redistributed": {},
+  "short_tasks": {},
+  "split_used": "val"
+}

@@ -49,7 +49,19 @@ DEFAULT_REDACT_PATTERNS = (
     r"(?i)(password\"?\s*[:=]\s*\"?)([^\s\"',]{4,})",
 )
 
+# Used to decide which *environment variable values* to blacklist. Deliberately
+# broad: over-redacting an env value costs nothing.
 SECRET_ENV_NAME = re.compile(r"(?i)(key|token|secret|password|passwd|credential)")
+
+# Used to decide which *payload keys* to redact wholesale. Requires the
+# credential word to sit on a token boundary, so telemetry names survive:
+# "input_tokens" / "max_tokens" do not match (the word is "tokens", plural),
+# while "token", "auth_token" and "HF_TOKEN" do. Getting this wrong silently
+# destroys the primary length signal, so there is a regression test for it.
+SECRET_PAYLOAD_KEY = re.compile(
+    r"(?i)(^|[_\-.])(api[_\-]?key|key|secret|password|passwd|credential|credentials"
+    r"|authorization|auth|bearer|token)([_\-.]|$)"
+)
 
 _REDACTED = "[REDACTED]"
 
@@ -104,7 +116,7 @@ class Redactor:
         if isinstance(value, dict):
             out = {}
             for k, v in value.items():
-                if isinstance(k, str) and SECRET_ENV_NAME.search(k):
+                if isinstance(k, str) and SECRET_PAYLOAD_KEY.search(k):
                     out[k] = _REDACTED
                 else:
                     out[k] = self.payload(v, _depth + 1)

@@ -42,6 +42,7 @@ _ALREADY_RAN = False
 
 FAILURE_CLASSES = (
     "model_server_failure",
+    "model_context_overflow",
     "model_timeout",
     "tool_timeout",
     "external_resource_failure",
@@ -279,6 +280,12 @@ def build_agent(cfg: Config, spec: RunSpec, endpoint: str, api_key: str = "EMPTY
 def classify_exception(exc: BaseException, stats: TrajectoryStats) -> str:
     name = type(exc).__name__
     text = f"{name}: {exc}".lower()
+    # Context overflow is a *terminal* outcome of a long trajectory, not a
+    # transient server problem: the conversation grew past the served context
+    # window. Retrying reproduces it, so it gets its own non-retryable class and
+    # is reported as a distinct failure mode rather than lumped into "unknown".
+    if "maximum context length" in text or "context length" in text and "exceed" in text:
+        return "model_context_overflow"
     if name in ("APITimeoutError", "Timeout", "ReadTimeout", "ReadTimeoutError") or "timed out" in text:
         return "model_timeout"
     if name in ("APIConnectionError", "ConnectionError", "InternalServerError", "APIStatusError", "APIError"):
