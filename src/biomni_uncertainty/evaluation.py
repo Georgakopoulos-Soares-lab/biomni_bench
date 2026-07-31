@@ -12,9 +12,26 @@ Design constraints:
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
+
+
+def _missing(value: Any) -> bool:
+    """True for a missing answer.
+
+    Answers arrive through pandas, which represents a missing object as ``NaN``
+    rather than ``None``. Treating a NaN as a real answer sends it into the
+    official scorer, which raises - and a substantive "the agent produced no
+    answer" outcome would then be mislabelled an evaluator failure and dropped
+    from the analysis instead of scoring zero.
+    """
+    if value is None:
+        return True
+    if isinstance(value, float) and math.isnan(value):
+        return True
+    return isinstance(value, str) and not value.strip()
 
 
 @dataclass(frozen=True)
@@ -74,7 +91,7 @@ class OfficialEvaluator:
             return EvaluationResult(task_name, int(task_instance_id), None, None, "no_ground_truth")
         gt = self.ground_truth[key]
 
-        if canonical_answer is None:
+        if _missing(canonical_answer):
             # A trajectory that produced no parseable answer scores 0 by
             # construction; that is a substantive agent failure, not an
             # evaluator failure, so the reward is defined.
@@ -86,7 +103,7 @@ class OfficialEvaluator:
             return EvaluationResult(task_name, int(task_instance_id), None, None, "evaluator_failure", repr(exc))
 
         strict = None
-        if strict_answer is not None:
+        if not _missing(strict_answer):
             try:
                 strict = float(self._compute(task_name, strict_answer, gt))
             except Exception:  # noqa: BLE001 - strict reward is diagnostic only

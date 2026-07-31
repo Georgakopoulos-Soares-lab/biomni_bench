@@ -158,3 +158,26 @@ def test_all_release_tasks_have_a_scoring_branch(ev):
         ev.ground_truth[(task, 42)] = "x"
         res = ev.evaluate(task, 42, "x")
         assert res.status == "ok", f"{task} has no branch in the official evaluator"
+
+
+def test_nan_answer_is_unparseable_not_an_evaluator_failure(ev):
+    """Regression: answers arrive through pandas, which represents a missing
+    object as NaN. NaN reached the official scorer, raised, and a substantive
+    "no answer produced" outcome was mislabelled an evaluator failure - which
+    would drop the run from the analysis instead of scoring it zero."""
+    res = ev.evaluate("crispr_delivery", 0, float("nan"))
+    assert res.status == "unparseable_answer"
+    assert res.reward == 0.0
+
+
+def test_blank_answer_is_unparseable(ev):
+    for blank in ("", "   ", None):
+        res = ev.evaluate("crispr_delivery", 0, blank)
+        assert res.status == "unparseable_answer"
+        assert res.reward == 0.0
+
+
+def test_nan_strict_answer_does_not_break_the_primary_reward(ev):
+    res = ev.evaluate("crispr_delivery", 0, "b", float("nan"))
+    assert res.reward == 1.0
+    assert res.strict_reward is None

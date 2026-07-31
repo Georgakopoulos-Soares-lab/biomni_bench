@@ -294,3 +294,68 @@ def test_single_candidate_is_handled():
 def test_empty_candidate_list_rejected():
     with pytest.raises(ValueError):
         run_all_selectors([])
+
+
+# --------------------------------------------------------------------------
+# NaN robustness (regression: real pilot data arrives via pandas)
+# --------------------------------------------------------------------------
+
+
+def test_oracle_ignores_nan_rewards_instead_of_crashing():
+    """Regression: a failed run has reward NaN. NaN != NaN left the tie list
+    empty and raised IndexError, taking down the whole analysis."""
+    nan = float("nan")
+    s = select_oracle([C(0, "A", reward=nan), C(1, "B", reward=1.0), C(2, "C", reward=nan)])
+    assert s.reward == 1.0
+    assert s.run_id == "r1"
+
+
+def test_oracle_with_only_nan_rewards_returns_no_selection():
+    nan = float("nan")
+    s = select_oracle([C(0, "A", reward=nan), C(1, "B", reward=nan)])
+    assert s.run_id is None
+    assert s.reward is None
+
+
+def test_run_all_selectors_survives_a_nan_reward():
+    nan = float("nan")
+    out = run_all_selectors([C(0, "A", conf=0.4, length=100, reward=nan), C(1, "A", conf=0.8, length=50, reward=1.0)])
+    assert out["oracle"].reward == 1.0
+    assert out["plurality"].run_id is not None
+
+
+def test_candidates_from_frame_normalizes_pandas_missing_values():
+    pd = pytest.importorskip("pandas")
+
+    from biomni_uncertainty.selectors import candidates_from_frame
+
+    df = pd.DataFrame(
+        [
+            {
+                "run_id": "a",
+                "trajectory_index": 0,
+                "cluster_key": "K",
+                "answer_canonical": "K",
+                "final_confidence": 0.5,
+                "total_output_tokens": 100,
+                "reward": 1.0,
+            },
+            # A failed run: every downstream field is NaN.
+            {
+                "run_id": "b",
+                "trajectory_index": 1,
+                "cluster_key": None,
+                "answer_canonical": None,
+                "final_confidence": None,
+                "total_output_tokens": None,
+                "reward": None,
+            },
+        ]
+    )
+    cands = candidates_from_frame(df)
+    assert cands[1].reward is None
+    assert cands[1].confidence is None
+    assert cands[1].length is None
+    assert cands[1].canonical_answer is None
+    # The failed run gets its own singleton cluster rather than joining "K".
+    assert cands[1].cluster_key != cands[0].cluster_key

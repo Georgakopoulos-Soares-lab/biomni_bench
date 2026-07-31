@@ -309,9 +309,16 @@ def select_rank_combination(cands: list[Candidate]) -> Selection:
     )
 
 
+def _is_number(v: object) -> bool:
+    """A usable numeric value: not None, not NaN."""
+    return isinstance(v, (int, float)) and not (isinstance(v, float) and math.isnan(v))
+
+
 def select_oracle(cands: list[Candidate]) -> Selection:
     """UPPER BOUND ONLY - reads ground truth. Never a deployable method."""
-    scored = [c for c in _sorted(cands) if c.reward is not None]
+    # A NaN reward (evaluator failure, or a run with no record) must be excluded
+    # rather than compared: NaN != NaN leaves the tie list empty and crashes.
+    scored = [c for c in _sorted(cands) if _is_number(c.reward)]
     if not scored:
         return _sel("oracle", None, None, "no candidate has a reward")
     best = max(c.reward for c in scored)
@@ -370,15 +377,19 @@ def candidates_from_frame(df: Any, *, length_field: str = "total_output_tokens")
             key = f"{UNPARSEABLE_PREFIX}{r['run_id']}"
         conf = r.get("final_confidence")
         length = r.get(length_field)
+        reward = r.get("reward")
+        answer = r.get("answer_canonical")
         out.append(
             Candidate(
                 run_id=r["run_id"],
                 trajectory_index=int(r["trajectory_index"]),
                 cluster_key=str(key),
-                canonical_answer=r.get("answer_canonical"),
-                confidence=None if conf is None or (isinstance(conf, float) and math.isnan(conf)) else float(conf),
-                length=None if length is None or (isinstance(length, float) and math.isnan(length)) else float(length),
-                reward=r.get("reward"),
+                # pandas turns a missing object into NaN; normalize back to None
+                # so downstream comparisons stay well defined.
+                canonical_answer=None if isinstance(answer, float) and math.isnan(answer) else answer,
+                confidence=float(conf) if _is_number(conf) else None,
+                length=float(length) if _is_number(length) else None,
+                reward=float(reward) if _is_number(reward) else None,
             )
         )
     return out
