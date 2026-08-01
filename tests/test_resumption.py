@@ -234,3 +234,21 @@ def test_archive_is_a_noop_for_a_fresh_run(tmp_path):
     d.mkdir()
     assert _archive_previous_attempt(d) is None
     assert not list(d.iterdir())
+
+
+def test_context_overflow_second_error_phrasing_is_classified():
+    """Regression: the endpoint uses two different phrasings for the same
+    error ("Requested token count exceeds the model's maximum context length"
+    and "The input (N tokens) is longer than the model's context length").
+    Only the first was recognised; the second landed in unknown_failure."""
+    from biomni_uncertainty.instrumentation import TrajectoryStats
+    from biomni_uncertainty.runner import classify_exception
+
+    class BadRequestError(Exception):
+        pass
+
+    exc = BadRequestError(
+        "Error code: 400 - {'message': \"The input (65551 tokens) is longer than "
+        "the model's context length (65536 tokens).\"}"
+    )
+    assert classify_exception(exc, TrajectoryStats()) == "model_context_overflow"

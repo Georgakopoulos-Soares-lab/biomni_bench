@@ -1,122 +1,88 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-07-31 19:25 CDT
-**Phase:** Phase 0 COMPLETE. Phase-1 pilot LAUNCHED and running detached.
+**Last updated:** 2026-08-01 06:40 CDT
+**Phase:** **PHASE 1 COMPLETE.** Pilot ran, was fixed and re-analyzed, report is final.
+
+---
+
+## Headline result
+
+**GO.** Oracle headroom 20.0 pp (relative error reduction 34.5%). Plurality
+beats first-trajectory by +0.16 with a 95% CI `[+0.06, +0.26]` that excludes
+zero. Agreement-fraction is the strongest uncertainty signal measured (AUROC
+0.874), stronger than verbalized confidence (0.789), which is itself
+discriminative but severely miscalibrated (mean stated 0.96 vs actual accuracy
+0.59). Full detail: `reports/phase1_report.md`.
+
+The largest data-quality issue is a **24% context-overflow rate** — the
+top engineering priority before Phase 2.
 
 ---
 
 ## Completed
 
-### Step 1 — Inspection
-- Cloned Biomni, pinned at `400c1f366b96a35ca253e13c9b06c5076af41d65`
-  (2026-01-14, package version `0.0.8`). Recorded in `external/BIOMNI_PIN.json`.
-- Read and verified against the checked-out source: `README.md`,
-  `biomni/config.py`, `biomni/llm.py`, `biomni/agent/a1.py` (3001 lines),
-  `biomni/model/retriever.py`, `biomni/eval/biomni_eval1.py`,
-  `biomni/tool/support_tools.py`, `biomni/utils.py`, `biomni_env/`.
-- Architecture found (differs from the brief's assumptions in several places —
-  all recorded in `DECISIONS.md`):
-  - `A1` is a **LangGraph `StateGraph`** with two nodes, `generate` and
-    `execute`, defined as **closures inside `A1.configure()`** — so subclassing
-    cannot override them.
-  - The LLM is a LangChain `ChatOpenAI` built with
-    `stop_sequences=["</execute>", "</solution>"]`. Final answers arrive inside
-    `<solution>…</solution>`.
-  - "Tools" are plain Python functions called **inside generated code**, not
-    structured tool calls. There is no tool-call channel to attach metadata to.
-  - `run_python_repl` execs into a **module-global namespace** ⇒ one trajectory
-    per process.
-  - The tool retriever is called with `llm=self.llm`, so it shares the agent's
-    client — but `default_config` must also be set, because other components
-    build their own client from it.
+### Phase 0 (steps 1–10) — see prior entries below, all done.
 
-### Step 2 — Scaffolding
-- Repository `biomni-uncertainty` with validated Pydantic config, provenance
-  capture, dev tooling.
-- `patches/` is **empty**: no upstream edit was required.
+### Phase 1 pilot — run to completion
 
-### Step 3 — Benchmark integration
-- BiomniEval1 loaded via the official interface. **433 instances, 10 tasks,
-  every row `split == "val"`** (no held-out split exists — `DECISIONS.md` D-02).
-- Deterministic keyed-hash balanced sampling with documented redistribution.
-- Task-aware canonicalization for all 10 release tasks + `hle`
-  (evaluator-supported, 0 instances in this release).
+* Launched 2026-07-31 19:25 CDT, detached (`setsid`, PPID 1). Relaunched
+  19:33 at dispatcher concurrency 8 (measured throughput at concurrency 4
+  would not finish inside the allocation; 8 gave 379 tok/s vs 190, KV usage
+  well under capacity).
+* **Finished 2026-08-01 05:38 CDT.** 248/250 runs present, 188/250 (75.2%)
+  completed. All 250 runs accounted for (2 truly missing run directories).
+* Full pipeline ran automatically: dispatch → aggregate → analyze → 13
+  figures + tables, via `scripts/run_detached.sh`.
 
-### Step 4 — Instrumentation
-- LangChain callback (LLM telemetry from endpoint `usage`), `run_with_timeout`
-  patch (code execution), retriever wrap. Redacted append-only JSONL events.
-- Per-run isolation, atomic markers, resumption with a validity check that
-  rejects a `COMPLETE` marker whose artifacts are missing.
+### Post-pilot bug fixes (found by reading real pilot data, not the smoke test)
 
-### Step 5 — Confidence elicitation
-- Final-only confidence, emitted **inside** `<solution>` (it would otherwise
-  never be generated — the stop sequence cuts generation at `</solution>`).
-- Injected through the **system prompt**, so the benchmark prompt is
-  byte-identical between conditions A and B.
-- Per-step confidence **not implemented**; the reason is architectural
-  (`DECISIONS.md` D-08), and the SRLM-style selector is labelled an
-  approximation everywhere.
+1. **Canonicalization gap** — Biomni states gene-symbol answers symbol-first
+   ("**PDGFRB** is identified as the most likely causal gene...") far more
+   often than label-first ("answer: PDGFRB"); the old parser only matched
+   label-first and marked 32 trajectories `ambiguous` (all in the three
+   `gwas_causal_gene_*` tasks, 44–52% of those tasks). Fixed with a new
+   symbol-first-conclusion regex; **reparsed every stored raw response with
+   `scripts/reparse_pilot.py`** (no model calls — data was already on disk):
+   31/32 resolved cleanly. This meaningfully moved every headline number
+   (first 0.36→0.42, plurality 0.50→0.58, headroom 24pp→20pp). The report
+   reflects the **corrected** numbers; the fix and its effect are documented
+   in `reports/phase1_report.md` §3 for full transparency.
+2. **Context-overflow misclassification** — a second 400-error phrasing
+   ("the input (N tokens) is longer than the model's context length") wasn't
+   recognised by the classifier; 2 runs were mislabelled `unknown_failure`.
+   Fixed and relabelled from the already-recorded error text.
+3. **Confidence parse-rate denominator** — the missingness plot divided by
+   all planned runs instead of runs that actually requested confidence,
+   understating the rate (found on smoke data, fixed before the pilot ran).
+4. **`system_prompt.txt` truncation** — the audit copy was cut to 20k of
+   ~190k chars by the event-log redactor, hiding the confidence instruction
+   from the record (verified functional behavior was unaffected; fixed for
+   auditability, mid-pilot).
+5. **Resumption append bug** — `events.jsonl` is append-only, so a resumed
+   run would have interleaved two attempts. Fixed by archiving a prior
+   attempt to `attempt<N>/` before re-running (this mattered in practice: the
+   concurrency-4→8 relaunch exercised this path for real).
 
-### Step 6 — Evaluation and selectors
-- Wrapper around the **real** `BiomniEval1._compute_reward` (asserted by test).
-- All 10 pre-specified selectors + the exploratory grouped-CV learned selector.
-- Oracle@K over all size-K subsets and over first-K prefixes, both labelled.
+All five are regression-tested. Full list of earlier (pre-pilot) fixes is
+preserved below.
 
-### Step 7 — Aggregation and analysis
-- Deterministic Parquet + CSV aggregation; frozen statistics; 13 figures, each
-  with a machine-readable table.
-- Validated end-to-end on mock data.
+### Reports
 
-### Step 8 — Local model serving
-- SGLang 0.5.16 / torch 2.11.0+cu130 in a separate serving environment.
-- Model downloaded: 131 GB, revision `71432eb…`.
-- Two serving facts established **before** spending GPU time:
-  - weights ship **FP32** ⇒ `--dtype bfloat16` is mandatory (D-03);
-  - Biomni's system prompt is **43,891 tokens** pre-retrieval and 17k–41k
-    post-retrieval, against a native context of **40,960** ⇒ the context ceiling
-    must be lifted (D-04).
-- Startup validation prints and stores the effective model/endpoint for the
-  primary agent, tool retriever, database helpers and any critic
-  (`llm_components.json` per run).
-
-### Step 10 (partial) — Manifest frozen
-- `manifests/phase1.jsonl` — 50 instances, exactly 5 per task across all 10 tasks.
-- **Manifest hash:** `44854f87b3a0d2e0c00bf4fe06c8879e5636b8a470b8803a5b3e6a2db850fff9`
-- **Run manifest hash:** `894aeb948a27becdbd1e0d11210954cef59fb604345cc014e5f9c33b9ddad606`
-- 250 planned runs (200 instrumented + 50 standard). No exclusions.
-- Ground truth in a separate file, never handed to the agent.
-
----
-
-### Step 9 — GPU smoke test PASSED
-
-6 runs (2 instances × (2 instrumented + 1 standard)) → aggregation → frozen
-analysis → **13 figures**. 4 completed, 2 hit `model_context_overflow`.
-
-Real trajectories behaved as the design assumed: independent samples disagreed
-(`GUSB` vs `VKORC1L1` on the same GWAS instance), the confidence block parsed
-from inside `<solution>`, tool calls were detected from generated code, and
-token usage came from the endpoint's own `usage` block.
-
-### Step 10 — Protocol frozen, Step 11 — pilot launched
-
-Launched 2026-07-31 19:25 CDT, detached (`setsid nohup`, PPID 1), so it survives
-logout.
+* `reports/phase0_environment.md` — complete.
+* `reports/phase1_protocol.md` — frozen before the pilot; deviations logged
+  (concurrency change, one-replica layout, failure-class addition) rather than
+  edited away.
+* `reports/phase1_report.md` — **complete, all real numbers**, no
+  placeholders remain. Go/No-Go: **GO**.
+* `reports/phase2_plan.md` — decision rule; this pilot's outcome selects
+  **Track A (adaptive controller)**, with context-overflow fix and
+  confidence recalibration flagged as prerequisites.
 
 ---
 
 ## Current blockers
 
-None. Two environmental constraints, both handled:
-
-- **Two GPUs, not four.** GPUs 2–3 hold an unrelated job of the user's, so the
-  pilot runs on GPUs 0–1 as **one TP2 replica with dispatcher concurrency 4**
-  (instead of two replicas at 1 trajectory each). Logged in the protocol
-  deviations table. Sampling settings, prompts, conditions and seeds are
-  unchanged; this is a throughput choice only.
-- **Allocation ends in ~18 h**, and the pilot is estimated at ~17–27 h of work.
-  It will likely need a follow-up allocation. Resumption is implemented and
-  tested: re-running `scripts/run_detached.sh` skips every valid `COMPLETE` run.
+None. Phase 1 is complete.
 
 ---
 
@@ -124,37 +90,17 @@ None. Two environmental constraints, both handled:
 
 | check | result |
 | --- | --- |
-| `pytest -q` | **239 passed** |
+| `pytest -q` | **247 passed** |
 | `ruff check src tests` | clean |
 | `ruff format --check src tests` | clean |
-| Import check inside the Biomni environment | OK — `biomni 0.0.8`, 224 tools across 22 modules |
-| Manifest dry run | OK — 50 instances, 5 per task, hash stable across repeated runs |
-| Mock end-to-end (fake endpoint + fake benchmark + full pipeline) | **20 passed**, 13 figures generated |
-| GPU smoke test | **passed** — 6 runs, aggregation, analysis, 13 figures |
+| Import check inside the Biomni environment | OK |
+| Manifest dry run | OK — 50 instances, 5 per task, stable hash |
+| Mock end-to-end | 20 passed, 13 figures |
+| GPU smoke test | passed — 6 runs, aggregation, analysis, 13 figures |
+| **GPU pilot (250 runs)** | **complete** — 188/250 completed, full analysis, report written |
 
-Bugs found and fixed (all real, all now regression-tested):
-
-*Found by the test suite:*
-1. Gene-symbol candidate matching failed on trailing punctuation (`"SON."`), and
-   a loose fallback then extracted the word `"with"` from prose. Fixed: strip
-   trailing punctuation; never invent an answer when the prompt enumerates
-   candidates and none appear.
-2. `dict()` over a pandas `GroupBy` raised `TypeError` (it exposes a `keys`
-   attribute, so the mapping protocol is taken). Fixed with `dict(iter(...))`.
-
-*Found by reading real smoke output — the reason the smoke test is a gate:*
-3. **Token counts were redacted out of the event log.** The redactor matched the
-   substring `token` in payload *key* names, so `input_tokens` / `output_tokens`
-   became `[REDACTED]`. Run-record statistics were unaffected (the callback reads
-   `usage` before the log copy is redacted), but the event log was not auditable.
-   Fixed by requiring the credential word on a token boundary.
-4. **Context overflow was classified `unknown_failure`.** Now
-   `model_context_overflow`, non-retryable, separable in the report.
-5. **A pandas `NaN` answer was scored `evaluator_failure` with reward `None`.**
-   A trajectory that produces no answer is a substantive zero, not an
-   infrastructure failure — the old behaviour would have dropped it from the
-   analysis. The same `NaN` also crashed `select_oracle` (`NaN != NaN` emptied
-   the tie list), taking down the whole `analyze` command.
+All bugs found and fixed (pre-pilot + post-pilot) are listed with detail in
+`reports/phase0_environment.md` §8 and `reports/phase1_report.md` §3.
 
 ---
 
@@ -162,85 +108,33 @@ Bugs found and fixed (all real, all now regression-tested):
 
 | id | config | state |
 | --- | --- | --- |
-| `smoke` | `configs/smoke.yaml` | **complete.** 6 runs, 4 completed, 2 `model_context_overflow`. Results at `<output_root>/smoke/results/`. Not pooled with pilot results. |
-| `phase1` | `configs/phase1.yaml` | **RUNNING.** 250 runs, launched 2026-07-31 19:25 CDT on GPUs 0–1. Supervisor log: `<output_root>/_phase1/supervisor.log` |
+| `smoke` | `configs/smoke.yaml` | complete, not pooled with pilot results |
+| `phase1` | `configs/phase1.yaml` | **COMPLETE.** Results at `<output_root>/phase1/results/`. Report: `reports/phase1_report.md` |
 
 ---
 
-## Known failures
+## Known failures (final)
 
-None yet from real runs. Anticipated and instrumented for:
-
-- Biomni tools whose Python dependencies are absent in this lightweight
-  environment will fail inside trajectories. These are recorded as tool failures
-  and will be reported in the infrastructure section of the Phase-1 report, not
-  hidden. If infrastructure failures dominate biological reasoning failures, that
-  is itself a Phase-1 stop criterion.
-- Positions above 40,960 are reached by extrapolation (D-04). `finish_reason` is
-  captured per LLM call so truncation surfaces in the results.
+* `model_context_overflow`: 60/250 (24.0%) — dominant failure mode, concentrated
+  in `rare_disease_diagnosis` (52%), `patient_gene_detection` (44%),
+  `crispr_delivery`/`lab_bench_seqqa` (36% each); zero in two GWAS tasks.
+  Flagged as the top Phase-2 engineering priority.
+* `confidence_parse_failure`: 17 — model answered but confidence block was
+  missing/malformed.
+* `agent_parse_failure`: 8 (6 genuinely ambiguous, 2 unparseable) — down from
+  40 before the canonicalization fix.
+* `missing_run`: 2 — no run directory ever created; preserved as a finding,
+  not silently dropped (see `status_summary.json`).
 
 ---
 
 ## Next actions
 
-1. **Monitor the pilot.** Progress: `grep 'done |' <output_root>/_phase1/supervisor.log`
-2. **Resume if the allocation ends first.** Re-run, from the repo root:
-   ```
-   setsid nohup env AGENT_PYTHON=<agent_python> BIOMNI_UNC_EVAL1_PARQUET=<parquet> \
-     bash scripts/run_detached.sh configs/cluster.yaml configs/phase1.yaml \
-     <output_root>/_phase1/endpoints.json 4 \
-     > <output_root>/_phase1/supervisor.log 2>&1 < /dev/null &
-   ```
-   The model server must be running first (`scripts/launch_node_servers.sh`).
-   Valid `COMPLETE` runs are skipped automatically.
-3. Aggregate + analyze (the supervisor does both automatically at the end).
-4. Complete `reports/phase1_report.md` — it currently holds **placeholders only**;
-   no conclusion is to be written before the numbers exist.
-5. Record the go/no-go recommendation against the pre-specified criteria in
-   `reports/phase1_protocol.md` §8.
+Phase 1 is done. Candidates for follow-up, not started:
 
----
-
-## Pilot run log (append-only)
-
-**2026-07-31 19:25 CDT — launched.** 250 runs, GPUs 0–1, one TP2 replica,
-dispatcher concurrency 4, detached (`setsid nohup`, PPID 1).
-Supervisor log: `<output_root>/_phase1/supervisor.log`.
-
-**2026-07-31 19:50 — artifact fix mid-run.** `system_prompt.txt` was being
-truncated to 20k chars by the event-log redactor, so the confidence instruction
-(which sits at the end of Biomni's ~190k-char system prompt) was missing from the
-audit copy. Verified this was only an artifact — 3/3 instrumented smoke
-trajectories that reached a solution emitted a confidence block, and 0/2 standard
-trajectories did — then lifted the length cap. Secret redaction is unchanged and
-**no measured quantity is affected**. Runs dispatched before this point keep a
-truncated `system_prompt.txt`; every other artifact for those runs is complete.
-
-**Verified on live runs:** every LLM component points at the local endpoint
-(`llm_components.json`: primary agent, `default_config` used by database helpers,
-and the tool retriever, which shares the agent's client). No proprietary provider
-key is present in the run environment.
-
-### Monitoring
-
-```bash
-grep 'done |' <output_root>/_phase1/supervisor.log | tail
-find <output_root>/phase1 \( -name COMPLETE -o -name FAILED \) | wc -l
-python -m biomni_uncertainty.cli status --config configs/phase1.yaml
-```
-
-**2026-07-31 19:33 — relaunched at concurrency 8.** The first launch (concurrency
-4) measured ~190 tok/s aggregate decode and projected ~17.6 h, against ~14 h left
-in the allocation. Decode is memory-bandwidth-bound on the weights, so a larger
-batch is nearly free: at concurrency 8 the server reports **379 tok/s** with KV
-at 8% of 388k tokens. Projected ~9 h, which fits.
-
-Before relaunching, fixed a resumption bug this exposed: `events.jsonl` is
-append-only, so re-running a trajectory interleaved two attempts in one file with
-event indices restarting at zero. Prior artifacts now move to `attempt<N>/` —
-preserved, never deleted.
-
-Resumption verified live on the relaunch: `pending=248 skipped(complete)=2`.
-
-Sampling settings, prompts, conditions and seeds are unchanged by the relaunch;
-concurrency is a throughput parameter only.
+1. Decide whether to act on the Phase-2 recommendation
+   (`reports/phase2_plan.md`, Track A) — requires user direction.
+2. If continuing: fix context overflow first (§16 of the report) before any
+   Phase-2 controller is trained or evaluated on this pilot's distribution.
+3. Optional: expand the pilot (more instances) now that the canonicalization
+   bug is fixed, if a tighter CI is wanted before committing to Phase 2.

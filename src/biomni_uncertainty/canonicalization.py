@@ -207,6 +207,37 @@ def _parse_letter_choice(
     return ParsedAnswer(task_name, "ok", raw, canonical, canonical, detail)
 
 
+# Declarative "SYMBOL is/was ... causal gene" and "making SYMBOL the prime
+# candidate" conclusions. Found necessary on real Phase-1 data: the model
+# routinely states its answer symbol-first ("**PDGFRB** is identified as the
+# most likely causal gene ...") rather than label-first ("answer: PDGFRB"),
+# which the older _LABELLED pattern above does not match. Only the LAST match
+# is used (closest to the conclusion), and only when it names a legal option.
+_SYMBOL_FIRST_CONCLUSION_RE = re.compile(
+    r"\*{0,2}([A-Za-z0-9][A-Za-z0-9._\-]{0,24})\*{0,2}'?s?\s+"
+    r"(?:is|was|remains|stands out as|represents)\s+"
+    r"(?:identified as\s+|confirmed as\s+|considered\s+)?"
+    r"(?:the\s+)?(?:most likely\s+|prime\s+|strongest\s+|best\s+|top\s+|primary\s+)?"
+    r"(?:candidate\s+)?causal gene",
+    re.IGNORECASE,
+)
+_MAKING_SYMBOL_CANDIDATE_RE = re.compile(
+    r"making\s+\*{0,2}([A-Za-z0-9][A-Za-z0-9._\-]{0,24})\*{0,2}\s+the\s+"
+    r"(?:prime|top|best|leading|strongest)\s+candidate",
+    re.IGNORECASE,
+)
+
+
+def _search_symbol_first_conclusion(body: str, opt_upper: dict[str, str]) -> str | None:
+    for pat in (_SYMBOL_FIRST_CONCLUSION_RE, _MAKING_SYMBOL_CANDIDATE_RE):
+        matches = list(pat.finditer(body))
+        for m in reversed(matches):
+            sym = m.group(1)
+            if sym.upper() in opt_upper:
+                return sym
+    return None
+
+
 def _parse_gene_symbol(task_name: str, body: str, options: list[str]) -> ParsedAnswer:
     """Gene symbol. Evaluator compares ``.strip().upper()``."""
     detail: dict[str, Any] = {"options": options}
@@ -236,6 +267,10 @@ def _parse_gene_symbol(task_name: str, body: str, options: list[str]) -> ParsedA
                 if m and m.group(1).upper() in opt_upper:
                     detail["source"] = "candidate_match_labelled"
                     return ParsedAnswer(task_name, "ok", m.group(1), m.group(1).upper(), m.group(1).upper(), detail)
+                sym = _search_symbol_first_conclusion(body, opt_upper)
+                if sym is not None:
+                    detail["source"] = "symbol_first_conclusion"
+                    return ParsedAnswer(task_name, "ok", sym, sym.upper(), sym.upper(), detail)
                 return ParsedAnswer(task_name, "ambiguous", hits[-1], None, None, detail)
             return ParsedAnswer(task_name, "ok", hits[0], hits[0].upper(), hits[0].upper(), detail)
 

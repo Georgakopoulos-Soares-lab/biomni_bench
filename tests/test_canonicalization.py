@@ -419,3 +419,64 @@ def test_ground_truth_is_never_an_input():
     for name, fn in inspect.getmembers(canonicalization, inspect.isfunction):
         params = set(inspect.signature(fn).parameters)
         assert not (params & {"answer", "ground_truth", "gt", "label"}), name
+
+
+# --------------------------------------------------------------------------
+# Regression: symbol-first conclusions (found on real Phase-1 data)
+# --------------------------------------------------------------------------
+
+
+GWAS_MULTI_PROMPT = "Genes in locus: {BANK1},{PPP3CA},{SLC39A8}"
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        (
+            "I considered BANK1, PPP3CA and SLC39A8. PPP3CA and SLC39A8 show weaker "
+            "evidence, with no direct phenotype associations for those candidates.\n\n"
+            "## Conclusion\n\n**BANK1** is the most likely causal gene for medial nucleus "
+            "volume based on strong evidence.",
+            "BANK1",
+        ),
+        (
+            "BANK1 and PPP3CA were both examined but showed no direct association.\n\n"
+            "[1] GWAS Catalog analysis revealed SLC39A8 associations with medial nucleus volume\n"
+            "[2] SLC39A8 encodes a zinc transporter with established roles in neurodevelopment\n\n"
+            "**SLC39A8** is identified as the most likely causal gene for this phenotype.",
+            "SLC39A8",
+        ),
+        (
+            "BANK1 and SLC39A8 were ruled out due to weak statistical evidence. "
+            "Growth factor receptors represent the most biologically plausible class, "
+            "making PPP3CA the prime candidate for further investigation.",
+            "PPP3CA",
+        ),
+    ],
+)
+def test_symbol_first_conclusion_resolves_the_ambiguity(text, expected):
+    """Regression: the model states its answer SYMBOL-FIRST ('X is the causal
+    gene') far more often than label-first ('answer: X'). The older label-first
+    -only fallback left ~30% of gwas_causal_gene_* trajectories 'ambiguous' even
+    though the model had clearly committed to one answer."""
+    p = parse_answer("gwas_causal_gene_opentargets", text, GWAS_MULTI_PROMPT)
+    assert p.status == "ok", p
+    assert p.canonical == expected
+    assert p.detail["source"] == "symbol_first_conclusion"
+
+
+def test_symbol_first_conclusion_still_ambiguous_without_a_clear_statement():
+    """No declarative 'causal gene' sentence naming a single legal candidate ->
+    stays ambiguous rather than guessing."""
+    text = "BANK1 regulates B-cell signaling. PPP3CA is involved in calcineurin signaling."
+    p = parse_answer("gwas_causal_gene_opentargets", text, GWAS_MULTI_PROMPT)
+    assert p.status == "ambiguous"
+
+
+def test_symbol_first_conclusion_ignored_if_symbol_is_not_a_legal_candidate():
+    text = "**NOTACANDIDATE** is the most likely causal gene here. BANK1 was also considered."
+    p = parse_answer("gwas_causal_gene_opentargets", text, GWAS_MULTI_PROMPT)
+    # NOTACANDIDATE isn't a legal option so it's never matched as a candidate hit
+    # at all; BANK1 is the sole legal candidate mentioned, so it resolves cleanly.
+    assert p.status == "ok"
+    assert p.canonical == "BANK1"
