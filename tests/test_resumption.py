@@ -200,3 +200,37 @@ def test_transient_classes_are_still_recognised():
     assert classify_exception(APIConnectionError("connection refused"), s) == "model_server_failure"
     assert classify_exception(ModuleNotFoundError("No module named 'Bio'"), s) == "dependency_failure"
     assert classify_exception(RuntimeError("something odd"), s) == "unknown_failure"
+
+
+def test_rerun_archives_the_previous_attempt_instead_of_appending(tmp_path):
+    """Regression: events.jsonl is append-only, so a resumed run interleaved two
+    attempts in one file with event indices restarting at zero. Failed attempts
+    must be preserved, not deleted, so they are moved aside."""
+    from biomni_uncertainty.runner import _archive_previous_attempt
+
+    d = tmp_path / "run"
+    d.mkdir()
+    (d / "events.jsonl").write_text('{"event_index": 0}\n')
+    (d / "metadata.json").write_text('{"completed": false}')
+    (d / "final_response.txt").write_text("first attempt")
+
+    n = _archive_previous_attempt(d)
+    assert n == 1
+    assert not (d / "events.jsonl").exists()
+    assert (d / "attempt1" / "events.jsonl").read_text() == '{"event_index": 0}\n'
+    assert (d / "attempt1" / "final_response.txt").read_text() == "first attempt"
+
+    # A second re-run stacks rather than clobbering attempt1.
+    (d / "events.jsonl").write_text('{"event_index": 0}\n')
+    assert _archive_previous_attempt(d) == 2
+    assert (d / "attempt1" / "final_response.txt").exists()
+    assert (d / "attempt2" / "events.jsonl").exists()
+
+
+def test_archive_is_a_noop_for_a_fresh_run(tmp_path):
+    from biomni_uncertainty.runner import _archive_previous_attempt
+
+    d = tmp_path / "fresh"
+    d.mkdir()
+    assert _archive_previous_attempt(d) is None
+    assert not list(d.iterdir())

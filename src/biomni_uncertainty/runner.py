@@ -316,6 +316,39 @@ def classify_timeout(stats: TrajectoryStats, last_event_type: str | None) -> str
 # --------------------------------------------------------------------------
 
 
+def _archive_previous_attempt(run_dir: Path) -> int | None:
+    """Move a previous attempt's artifacts aside before re-running.
+
+    ``events.jsonl`` is append-only, so a resumed run would otherwise interleave
+    two attempts in one file with event indices restarting at zero. Failed
+    attempts are never deleted - they are moved to ``attempt<N>/`` so the
+    original failure stays auditable.
+    """
+    artifacts = (
+        "events.jsonl",
+        "metadata.json",
+        "final_response.txt",
+        "parsed_answer.json",
+        "transcript.json",
+        "system_prompt.txt",
+        "llm_components.json",
+        "stdout.log",
+        "stderr.log",
+        "dispatch_stderr.log",
+    )
+    present = [f for f in artifacts if (run_dir / f).exists()]
+    if not present:
+        return None
+    n = 1
+    while (run_dir / f"attempt{n}").exists():
+        n += 1
+    dest = run_dir / f"attempt{n}"
+    dest.mkdir(parents=True, exist_ok=True)
+    for f in present:
+        os.replace(run_dir / f, dest / f)
+    return n
+
+
 @contextmanager
 def _tee_streams(stdout_path: Path, stderr_path: Path):
     """Redirect this process's stdout/stderr into per-run log files."""
@@ -359,6 +392,7 @@ def run_trajectory(
     artifacts.mkdir(parents=True, exist_ok=True)
     for stale in (COMPLETE_MARKER, FAILED_MARKER):
         (run_dir / stale).unlink(missing_ok=True)
+    _archive_previous_attempt(run_dir)
 
     redactor = Redactor(tuple(cfg.logging.redact_patterns), max_chars=cfg.logging.max_event_payload_chars)
     logger = EventLogger(spec.run_id, run_dir / "events.jsonl", redactor=redactor)
