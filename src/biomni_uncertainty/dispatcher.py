@@ -86,6 +86,39 @@ def _read_failure_class(run_dir: str) -> str | None:
         return None
 
 
+# Variables that let a *child* process reach out to whatever workstation happens
+# to be attached to this session. Biomni's agent writes its own Python, and when
+# it cannot find a suitable tool it improvises a web search with
+# ``webbrowser.open("https://www.google.com/search?q=...")``. Python's
+# ``webbrowser`` honours ``$BROWSER``; under VS Code Remote that points at a
+# helper which forwards the URL over ``$VSCODE_IPC_HOOK_CLI`` and prompts the
+# human sitting in front of the IDE. That is wrong on every axis: it interrupts
+# whoever launched the run, it makes trajectory behaviour depend on how the job
+# was started, and on a headless node it cannot return content to the agent
+# anyway. Stripping them makes ``webbrowser.open`` fail locally and silently,
+# which is the honest outcome and is identical whether or not anyone is watching.
+LEAKY_ENV_VARS = (
+    "BROWSER",
+    "DISPLAY",
+    "VSCODE_IPC_HOOK_CLI",
+    "VSCODE_GIT_ASKPASS_MAIN",
+    "VSCODE_GIT_ASKPASS_NODE",
+    "VSCODE_GIT_IPC_HANDLE",
+    "GIT_ASKPASS",
+    "SSH_ASKPASS",
+)
+
+
+def sanitized_env(env_extra: dict[str, str] | None = None) -> dict[str, str]:
+    """The environment a trajectory subprocess should inherit."""
+    env = {k: v for k, v in os.environ.items() if k not in LEAKY_ENV_VARS}
+    # Belt and braces: an empty BROWSER makes Python's webbrowser module find no
+    # usable browser rather than falling back to a system handler.
+    env["BROWSER"] = ""
+    env.update(env_extra or {})
+    return env
+
+
 def _run_one_subprocess(
     spec: RunSpec,
     endpoint: Endpoint,
@@ -112,8 +145,7 @@ def _run_one_subprocess(
         "--config",
         config_path,
     ]
-    env = dict(os.environ)
-    env.update(env_extra or {})
+    env = sanitized_env(env_extra)
     t0 = time.perf_counter()
     try:
         proc = subprocess.run(cmd, env=env, timeout=timeout, capture_output=True, text=True)

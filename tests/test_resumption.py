@@ -252,3 +252,57 @@ def test_context_overflow_second_error_phrasing_is_classified():
         "the model's context length (65536 tokens).\"}"
     )
     assert classify_exception(exc, TrajectoryStats()) == "model_context_overflow"
+
+
+# --------------------------------------------------------------------------
+# Subprocess environment isolation
+# --------------------------------------------------------------------------
+
+
+def test_sanitized_env_strips_ide_callback_variables(monkeypatch):
+    """A trajectory must not be able to reach the launcher's workstation.
+
+    Biomni's agent improvises web searches with ``webbrowser.open(...)``. Under
+    VS Code Remote, ``$BROWSER`` points at a helper that forwards the URL to
+    whoever is attached to the IDE and prompts them. Found in production: 18
+    Phase-1 runs and 4 ablation runs generated such calls.
+    """
+    from biomni_uncertainty.dispatcher import LEAKY_ENV_VARS, sanitized_env
+
+    monkeypatch.setenv("BROWSER", "/path/to/vscode/helpers/browser.sh")
+    monkeypatch.setenv("VSCODE_IPC_HOOK_CLI", "/run/user/1000/vscode-ipc-abc.sock")
+    monkeypatch.setenv("DISPLAY", ":0")
+    monkeypatch.setenv("GIT_ASKPASS", "/path/to/askpass")
+    monkeypatch.setenv("BIOMNI_PATH", "/keep/me")
+
+    env = sanitized_env()
+
+    assert env["BROWSER"] == ""  # present but unusable, not merely absent
+    for var in LEAKY_ENV_VARS:
+        if var != "BROWSER":
+            assert var not in env, f"{var} leaked into the subprocess environment"
+    assert env["BIOMNI_PATH"] == "/keep/me"  # experiment config survives
+
+
+def test_sanitized_env_applies_extra_overrides(monkeypatch):
+    from biomni_uncertainty.dispatcher import sanitized_env
+
+    monkeypatch.setenv("BROWSER", "/leaky/browser.sh")
+    env = sanitized_env({"BIOMNI_UNC_ENDPOINT": "http://x", "BROWSER": "explicit"})
+    assert env["BIOMNI_UNC_ENDPOINT"] == "http://x"
+    assert env["BROWSER"] == "explicit"  # an explicit override still wins
+
+
+def test_webbrowser_finds_nothing_with_sanitized_env(monkeypatch):
+    """The end-to-end property: webbrowser.open must not launch anything."""
+    import subprocess
+    import sys
+
+    from biomni_uncertainty.dispatcher import sanitized_env
+
+    monkeypatch.setenv("BROWSER", "/nonexistent/should_not_run.sh")
+    code = "import webbrowser; print(webbrowser.open('https://example.com'))"
+    proc = subprocess.run(
+        [sys.executable, "-c", code], env=sanitized_env(), capture_output=True, text=True, timeout=60
+    )
+    assert proc.stdout.strip() == "False", proc.stdout + proc.stderr
