@@ -19,11 +19,12 @@ import socket
 import sys
 import time
 import traceback
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from biomni_uncertainty.budget import BudgetExceeded, BudgetStats, budget_from_config
 from biomni_uncertainty.canonicalization import parse_final_response
 from biomni_uncertainty.confidence import confidence_instruction
 from biomni_uncertainty.config import Config
@@ -280,6 +281,12 @@ def build_agent(cfg: Config, spec: RunSpec, endpoint: str, api_key: str = "EMPTY
 def classify_exception(exc: BaseException, stats: TrajectoryStats) -> str:
     name = type(exc).__name__
     text = f"{name}: {exc}".lower()
+    # A budget guard ended this trajectory deliberately. It is a *controlled*
+    # terminal state, not breakage: the run stopped where we told it to, with its
+    # evidence intact, which is exactly what an adaptive controller needs to
+    # observe. It must never be conflated with an endpoint context overflow.
+    if isinstance(exc, BudgetExceeded):
+        return f"budget_terminated_{exc.reason}"
     # Context overflow is a *terminal* outcome of a long trajectory, not a
     # transient server problem: the conversation grew past the served context
     # window. Retrying reproduces it, so it gets its own non-retryable class and
@@ -440,6 +447,7 @@ def run_trajectory(
     write_json_atomic(run_dir / "config.json", cfg.snapshot())
 
     stats = TrajectoryStats()
+    budget_stats = BudgetStats()
     logger.emit(
         "agent_start",
         condition=spec.condition,
@@ -475,10 +483,16 @@ def run_trajectory(
             )
 
             with AgentInstrumentation(agent, logger, stats, stdout_limit=cfg.logging.stdout_limit):
-                deadline = t0 + spec.timeout_seconds
-                _log, raw_response = agent.go(spec.prompt)
-                if time.perf_counter() > deadline:
-                    record["exceeded_soft_deadline"] = True
+                # Attached *inside* the instrumentation so the callback still
+                # records the endpoint's unmodified usage and finish_reason: the
+                # raw degeneration signal stays in the event log even when the
+                # guard stops it from reaching the conversation.
+                guard = budget_from_config(cfg, agent, logger, budget_stats)
+                with guard if guard is not None else nullcontext():
+                    deadline = t0 + spec.timeout_seconds
+                    _log, raw_response = agent.go(spec.prompt)
+                    if time.perf_counter() > deadline:
+                        record["exceeded_soft_deadline"] = True
         record["completed"] = True
     except BaseException as exc:  # noqa: BLE001 - every failure mode must be preserved
         os.chdir(cwd)
@@ -554,6 +568,10 @@ def run_trajectory(
 
     msg_stats = analyze_messages(messages)
     record["trajectory_stats"] = {**stats.to_dict(), **msg_stats}
+    # Recorded whether or not the guards were enabled, so a Phase-1 control arm
+    # and a repaired arm carry the same fields and are directly comparable.
+    record["budget_stats"] = budget_stats.to_dict()
+    record["budget_enabled"] = bool(cfg.trajectory_budget.enabled)
     record["final_response_raw_chars"] = len(raw_response)
     record["solution_block_status"] = parsed["solution_block_status"]
     record["final_answer_parsed"] = parsed["parsed"]["raw"]

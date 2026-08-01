@@ -122,6 +122,25 @@ def collect_run_records(specs: list[RunSpec]) -> pd.DataFrame:
 
         meta_path = d / "metadata.json"
         if not meta_path.exists():
+            # A run killed mid-flight (dispatcher wall clock, node loss) never
+            # gets to write metadata.json, but the runner's FAILED marker records
+            # why. Trusting it keeps those runs classified by their real failure
+            # instead of `missing_run`, which would claim the directory does not
+            # exist. Phase 1 mislabelled 2 runaway-generation timeouts this way;
+            # see reports/context_overflow_forensics.md section 7.
+            failed_path = d / FAILED_MARKER
+            if failed_path.exists():
+                try:
+                    marker = json.loads(failed_path.read_text())
+                except (OSError, json.JSONDecodeError):
+                    marker = {}
+                if isinstance(marker, dict) and marker.get("failure_class"):
+                    base["run_present"] = True
+                    base["failure_class"] = marker["failure_class"]
+                    base["wall_time_seconds"] = marker.get("wall_time_seconds")
+                    base["error"] = marker.get("note")
+                    base["metadata_missing"] = True
+                    base["n_events"] = _count_events(d / "events.jsonl")
             rows.append(base)
             continue
         try:

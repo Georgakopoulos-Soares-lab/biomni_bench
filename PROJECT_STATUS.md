@@ -1,7 +1,121 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-01 06:40 CDT
-**Phase:** **PHASE 1 COMPLETE.** Pilot ran, was fixed and re-analyzed, report is final.
+**Last updated:** 2026-08-01 (Phase-1.5: forensics + repair implemented + live validation)
+**Phase:** **PHASE 1.5 — repair built and validated live; full ablation needs a GPU allocation.**
+Phase 1 is complete, frozen and independently re-verified.
+
+---
+
+## Phase 1.5 status
+
+**Diagnosis is done and it changes the repair plan.** Context overflow is *not* a
+context-budget problem — it is model degeneration above ~32,768 input tokens
+(this model's base is trained at 32,768; the serving override lifted the position
+ceiling to 65,536 without extending usable context). Past that boundary the model
+emits 8,192 tokens of degenerate repetition with no stop tag; the blob is
+appended to the conversation, which guarantees the next call repeats it. **62 of
+the 69 trajectories that crossed it never returned.**
+
+Decisive numbers (`reports/context_overflow_forensics.md`):
+
+* runaway generations: **100%** of 62 failed runs vs **3.7%** of 188 completed;
+* runaway rate per call: **3.1%** below 32,768 input tokens, **94.1%** above;
+* **no completed run ever exceeded 32,154 input tokens** — the upper half of the
+  served window was used only by already-degenerating trajectories;
+* 7/7 runs whose *system prompt alone* exceeded 32,768 degenerated on their first
+  call, with zero history — rules out "long trajectories are just hard";
+* median post-retrieval system prompt is **2,687 tokens**, not the 17k–41k that
+  `DECISIONS.md` D-04 assumed — **prompt trimming has nothing to recover**;
+* **50.4%** of measured wall-clock produced no answer.
+
+**Repair, implemented and approved** (`context_overflow_forensics.md` §9;
+`src/biomni_uncertainty/budget.py`, 24 tests, off by default so Phase-1 configs
+are unchanged): `max_tokens` 8192→2048;
+truncate-and-nudge on `finish_reason == "length"` instead of appending the blob;
+soft budget at 24,576 / hard at 32,768 input tokens (**0 of 188 completed runs
+disturbed**); cap retrieval selection; cap a single model-visible observation at
+4,000 tokens with full raw output still on disk; aggregator to trust `FAILED`
+when `metadata.json` is absent. **Explicitly rejected: raising the context
+ceiling or increasing YaRN scaling** — the evidence says both make it worse.
+
+### Live validation of the repair — 2026-08-01, 6 runs, PASSED
+
+Arm 3 (all guards) run against the live endpoint on the **six worst
+overflow-prone instances**, which in Phase 1 failed 22 of their 30 trajectories.
+Experiment `abl_arm3`, `<output_root>/abl_arm3/runs/`.
+
+| instance | Phase 1 (unguarded) | Arm 3 (guarded) |
+| --- | --- | --- |
+| | runs / failed / peak input / runaways | peak input / runaways / answer |
+| `crispr_delivery/i0020` | 5 / 4 / 52,603 / 15 | 12,908 / 0 / ok |
+| `crispr_delivery/i0028` | 5 / 3 / 56,898 / 23 | 24,253 / 0 / ok |
+| `patient_gene_detection/i0161` | 5 / 5 / 56,678 / 17 | 29,420 / 0 / ok |
+| `rare_disease_diagnosis/i0021` | 5 / 3 / 54,699 / 10 | 22,518 / 0 / ok |
+| `rare_disease_diagnosis/i0099` | 5 / 3 / 57,050 / 10 | 26,841 / 1 / ok |
+| `rare_disease_diagnosis/i0103` | 5 / 4 / 50,229 / 12 | 23,288 / 0 / ok |
+
+**6/6 completed with a parseable answer; 0 failures** (Phase 1: 22/30 failed).
+Peak input fell from 50k–57k to 12.9k–29.4k, and **87 runaway generations became
+1**, which was truncated on the spot. Guards fired 5 runaway truncations, 9
+observation truncations, 5 soft-budget nudges, 1 retrieval cap.
+
+**The hard budget never fired.** Every trajectory stayed under 29,420 tokens
+without it, meaning the *bounding* guards (R2/R4/R5) did the work on their own.
+That is the open question the arm-2-vs-arm-3 comparison exists to settle, and it
+now looks like arm 2 may be sufficient — which would be the less invasive repair.
+
+Caveat: this is a **one-armed validation on 6 runs**, not the ablation. It shows
+the guards work and do not break the agent; it cannot show they leave
+previously-healthy trajectories unchanged. That needs arms 1 and 2.
+
+**Still to run:** the full 3-arm ablation (72 trajectories). Manifest, configs
+and run specs are built and frozen; only GPU time is missing.
+
+**Correction to the Phase-1 record:** the 2 "missing runs" are not missing. Both
+have full directories and `FAILED` markers reading `model_timeout` — killed on
+the dispatcher wall clock after 18 consecutive runaway generations. Correct
+accounting: **62 failures, 0 missing**. `crispr_delivery` failure rate is 44%,
+not 36%.
+
+---
+
+## Forest Check — 2026-08-01, after the context-overflow forensics
+
+**1. What scientific uncertainty was resolved?**
+Whether the 24% data loss was an agent property or a configuration artifact. It
+is substantially the latter: the failure begins above the model's trained context,
+is reproducible from a bloated system prompt alone with no agent history, and
+never occurs in the region where completed trajectories live. This also killed
+the expensive repair options (bigger context, prompt rewriting) before any GPU
+time was spent on them.
+
+**2. Did the main research claim change?**
+No. Oracle headroom, the plurality gain and the agreement AUROC all reproduce
+exactly, and the oracle headroom can only grow after repair. One *framing* claim
+is retracted: the Phase-1 report's "not a configuration mistake" (§5) is wrong.
+Two claims are now flagged as bias-exposed and must be re-measured on repaired
+data — `agreement_fraction` AUROC 0.874 (computed over surviving trajectories
+only) and the inverted length signals (partly a restatement of the failure being
+repaired).
+
+**3. Is the next task necessary for the central contribution?**
+Yes. The controller must act after trajectory 1, and every K=1 signal Phase 1
+measured is either missing 42% of the time (confidence) or confounded with the
+failure being repaired (length, wall time). The controller cannot be designed
+against these numbers as they stand.
+
+**4. Are we overfitting to implementation details or the original pilot?**
+Live risk. The mitigation is the stopping rule: the repair is capped at the six
+changes in §9, none of which touches the task prompt, the confidence instruction,
+temperature, or the retriever's ranking. Prompt trimming was on the brief's
+priority list and is **not being done**, because the measurement said there was
+nothing there. If the repair grows beyond an inference-serving fix, the north
+star has been lost.
+
+**5. What is the simplest decisive next experiment?**
+The 72-trajectory ablation. It tests the mechanism directly on the cases that
+failed, keeps matched controls that previously succeeded, and costs under two
+node-hours. Everything larger waits on its result.
 
 ---
 
@@ -33,6 +147,8 @@ top engineering priority before Phase 2.
   completed. All 250 runs accounted for (2 truly missing run directories).
 * Full pipeline ran automatically: dispatch → aggregate → analyze → 13
   figures + tables, via `scripts/run_detached.sh`.
+* **Correction:** "2 truly missing run directories" above is wrong — see the
+  Phase-1.5 correction and `reports/phase1_report.md` errata E1.
 
 ### Post-pilot bug fixes (found by reading real pilot data, not the smoke test)
 
@@ -82,7 +198,9 @@ preserved below.
 
 ## Current blockers
 
-None. Phase 1 is complete.
+**A GPU allocation.** Job 3358875 ended 2026-08-01 09:38 CDT after the 6-run
+live validation. Nothing else blocks: code, tests, configs, manifests and run
+specs for all three ablation arms are committed and frozen.
 
 ---
 
@@ -90,14 +208,15 @@ None. Phase 1 is complete.
 
 | check | result |
 | --- | --- |
-| `pytest -q` | **247 passed** |
-| `ruff check src tests` | clean |
-| `ruff format --check src tests` | clean |
+| `pytest -q` | **270 passed** (247 + 23 budget-guard tests) |
+| `ruff check src tests scripts` | clean |
+| `ruff format --check src tests scripts` | clean |
 | Import check inside the Biomni environment | OK |
 | Manifest dry run | OK — 50 instances, 5 per task, stable hash |
 | Mock end-to-end | 20 passed, 13 figures |
 | GPU smoke test | passed — 6 runs, aggregation, analysis, 13 figures |
 | **GPU pilot (250 runs)** | **complete** — 188/250 completed, full analysis, report written |
+| **Repair live validation (6 runs, arm 3)** | **passed** — 6/6 completed where Phase 1 failed 22/30; 87 runaways → 1 |
 
 All bugs found and fixed (pre-pilot + post-pilot) are listed with detail in
 `reports/phase0_environment.md` §8 and `reports/phase1_report.md` §3.
@@ -109,7 +228,10 @@ All bugs found and fixed (pre-pilot + post-pilot) are listed with detail in
 | id | config | state |
 | --- | --- | --- |
 | `smoke` | `configs/smoke.yaml` | complete, not pooled with pilot results |
-| `phase1` | `configs/phase1.yaml` | **COMPLETE.** Results at `<output_root>/phase1/results/`. Report: `reports/phase1_report.md` |
+| `phase1` | `configs/phase1.yaml` | **COMPLETE and frozen.** Results at `<output_root>/phase1/results/`. Report: `reports/phase1_report.md` (+ errata). Never re-run. |
+| `abl_arm1` | `configs/ablation_arm1.yaml` | ablation control (Phase-1 behaviour). Run specs frozen, **0/24 run** |
+| `abl_arm2` | `configs/ablation_arm2.yaml` | bounding only, no input budget. Run specs frozen, **0/24 run** |
+| `abl_arm3` | `configs/ablation_arm3.yaml` | bounding + soft/hard budgets. **6/24 run** (live validation, passed) |
 
 ---
 
@@ -123,18 +245,62 @@ All bugs found and fixed (pre-pilot + post-pilot) are listed with detail in
   missing/malformed.
 * `agent_parse_failure`: 8 (6 genuinely ambiguous, 2 unparseable) — down from
   40 before the canonicalization fix.
-* `missing_run`: 2 — no run directory ever created; preserved as a finding,
-  not silently dropped (see `status_summary.json`).
+* ~~`missing_run`: 2~~ — **corrected 2026-08-01.** Both runs have full
+  directories and `FAILED` markers reading `model_timeout`; they were killed on
+  the dispatcher wall clock after 18 consecutive runaway generations. Same
+  pathology as the 60 above. Correct total: **62 failures, 0 missing**
+  (`reports/context_overflow_forensics.md` §7; aggregator fix R6).
 
 ---
 
 ## Next actions
 
-Phase 1 is done. Candidates for follow-up, not started:
+**Blocking on approval:** the repair ablation (72 trajectories, 3 arms,
+≈1.2–1.5 node-hours). Nothing has been launched.
 
-1. Decide whether to act on the Phase-2 recommendation
-   (`reports/phase2_plan.md`, Track A) — requires user direction.
-2. If continuing: fix context overflow first (§16 of the report) before any
-   Phase-2 controller is trained or evaluated on this pilot's distribution.
-3. Optional: expand the pilot (more instances) now that the canonicalization
-   bug is fixed, if a tighter CI is wanted before committing to Phase 2.
+1. **← needs a fresh GPU allocation.** Run the full repair ablation. Everything
+   is prepared and frozen; the previous allocation ended after the 6-run live
+   validation. Resume with:
+
+   ```bash
+   export BIOMNI_SRC=... BIOMNI_PATH=... HF_HOME=... BIOMNI_UNC_OUTPUT_ROOT=...
+   # servers must be up; endpoints.json points at them
+   for n in 1 2 3; do
+     python -m biomni_uncertainty.cli dispatch \
+       --config configs/ablation_arm$n.yaml \
+       --run-manifest manifests/abl_arm${n}_runs.jsonl \
+       --endpoints <endpoints.json> --max-concurrent-per-endpoint 8
+   done
+   ```
+
+   The 6 arm-3 validation runs are already `COMPLETE` and will be skipped on
+   resume, so arm 3 has 18 runs left. Freeze the least invasive arm that removes
+   the degeneration without moving reward on the controls — on current evidence
+   that may be **arm 2**, since the hard budget never fired in validation.
+2. Re-run all 62 failed runs under the frozen repair as experiment `phase1_5`,
+   preserving `phase1` untouched, with an explicit original→repaired mapping.
+   Include matched previously-completed controls. ≈2–3 node-hours.
+3. Write `reports/phase1_completion_bias_analysis.md` and
+   `reports/phase1_repaired_report.md`: observed-completion vs
+   intention-to-evaluate vs matched-paired results.
+4. Adjudicate entry conditions E1–E6 (`reports/phase2_entry_assessment.md` §6).
+   **If the repaired data eliminates the oracle headroom, the plurality gain or
+   the predictive value of agreement, Phase 2 does not proceed as planned** —
+   that outcome selects Track C, not Track A.
+5. Only then: offline policy replay on the repaired K=4 pool (zero new GPU
+   time), before any prospective Phase-2 pilot.
+
+Deferred, not started: expanding the pilot for tighter CIs; transfer to a second
+agent; expert workflow annotation.
+
+---
+
+## Documents added in Phase 1.5
+
+| document | contents |
+| --- | --- |
+| `reports/context_overflow_forensics.md` | full diagnosis, counterfactuals, proposed repair R1–R6, ablation design |
+| `reports/phase2_entry_assessment.md` | independent verification of every headline number; completion-bias exposure per claim; entry conditions E1–E6 |
+| `reports/research_north_star.md` | the central question, the target result, the five questions, standing constraints |
+| `scripts/context_forensics.py` | reproduces the forensics from stored traces; no model calls, no GPU |
+| `reports/forensics/*` | per-run and per-call token ledgers |

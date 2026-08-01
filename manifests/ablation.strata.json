@@ -1,0 +1,194 @@
+[
+  {
+    "task_name": "patient_gene_detection",
+    "task_instance_id": 161,
+    "global_instance_id": 153,
+    "stratum": "overflow_prone",
+    "phase1_failed_runs": 5,
+    "phase1_runs_with_runaway": 5
+  },
+  {
+    "task_name": "crispr_delivery",
+    "task_instance_id": 20,
+    "global_instance_id": 277,
+    "stratum": "overflow_prone",
+    "phase1_failed_runs": 4,
+    "phase1_runs_with_runaway": 4
+  },
+  {
+    "task_name": "rare_disease_diagnosis",
+    "task_instance_id": 103,
+    "global_instance_id": 260,
+    "stratum": "overflow_prone",
+    "phase1_failed_runs": 4,
+    "phase1_runs_with_runaway": 4
+  },
+  {
+    "task_name": "crispr_delivery",
+    "task_instance_id": 28,
+    "global_instance_id": 281,
+    "stratum": "overflow_prone",
+    "phase1_failed_runs": 3,
+    "phase1_runs_with_runaway": 4
+  },
+  {
+    "task_name": "rare_disease_diagnosis",
+    "task_instance_id": 21,
+    "global_instance_id": 247,
+    "stratum": "overflow_prone",
+    "phase1_failed_runs": 3,
+    "phase1_runs_with_runaway": 3
+  },
+  {
+    "task_name": "rare_disease_diagnosis",
+    "task_instance_id": 99,
+    "global_instance_id": 261,
+    "stratum": "overflow_prone",
+    "phase1_failed_runs": 3,
+    "phase1_runs_with_runaway": 3
+  },
+  {
+    "task_name": "crispr_delivery",
+    "task_instance_id": 14,
+    "global_instance_id": 280,
+    "stratum": "same_family_control",
+    "phase1_failed_runs": 1,
+    "phase1_runs_with_runaway": 4
+  },
+  {
+    "task_name": "patient_gene_detection",
+    "task_instance_id": 80,
+    "global_instance_id": 168,
+    "stratum": "same_family_control",
+    "phase1_failed_runs": 1,
+    "phase1_runs_with_runaway": 2
+  },
+  {
+    "task_name": "patient_gene_detection",
+    "task_instance_id": 1,
+    "global_instance_id": 163,
+    "stratum": "same_family_control",
+    "phase1_failed_runs": 1,
+    "phase1_runs_with_runaway": 1
+  },
+  {
+    "task_name": "crispr_delivery",
+    "task_instance_id": 22,
+    "global_instance_id": 274,
+    "stratum": "same_family_control",
+    "phase1_failed_runs": 1,
+    "phase1_runs_with_runaway": 3
+  },
+  {
+    "task_name": "rare_disease_diagnosis",
+    "task_instance_id": 59,
+    "global_instance_id": 252,
+    "stratum": "same_family_control",
+    "phase1_failed_runs": 1,
+    "phase1_runs_with_runaway": 2
+  },
+  {
+    "task_name": "patient_gene_detection",
+    "task_instance_id": 488,
+    "global_instance_id": 147,
+    "stratum": "same_family_control",
+    "phase1_failed_runs": 2,
+    "phase1_runs_with_runaway": 3
+  },
+  {
+    "task_name": "screen_gene_retrieval",
+    "task_instance_id": 306,
+    "global_instance_id": 76,
+    "stratum": "short_easy_control",
+    "phase1_failed_runs": 0,
+    "phase1_runs_with_runaway": 2
+  },
+  {
+    "task_name": "lab_bench_dbqa",
+    "task_instance_id": 511,
+    "global_instance_id": 288,
+    "stratum": "short_easy_control",
+    "phase1_failed_runs": 0,
+    "phase1_runs_with_runaway": 0
+  },
+  {
+    "task_name": "lab_bench_dbqa",
+    "task_instance_id": 212,
+    "global_instance_id": 284,
+    "stratum": "short_easy_control",
+    "phase1_failed_runs": 0,
+    "phase1_runs_with_runaway": 1
+  },
+  {
+    "task_name": "lab_bench_dbqa",
+    "task_instance_id": 190,
+    "global_instance_id": 298,
+    "stratum": "short_easy_control",
+    "phase1_failed_runs": 0,
+    "phase1_runs_with_runaway": 3
+  },
+  {
+    "task_name": "lab_bench_dbqa",
+    "task_instance_id": 309,
+    "global_instance_id": 299,
+    "stratum": "short_easy_control",
+    "phase1_failed_runs": 0,
+    "phase1_runs_with_runaway": 1
+  },
+  {
+    "task_name": "screen_gene_retrieval",
+    "task_instance_id": 53,
+    "global_instance_id": 59,
+    "stratum": "short_easy_control",
+    "phase1_failed_runs": 1,
+    "phase1_runs_with_runaway": 2
+  },
+  {
+    "task_name": "gwas_causal_gene_opentargets",
+    "task_instance_id": 817,
+    "global_instance_id": 380,
+    "stratum": "gwas_control",
+    "phase1_failed_runs": 0,
+    "phase1_runs_with_runaway": 1
+  },
+  {
+    "task_name": "gwas_variant_prioritization",
+    "task_instance_id": 71,
+    "global_instance_id": 37,
+    "stratum": "gwas_control",
+    "phase1_failed_runs": 0,
+    "phase1_runs_with_runaway": 0
+  },
+  {
+    "task_name": "gwas_variant_prioritization",
+    "task_instance_id": 197,
+    "global_instance_id": 2,
+    "stratum": "gwas_control",
+    "phase1_failed_runs": 0,
+    "phase1_runs_with_runaway": 3
+  },
+  {
+    "task_name": "gwas_causal_gene_opentargets",
+    "task_instance_id": 556,
+    "global_instance_id": 338,
+    "stratum": "gwas_control",
+    "phase1_failed_runs": 0,
+    "phase1_runs_with_runaway": 0
+  },
+  {
+    "task_name": "gwas_variant_prioritization",
+    "task_instance_id": 1,
+    "global_instance_id": 22,
+    "stratum": "gwas_control",
+    "phase1_failed_runs": 0,
+    "phase1_runs_with_runaway": 1
+  },
+  {
+    "task_name": "gwas_causal_gene_opentargets",
+    "task_instance_id": 217,
+    "global_instance_id": 364,
+    "stratum": "gwas_control",
+    "phase1_failed_runs": 0,
+    "phase1_runs_with_runaway": 1
+  }
+]

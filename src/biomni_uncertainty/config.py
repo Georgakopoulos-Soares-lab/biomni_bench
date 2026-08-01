@@ -138,6 +138,45 @@ class LoggingCfg(_Base):
     )
 
 
+class TrajectoryBudgetCfg(_Base):
+    """Guards against the degeneration trapdoor measured in Phase 1.
+
+    Defaults are the Phase-1.5 repair values, chosen from
+    ``reports/context_overflow_forensics.md``: a 32,768-token hard input budget
+    disturbs 0 of the 188 completed pilot trajectories while catching 60 of 62
+    failures, and truncating runaway generations keeps 62 of 62 under the
+    request ceiling. ``enabled: false`` reproduces the original Phase-1 behaviour
+    exactly, which is what the ablation's control arm uses.
+    """
+
+    enabled: bool = False
+    # Input-token budget. Reactive rather than predictive: measured against the
+    # endpoint's own reported usage, self-calibrated per run.
+    soft_input_tokens: int = 24576
+    hard_input_tokens: int = 32768
+    # A generation stopping on `length` without a complete block is degenerate;
+    # keep this much of it for context and replace the rest with a correction.
+    runaway_keep_tokens: int = 512
+    # Terminate in a controlled state after this many consecutive runaways.
+    # 0 disables termination (truncation still applies).
+    max_consecutive_runaway: int = 3
+    # Model-visible cap on one tool observation. The full output is always kept
+    # on disk and in the event log.
+    max_observation_tokens: int = 4000
+    # Caps on the tool retriever's selection size. `None` leaves it uncapped.
+    retrieval_max_tools: int | None = 40
+    retrieval_max_data_lake: int | None = 20
+    retrieval_max_libraries: int | None = 20
+
+    @field_validator("hard_input_tokens")
+    @classmethod
+    def _hard_above_soft(cls, v: int, info) -> int:  # noqa: ANN001
+        soft = info.data.get("soft_input_tokens", 0)
+        if v and soft and v <= soft:
+            raise ValueError("trajectory_budget.hard_input_tokens must exceed soft_input_tokens")
+        return v
+
+
 class AnalysisCfg(_Base):
     bootstrap_replicates: int = 2000
     bootstrap_seed: int = 20260731
@@ -155,6 +194,7 @@ class Config(_Base):
     trajectories: TrajectoriesCfg = Field(default_factory=TrajectoriesCfg)
     execution: ExecutionCfg = Field(default_factory=ExecutionCfg)
     logging: LoggingCfg = Field(default_factory=LoggingCfg)
+    trajectory_budget: TrajectoryBudgetCfg = Field(default_factory=TrajectoryBudgetCfg)
     analysis: AnalysisCfg = Field(default_factory=AnalysisCfg)
 
     # ---- derived paths -------------------------------------------------

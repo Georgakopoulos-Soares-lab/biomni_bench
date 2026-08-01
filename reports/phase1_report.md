@@ -614,3 +614,73 @@ Artifacts: `<output_root>/phase1/runs/**` (raw traces, failures preserved),
 `<output_root>/phase1/results/tables/*.{parquet,csv}`,
 `<output_root>/phase1/results/figures/*.png` (13 figures),
 `<output_root>/phase1/results/analysis.json`.
+
+---
+
+# Errata (appended 2026-08-01, after the Phase-1.5 forensics)
+
+This section is **appended, not merged**: the text above is the pre-registered
+record of what was concluded from the pilot, and the rule in `CLAUDE.md` is that
+changes made after seeing results are documented as changes rather than edited
+away. Every headline number above was independently recomputed and **reproduces
+exactly** (`reports/phase2_entry_assessment.md` §2). What follows are the three
+corrections that do not.
+
+### E1. The 2 "missing runs" were not missing (§5, §Known failures)
+
+`crispr_delivery/i0014/instrumented/t2` and `crispr_delivery/i0028/standard/t0`
+were reported as `missing_run` — "no run directory ever created". Both
+directories exist with `events.jsonl`, `stdout.log`, `system_prompt.txt` and a
+`FAILED` marker reading `"failure_class": "model_timeout"`. They were killed by
+the dispatcher's 3,900 s wall clock after **18 consecutive runaway generations**
+— the same degeneration as the other 60 failures, caught by a different limit.
+They were misclassified because `metadata.json` was never written; the aggregator
+now trusts `FAILED` in that case.
+
+Corrected accounting: **62 failures, 0 missing.** `crispr_delivery`'s failure
+rate is **44%**, not the 36% in §5.
+
+### E2. "Not a configuration mistake" (§5) is retracted
+
+§5 states the overflow is "a genuine agent behavior interacting with a genuine
+serving constraint ... not a configuration mistake". The forensics does not
+support the second half. The serving configuration is a contributing cause:
+
+* the runaway rate per model call is **3.1%** below 32,768 input tokens and
+  **94.1%** above — a 30x discontinuity at this model's trained context length;
+* **7 of 7** runs whose system prompt alone exceeded 32,768 degenerated on their
+  *first* agent call, with no history and no opportunity for the task to have
+  gone badly;
+* **no completed run ever exceeded 32,154 input tokens**, so the served
+  65,536-token window only ever held already-degenerating trajectories.
+
+Serving a 65,536-token window over a model that collapses above 32,768 gave the
+repetition loop 30k tokens of room to run. See `DECISIONS.md` D-17.
+
+The Go/No-Go verdict in §16 is **unaffected** — 188 completed trajectories, 80%
+disagreement, an oracle headroom that can only grow under repair, and
+`agreement_fraction` at AUROC 0.874 all stand. But the pre-registered stop
+criterion "infrastructure failures dominate" now selects Track E (fix the
+environment) *alongside* Track A, which is what Phase 1.5 is.
+
+### E3. Two AUROC values differ from the tables in the third decimal (§11)
+
+`visible_plan_step_count` is 0.635 in `signal_auroc.csv`, reported as 0.637;
+`tool_call_count` is 0.407, reported as 0.412. Immaterial to every conclusion.
+**`results/tables/signal_auroc.csv` is authoritative.**
+
+### E4. Two conclusions above are bias-exposed and must be re-measured
+
+Not errors, but limits that §15 does not state sharply enough:
+
+* **`agreement_fraction` AUROC 0.874 (§9, §11)** is computed over surviving
+  trajectories only. In an instance where 2 of 4 completed, "2/2 agree" scores
+  1.0 on far less evidence than a genuine 4/4. Only 19 of 50 instances have the
+  full K=4.
+* **The inverted length signals (§11)** are partly circular. Overflowed runs ran
+  3.2x longer and score 0, and the forensics shows context length is the
+  proximate *cause* of that failure — so "longer → wrong" partly restates
+  "longer → crossed the degeneration boundary".
+
+Both must be re-measured on repaired data before any Phase-2 controller uses
+them. Full treatment: `reports/phase2_entry_assessment.md` §3.

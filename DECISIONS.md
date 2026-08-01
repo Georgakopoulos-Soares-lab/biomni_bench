@@ -287,3 +287,53 @@ for a finished run.
 | Prefer native context | native 40,960 is too small for Biomni's own system prompt | D-04, measured before any GPU time |
 | Model served in BF16 | weights ship as FP32 | D-03 |
 | `hle` is a benchmark task | supported by the evaluator, **0 instances** in this release | canonicalizer supports it; it cannot appear in the manifest |
+
+---
+
+## D-17 D-04's prompt sizing was wrong; the repair is a budget, not a bigger window
+
+**Decided 2026-08-01, AFTER seeing Phase-1 results.** Marked as such per the rule
+at the top of this file. Evidence: `reports/context_overflow_forensics.md`.
+
+**What D-04 assumed.** That Biomni's post-retrieval system prompt would be
+17k-41k tokens, extrapolated from selecting 25-100% of the 224 available tools,
+and that the native 40,960-token ceiling was therefore too small. On that basis
+the served context was raised to 65,536 with the model card's YaRN override.
+
+**What actually happened**, measured over 250 runs and 3,344 model calls:
+
+* the retriever selects a **median of 5 of 224 tools**, giving a median
+  post-retrieval system prompt plus task prompt of **2,687 tokens** - not 17k-41k;
+* **no completed trajectory ever exceeded 32,154 input tokens**, so the upper
+  half of the served window was never used by a working run;
+* above ~32,768 input tokens the model degenerates into unterminated repetition:
+  runaway rate is **3.1% below that boundary and 94.1% above**, and 7 of 7 runs
+  whose system prompt alone exceeded it degenerated on their *first* call.
+
+**Why the boundary is 32,768.** Qwen3-32B, this model's base, is trained at
+32,768 tokens of context; the `max_position_embeddings: 40960` in `config.json`
+is that context plus one 8,192-token generation, not a 40,960-token context.
+D-04's *mathematics* stands - YaRN at factor 1.0 is exactly the identity on the
+RoPE frequencies - but the override therefore lifted the position ceiling
+**without extending usable context**. Its practical effect was to convert a hard
+400 rejection at 40,960 into silent behavioural collapse starting at 32,768,
+with room for the resulting repetition loop to run for another 30k tokens.
+
+**Decision.** Do **not** raise the context ceiling and do **not** increase YaRN
+scaling; both add capacity exclusively above the boundary where the model no
+longer works. Instead bound the trajectory (`trajectory_budget` in
+`config.py`, implemented in `budget.py`): cap `max_tokens` at 2,048, truncate an
+unterminated generation instead of appending it, cap the retrieval selection and
+a single model-visible observation, and enforce a soft 24,576 / hard 32,768
+input-token budget that terminates in a *controlled* state.
+
+**Alternatives rejected.** (a) Larger context window - would have converted 60
+fast failures into 60 slower ones. (b) YaRN factor > 1.0 - the model card warns it
+degrades short trajectories, which is most of this benchmark. (c) Trimming tool
+and dataset descriptions, which was first on the original repair list - the
+median prompt is 2,687 tokens, so there is nothing to recover, and it would
+perturb agent behaviour for no measured gain.
+
+**Consequence for Phase 1.** The report's framing of overflow as "genuine agent
+behavior ... not a configuration mistake" (§5) is retracted; see the errata
+appended to `reports/phase1_report.md`. The Go/No-Go verdict is unaffected.

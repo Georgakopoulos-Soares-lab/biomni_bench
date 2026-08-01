@@ -1,0 +1,24 @@
+{"answer": "b", "global_instance_id": 280, "task_instance_id": 14, "task_name": "crispr_delivery"}
+{"answer": "a", "global_instance_id": 277, "task_instance_id": 20, "task_name": "crispr_delivery"}
+{"answer": "b", "global_instance_id": 274, "task_instance_id": 22, "task_name": "crispr_delivery"}
+{"answer": "e", "global_instance_id": 281, "task_instance_id": 28, "task_name": "crispr_delivery"}
+{"answer": "GUSB", "global_instance_id": 364, "task_instance_id": 217, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "SLC2A9", "global_instance_id": 338, "task_instance_id": 556, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "COL11A1", "global_instance_id": 380, "task_instance_id": 817, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "rs9637599", "global_instance_id": 22, "task_instance_id": 1, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs7159888", "global_instance_id": 37, "task_instance_id": 71, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs7542172", "global_instance_id": 2, "task_instance_id": 197, "task_name": "gwas_variant_prioritization"}
+{"answer": "E", "global_instance_id": 298, "task_instance_id": 190, "task_name": "lab_bench_dbqa"}
+{"answer": "A", "global_instance_id": 284, "task_instance_id": 212, "task_name": "lab_bench_dbqa"}
+{"answer": "C", "global_instance_id": 299, "task_instance_id": 309, "task_name": "lab_bench_dbqa"}
+{"answer": "E", "global_instance_id": 288, "task_instance_id": 511, "task_name": "lab_bench_dbqa"}
+{"answer": "ENSG00000173801", "global_instance_id": 163, "task_instance_id": 1, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000105983", "global_instance_id": 168, "task_instance_id": 80, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000133703", "global_instance_id": 153, "task_instance_id": 161, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000039650", "global_instance_id": 147, "task_instance_id": 488, "task_name": "patient_gene_detection"}
+{"answer": "{\"disease_name\": \"Arthrogryposis, Distal, Type 2A\", \"OMIM_ID\": \"193700\"}", "global_instance_id": 247, "task_instance_id": 21, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"DA8\", \"OMIM_ID\": \"178110\"}", "global_instance_id": 252, "task_instance_id": 59, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Arthrogryposis with oculomotor limitation and electroretinal anomalies\", \"OMIM_ID\": \"108145\"}", "global_instance_id": 261, "task_instance_id": 99, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Arthrogryposis with oculomotor limitation and electroretinal anomalies\", \"OMIM_ID\": \"108145\"}", "global_instance_id": 260, "task_instance_id": 103, "task_name": "rare_disease_diagnosis"}
+{"answer": "NHLRC2", "global_instance_id": 59, "task_instance_id": 53, "task_name": "screen_gene_retrieval"}
+{"answer": "FLCN", "global_instance_id": 76, "task_instance_id": 306, "task_name": "screen_gene_retrieval"}

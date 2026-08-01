@@ -34,6 +34,14 @@ EVENT_TYPES = frozenset(
         "exception",
         "final_answer",
         "confidence_extracted",
+        # Phase-1.5 trajectory-budget guards (see budget.py). These record what a
+        # guard did, so a repaired run's behaviour is auditable against a Phase-1
+        # run that had no guards at all.
+        "budget_warning",
+        "budget_terminated",
+        "runaway_truncated",
+        "observation_truncated",
+        "retrieval_capped",
     }
 )
 
