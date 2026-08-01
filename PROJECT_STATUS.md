@@ -198,3 +198,33 @@ None yet from real runs. Anticipated and instrumented for:
    no conclusion is to be written before the numbers exist.
 5. Record the go/no-go recommendation against the pre-specified criteria in
    `reports/phase1_protocol.md` §8.
+
+---
+
+## Pilot run log (append-only)
+
+**2026-07-31 19:25 CDT — launched.** 250 runs, GPUs 0–1, one TP2 replica,
+dispatcher concurrency 4, detached (`setsid nohup`, PPID 1).
+Supervisor log: `<output_root>/_phase1/supervisor.log`.
+
+**2026-07-31 19:50 — artifact fix mid-run.** `system_prompt.txt` was being
+truncated to 20k chars by the event-log redactor, so the confidence instruction
+(which sits at the end of Biomni's ~190k-char system prompt) was missing from the
+audit copy. Verified this was only an artifact — 3/3 instrumented smoke
+trajectories that reached a solution emitted a confidence block, and 0/2 standard
+trajectories did — then lifted the length cap. Secret redaction is unchanged and
+**no measured quantity is affected**. Runs dispatched before this point keep a
+truncated `system_prompt.txt`; every other artifact for those runs is complete.
+
+**Verified on live runs:** every LLM component points at the local endpoint
+(`llm_components.json`: primary agent, `default_config` used by database helpers,
+and the tool retriever, which shares the agent's client). No proprietary provider
+key is present in the run environment.
+
+### Monitoring
+
+```bash
+grep 'done |' <output_root>/_phase1/supervisor.log | tail
+find <output_root>/phase1 \( -name COMPLETE -o -name FAILED \) | wc -l
+python -m biomni_uncertainty.cli status --config configs/phase1.yaml
+```
