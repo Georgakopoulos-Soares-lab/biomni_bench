@@ -516,27 +516,32 @@ def plot_missingness(trajectories: pd.DataFrame, out_dir: Path) -> dict:
         return _empty(out_dir, name, "No trajectories available")
     rows = []
     total = len(trajectories)
-    rows.append({"category": "planned runs", "n": total, "fraction": 1.0})
-    for label, mask in (
-        ("run directory present", trajectories["run_present"] == True),  # noqa: E712
-        ("completed", trajectories["completed"].fillna(False).astype(bool)),
-        ("answer parsed", trajectories.get("answer_parse_status", pd.Series(dtype=str)) == "ok"),
+    rows.append({"category": "planned runs", "n": total, "denominator": total, "fraction": 1.0})
+    for label, mask, denom in (
+        ("run directory present", trajectories["run_present"] == True, total),  # noqa: E712
+        ("completed", trajectories["completed"].fillna(False).astype(bool), total),
+        ("answer parsed", trajectories.get("answer_parse_status", pd.Series(dtype=str)) == "ok", total),
         (
-            "valid confidence",
+            # Denominator is runs that actually REQUESTED a confidence value.
+            # Standard-condition runs never do, so scoring them against the full
+            # planned count would understate the parse rate.
+            "valid confidence\n(of runs requesting it)",
             trajectories.get("confidence_parse_status", pd.Series(dtype=str)).isin(["ok", "multiple_blocks"]),
+            int((trajectories.get("confidence_mode", pd.Series(dtype=str)) != "none").sum()),
         ),
         (
             "token usage available",
             trajectories.get("token_usage_available", pd.Series(dtype=bool)).fillna(False).astype(bool),
+            total,
         ),
     ):
         n = int(mask.sum()) if len(mask) else 0
-        rows.append({"category": label, "n": n, "fraction": n / total if total else 0.0})
+        rows.append({"category": label, "n": n, "denominator": denom, "fraction": n / denom if denom else 0.0})
     df = pd.DataFrame(rows)
     fig, ax = plt.subplots(figsize=STYLE["figsize_wide"])
     ax.bar(np.arange(len(df)), df["fraction"], color=STYLE["bar_color"])
     for i, r in df.iterrows():
-        ax.text(i, r["fraction"], f"{int(r['n'])}", ha="center", va="bottom", fontsize=8)
+        ax.text(i, r["fraction"], f"{int(r['n'])}/{int(r['denominator'])}", ha="center", va="bottom", fontsize=8)
     ax.set_xticks(np.arange(len(df)))
     ax.set_xticklabels(df["category"], rotation=25, ha="right", fontsize=8)
     ax.set_ylim(0, 1.05)
@@ -547,8 +552,8 @@ def plot_missingness(trajectories: pd.DataFrame, out_dir: Path) -> dict:
             ax,
             f"Data completeness and failures (trajectory level, n={total})",
             "",
-            "Fraction of planned runs",
-            f"Failure classes: {fails}",
+            "Fraction of the stated denominator",
+            f"Bars annotated n/denominator. Failure classes: {fails}",
         ),
         df,
         out_dir,
