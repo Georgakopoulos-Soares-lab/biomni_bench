@@ -40,3 +40,7 @@ external/*
 
 # Site-specific cluster config (may contain a private allocation name)
 configs/cluster.yaml
+
+# Stray caches written by biomedical tool libraries
+.pybiomart.sqlite
+*.sqlite

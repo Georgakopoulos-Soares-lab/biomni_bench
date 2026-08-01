@@ -115,3 +115,17 @@ assignment, timings, completion status, failure class, and output paths.
 
 Never claim deterministic reproducibility unless the whole stack is deterministic.
 `requested_seed` and `seed_supported` are separate fields for exactly this reason.
+
+## Why ground truth is tracked in git
+
+`manifests/*.groundtruth.jsonl` **is** committed. That is deliberate and not a
+violation of the "never commit benchmark answers" rule, which concerns
+*agent-visible* files:
+
+* the answers are public — they come from the public `biomni/Eval1` dataset;
+* the file is never passed to the agent, never used to select instances, and is
+  read only by `OfficialEvaluator`;
+* tracking it makes evaluation reproducible on a node with no internet access.
+
+If you add a benchmark whose answers are **not** public, gitignore its
+ground-truth file and load it from a path in `configs/cluster.yaml` instead.
