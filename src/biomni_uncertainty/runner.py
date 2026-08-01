@@ -426,8 +426,14 @@ def run_trajectory(
             agent = build_agent(cfg, spec, endpoint, api_key)
             record["llm_components"] = describe_llm_components(agent)
             write_json_atomic(run_dir / "llm_components.json", record["llm_components"])
+            # Secret-redacted but NOT length-truncated: this file is the record
+            # of what the agent actually saw, and Biomni's system prompt is
+            # ~190k chars, so the event-log truncation limit would cut the
+            # confidence instruction (which sits at the end) out of the audit
+            # trail entirely.
+            prompt_redactor = Redactor(tuple(cfg.logging.redact_patterns), max_chars=4_000_000)
             (run_dir / "system_prompt.txt").write_text(
-                redactor.text(getattr(agent, "system_prompt", "")), encoding="utf-8"
+                prompt_redactor.text(getattr(agent, "system_prompt", "")), encoding="utf-8"
             )
 
             with AgentInstrumentation(agent, logger, stats, stdout_limit=cfg.logging.stdout_limit):
