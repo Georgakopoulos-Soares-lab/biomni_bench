@@ -228,3 +228,19 @@ grep 'done |' <output_root>/_phase1/supervisor.log | tail
 find <output_root>/phase1 \( -name COMPLETE -o -name FAILED \) | wc -l
 python -m biomni_uncertainty.cli status --config configs/phase1.yaml
 ```
+
+**2026-07-31 19:33 — relaunched at concurrency 8.** The first launch (concurrency
+4) measured ~190 tok/s aggregate decode and projected ~17.6 h, against ~14 h left
+in the allocation. Decode is memory-bandwidth-bound on the weights, so a larger
+batch is nearly free: at concurrency 8 the server reports **379 tok/s** with KV
+at 8% of 388k tokens. Projected ~9 h, which fits.
+
+Before relaunching, fixed a resumption bug this exposed: `events.jsonl` is
+append-only, so re-running a trajectory interleaved two attempts in one file with
+event indices restarting at zero. Prior artifacts now move to `attempt<N>/` —
+preserved, never deleted.
+
+Resumption verified live on the relaunch: `pending=248 skipped(complete)=2`.
+
+Sampling settings, prompts, conditions and seeds are unchanged by the relaunch;
+concurrency is a throughput parameter only.
