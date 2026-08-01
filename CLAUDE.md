@@ -46,7 +46,7 @@ closures inside `A1.configure()` and cannot be subclassed.
 ## Commands
 
 ```bash
-pytest -q                                    # 210 tests, CPU only, no data lake
+pytest -q                                    # 246 tests, CPU only, no data lake
 ruff check src tests && ruff format src tests
 
 python -m biomni_uncertainty.cli inspect-env
