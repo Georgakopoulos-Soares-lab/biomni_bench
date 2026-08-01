@@ -249,4 +249,6 @@ selection, failure of uncertainty estimation, and infrastructure failure.
 
 | date | change | reason |
 | --- | --- | --- |
-| — | none yet | — |
+| 2026-07-31 | Added failure class `model_context_overflow` (non-retryable) | The GPU smoke test produced a 400 "maximum context length exceeded" after 23 LLM calls. It was landing in `unknown_failure`. It is a terminal outcome of a long trajectory, not a transient server problem, and must be separable from infrastructure failure in the report. No metric definition changed. |
+| 2026-07-31 | Execution layout: **one** TP2 replica on GPUs 0–1, dispatcher concurrency **4** (instead of two replicas at 1 trajectory each) | Only two GPUs were free; the other two hold an unrelated job. This is a throughput choice, not a scientific one: sampling settings, prompts, conditions and seeds are unchanged, and all conditions are interleaved across the same replica. Sampling was already established to be stochastic and unseeded, so shared batching introduces no new confound. |
+| 2026-07-31 | Smoke-test observation, no protocol change | Common Biomni tool dependencies (`biopython`, `PyPDF2`, `gget`, `pybiomart`, `gseapy`, `googlesearch-python`) were installed **before** the pilot after the smoke test showed them missing. The pilot therefore runs on a slightly richer tool environment than the smoke test. Smoke results are not pooled with pilot results. |

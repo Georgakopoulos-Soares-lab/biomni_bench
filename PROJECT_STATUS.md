@@ -1,7 +1,7 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-07-31
-**Phase:** Phase 0 complete through step 8; GPU smoke test in progress (step 9).
+**Last updated:** 2026-07-31 19:25 CDT
+**Phase:** Phase 0 COMPLETE. Phase-1 pilot LAUNCHED and running detached.
 
 ---
 
@@ -88,14 +88,35 @@
 
 ---
 
+### Step 9 — GPU smoke test PASSED
+
+6 runs (2 instances × (2 instrumented + 1 standard)) → aggregation → frozen
+analysis → **13 figures**. 4 completed, 2 hit `model_context_overflow`.
+
+Real trajectories behaved as the design assumed: independent samples disagreed
+(`GUSB` vs `VKORC1L1` on the same GWAS instance), the confidence block parsed
+from inside `<solution>`, tool calls were detected from generated code, and
+token usage came from the endpoint's own `usage` block.
+
+### Step 10 — Protocol frozen, Step 11 — pilot launched
+
+Launched 2026-07-31 19:25 CDT, detached (`setsid nohup`, PPID 1), so it survives
+logout.
+
+---
+
 ## Current blockers
 
-None blocking. One environmental constraint:
+None. Two environmental constraints, both handled:
 
-- This session holds **one** node (4 × H100 96 GB), not two. GPUs 2–3 are
-  occupied by an unrelated job of the user's, so the smoke test uses GPUs 0–1
-  as a single TP2 replica. The two-node path is implemented and configurable
-  (`slurm.nodes`); with one node the pilot simply takes longer.
+- **Two GPUs, not four.** GPUs 2–3 hold an unrelated job of the user's, so the
+  pilot runs on GPUs 0–1 as **one TP2 replica with dispatcher concurrency 4**
+  (instead of two replicas at 1 trajectory each). Logged in the protocol
+  deviations table. Sampling settings, prompts, conditions and seeds are
+  unchanged; this is a throughput choice only.
+- **Allocation ends in ~18 h**, and the pilot is estimated at ~17–27 h of work.
+  It will likely need a follow-up allocation. Resumption is implemented and
+  tested: re-running `scripts/run_detached.sh` skips every valid `COMPLETE` run.
 
 ---
 
@@ -103,15 +124,17 @@ None blocking. One environmental constraint:
 
 | check | result |
 | --- | --- |
-| `pytest -q` | **210 passed** |
+| `pytest -q` | **239 passed** |
 | `ruff check src tests` | clean |
 | `ruff format --check src tests` | clean |
 | Import check inside the Biomni environment | OK — `biomni 0.0.8`, 224 tools across 22 modules |
 | Manifest dry run | OK — 50 instances, 5 per task, hash stable across repeated runs |
 | Mock end-to-end (fake endpoint + fake benchmark + full pipeline) | **20 passed**, 13 figures generated |
-| GPU smoke test | **in progress** |
+| GPU smoke test | **passed** — 6 runs, aggregation, analysis, 13 figures |
 
-Bugs found and fixed by the test suite (both real, both now regression-tested):
+Bugs found and fixed (all real, all now regression-tested):
+
+*Found by the test suite:*
 1. Gene-symbol candidate matching failed on trailing punctuation (`"SON."`), and
    a loose fallback then extracted the word `"with"` from prose. Fixed: strip
    trailing punctuation; never invent an answer when the prompt enumerates
@@ -119,14 +142,28 @@ Bugs found and fixed by the test suite (both real, both now regression-tested):
 2. `dict()` over a pandas `GroupBy` raised `TypeError` (it exposes a `keys`
    attribute, so the mapping protocol is taken). Fixed with `dict(iter(...))`.
 
+*Found by reading real smoke output — the reason the smoke test is a gate:*
+3. **Token counts were redacted out of the event log.** The redactor matched the
+   substring `token` in payload *key* names, so `input_tokens` / `output_tokens`
+   became `[REDACTED]`. Run-record statistics were unaffected (the callback reads
+   `usage` before the log copy is redacted), but the event log was not auditable.
+   Fixed by requiring the credential word on a token boundary.
+4. **Context overflow was classified `unknown_failure`.** Now
+   `model_context_overflow`, non-retryable, separable in the report.
+5. **A pandas `NaN` answer was scored `evaluator_failure` with reward `None`.**
+   A trajectory that produces no answer is a substantive zero, not an
+   infrastructure failure — the old behaviour would have dropped it from the
+   analysis. The same `NaN` also crashed `select_oracle` (`NaN != NaN` emptied
+   the tie list), taking down the whole `analyze` command.
+
 ---
 
 ## Active experiment IDs
 
 | id | config | state |
 | --- | --- | --- |
-| `smoke` | `configs/smoke.yaml` | GPU smoke test running (6 runs: 2 instances × (2 instrumented + 1 standard)) |
-| `phase1` | `configs/phase1.yaml` | **frozen, not launched** — awaiting approval (250 runs) |
+| `smoke` | `configs/smoke.yaml` | **complete.** 6 runs, 4 completed, 2 `model_context_overflow`. Results at `<output_root>/smoke/results/`. Not pooled with pilot results. |
+| `phase1` | `configs/phase1.yaml` | **RUNNING.** 250 runs, launched 2026-07-31 19:25 CDT on GPUs 0–1. Supervisor log: `<output_root>/_phase1/supervisor.log` |
 
 ---
 
@@ -146,12 +183,18 @@ None yet from real runs. Anticipated and instrumented for:
 
 ## Next actions
 
-1. Finish the GPU smoke test; inspect logs and outputs by hand.
-2. Write `reports/phase0_environment.md` with the real endpoint validation and
-   GPU topology.
-3. Write `reports/phase1_protocol.md` (frozen manifest hash, conditions, primary
-   metrics, selectors, analysis plan, limitations) **before** the pilot.
-4. Print the planned run count, GPU layout and any unresolved cluster
-   placeholders, then **pause for approval** before launching the 250-run pilot.
-5. After approval: launch, monitor, resume if needed, aggregate, run the frozen
-   analysis, complete `reports/phase1_report.md`.
+1. **Monitor the pilot.** Progress: `grep 'done |' <output_root>/_phase1/supervisor.log`
+2. **Resume if the allocation ends first.** Re-run, from the repo root:
+   ```
+   setsid nohup env AGENT_PYTHON=<agent_python> BIOMNI_UNC_EVAL1_PARQUET=<parquet> \
+     bash scripts/run_detached.sh configs/cluster.yaml configs/phase1.yaml \
+     <output_root>/_phase1/endpoints.json 4 \
+     > <output_root>/_phase1/supervisor.log 2>&1 < /dev/null &
+   ```
+   The model server must be running first (`scripts/launch_node_servers.sh`).
+   Valid `COMPLETE` runs are skipped automatically.
+3. Aggregate + analyze (the supervisor does both automatically at the end).
+4. Complete `reports/phase1_report.md` — it currently holds **placeholders only**;
+   no conclusion is to be written before the numbers exist.
+5. Record the go/no-go recommendation against the pre-specified criteria in
+   `reports/phase1_protocol.md` §8.
