@@ -1,0 +1,106 @@
+# Phase-1.5 repair re-run.
+#
+# NOT a fresh sample: this experiment re-runs a HAND-PICKED set of 62 specific
+# Phase-1 (task, instance, condition, trajectory_index) tuples that failed with
+# model_context_overflow, under the repair selected by the 3-arm ablation
+# (reports/context_overflow_forensics.md SS10): Arm 2, "bounding only" (R1, R2,
+# R4, R5), WITHOUT Arm 3's soft/hard input-token budgets (R3) - the ablation
+# showed R3 collapses reward on two control strata that were fine without it.
+#
+# Every field below is identical to configs/phase1.yaml (same model, same
+# temperature, same context, same confidence protocol, same retry policy)
+# EXCEPT: experiment.name, model.max_tokens (R1), trajectories.* (this run
+# targets specific trajectory slots, not a fresh K expansion - see
+# scripts/prepare_phase1_5_manifest.py), and the trajectory_budget block.
+# Nothing about the task prompt, the confidence instruction, or the retriever's
+# ranking changed - see DECISIONS.md and context_overflow_forensics.md SS9.
+#
+# Ground truth is the same 50-instance benchmark as Phase 1: reuse
+# manifests/phase1.groundtruth.jsonl for aggregation, do not regenerate it.
+
+experiment:
+  name: phase1_5
+  seed: 20260731
+  output_root: ${BIOMNI_UNC_OUTPUT_ROOT:-./runs}
+
+benchmark:
+  dataset: biomni/Eval1
+  parquet_uri: hf://datasets/biomni/Eval1/biomni_eval1_dataset.parquet
+  local_parquet: ${BIOMNI_UNC_EVAL1_PARQUET:-}
+  target_total_instances: 50
+  per_task_target: 5
+  preferred_split: val
+  manifest_seed: 20260731
+  exclude_tasks: []
+  max_prompt_chars: null
+
+model:
+  identifier: biomni/Biomni-R0-32B-Preview
+  revision: 71432eb3d5e583bee757e0f9437a17e711e8e3d1
+  source: Custom
+  temperature: 0.7
+  # R1: 8192 -> 2048. Ablation SS6a: truncates only 0.68% of healthy
+  # generations, 4x less wasted output per degeneration event.
+  max_tokens: 2048
+  request_timeout_seconds: 1800
+  context_length: 65536
+  dtype: bfloat16
+  json_model_override_args: '{"rope_scaling":{"rope_type":"yarn","factor":1.0,"original_max_position_embeddings":32768}, "max_position_embeddings": 131072}'
+  request_seed_enabled: true
+
+confidence:
+  mode: final_only
+  open_delimiter: "<BIOMNI_CONFIDENCE>"
+  close_delimiter: "</BIOMNI_CONFIDENCE>"
+  epsilon: 0.001
+
+# Not used to expand a manifest for this experiment - the run manifest is
+# hand-built by scripts/prepare_phase1_5_manifest.py from the specific 62
+# failed (task, instance, condition, trajectory_index) tuples. Left at Phase-1
+# values only so the config validates and is comparable at a glance.
+trajectories:
+  instrumented_k: 4
+  standard_k: 1
+  seed_base: 1000
+
+execution:
+  max_concurrency: 4
+  run_timeout_seconds: 3600
+  tool_timeout_seconds: 600
+  scratch_root: ${BIOMNI_UNC_SCRATCH:-/tmp/biomni_unc_scratch}
+  data_path: ${BIOMNI_PATH:-./biomni_data_root}
+  use_tool_retriever: true
+  retry_policy:
+    max_attempts: 2
+    retryable_failure_classes:
+      - model_server_failure
+      - model_timeout
+      - external_resource_failure
+    backoff_seconds: 20.0
+
+logging:
+  stdout_limit: 4000
+  stderr_limit: 4000
+  max_event_payload_chars: 20000
+
+# R2 (runaway truncate-and-nudge), R4 (retrieval caps), R5 (observation cap).
+# No R3: soft/hard input-token budgets stay at 0 (disabled), matching the
+# ablation's selected arm 2, not arm 3.
+trajectory_budget:
+  enabled: true
+  soft_input_tokens: 0
+  hard_input_tokens: 0
+  runaway_keep_tokens: 512
+  max_consecutive_runaway: 3
+  max_observation_tokens: 4000
+  retrieval_max_tools: 40
+  retrieval_max_data_lake: 20
+  retrieval_max_libraries: 20
+
+analysis:
+  bootstrap_replicates: 2000
+  bootstrap_seed: 20260731
+  calibration_bins: 5
+  primary_length_field: total_output_tokens
+  binary_reward_threshold: 0.5
+  srlm_epsilon: 0.001

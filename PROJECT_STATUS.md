@@ -1,8 +1,57 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-01 (Phase-1.5: 72-trajectory ablation COMPLETE, decision made)
-**Phase:** **PHASE 1.5 COMPLETE. Repair selected: Arm 2 (bounding guards only).**
+**Last updated:** 2026-08-02 (Phase-1.5: 62-trajectory repair re-run COMPLETE)
+**Phase:** **PHASE 1.5 COMPLETE. Repair applied to all 62 Phase-1 failures: 42/62 rescued.**
 Phase 1 is complete, frozen and independently re-verified.
+
+## Repair re-run result (2026-08-02, final)
+
+All 62 Phase-1 `model_context_overflow`/`missing_run` failures re-run under the
+selected Arm 2 repair, on GPUs 0-1 only (GPUs 2-3 held a separate, unrelated job
+throughout — never touched). Experiment `phase1_5`,
+`manifests/phase1_5_runs.jsonl`, config `configs/phase1_5.yaml`. Each run keeps
+its *exact* original task/instance/condition/trajectory_index and prompt — only
+the serving config differs — with an explicit
+`manifests/phase1_5_runs.original_map.json` (repaired run_id → original phase1
+run_id).
+
+**42/62 rescued (67.7%). 20/62 still fail — all via the guard's own circuit
+breaker (`budget_terminated_consecutive_runaway`), not open-ended overflow.**
+That is a materially different failure mode than Phase 1's: the guard is doing
+its job (bounding cost after 3 consecutive degenerate generations) but cannot
+force a correct answer out of a trajectory that keeps re-degenerating no matter
+how it's nudged.
+
+Rescue rate is **not uniform**:
+
+| task | rescued / attempted |
+| --- | --- |
+| `crispr_delivery` | 11/11 (100%) |
+| `gwas_causal_gene_pharmaprojects` | 6/6 (100%) |
+| `gwas_causal_gene_gwas_catalog` | 2/2 (100%) |
+| `gwas_variant_prioritization` | 1/1 (100%) |
+| `screen_gene_retrieval` | 5/6 (83%) |
+| `patient_gene_detection` | 8/11 (73%) |
+| `lab_bench_seqqa` | 6/9 (67%) |
+| `rare_disease_diagnosis` | **3/13 (23%)** |
+| `lab_bench_dbqa` | **0/3 (0%)** |
+
+`rare_disease_diagnosis` — already the worst-failing task in Phase 1 (52%
+failure rate) — remains stubbornly resistant: 10 of its 13 failures persist even
+with the repair. This is a **residual limitation**, not a repair bug: the
+bounding guards contain the damage (no more indefinite 8k-token runaway blobs)
+but this task's reasoning pattern pushes the model into repeated degeneration in
+a way R1/R2/R4/R5 alone do not fix. `lab_bench_dbqa` is 0/3 but n=3 is too small
+to read as a pattern rather than noise.
+
+Mean reward among the 42 rescued: **0.357** (15 correct, 27 wrong) — expected to
+be below the Phase-1 baseline (0.42), since this pool is specifically the
+*hardest* cases, not a random sample.
+
+**What this changes for the pooled analysis:** the Phase-1 K=4 instrumented pool
+can now be reconstituted with 42 additional real trajectories (was 188/250
+complete, now 230/250), which changes oracle-headroom, self-consistency and
+signal-AUROC denominators. **Not yet re-run** — see Next Actions.
 
 ## Ablation verdict (2026-08-01, final)
 
@@ -229,9 +278,9 @@ preserved below.
 
 ## Current blockers
 
-None. The ablation is complete and the repair is decided (Arm 2). Next actions
-below need a decision on scope (re-run all 62 failed Phase-1 trajectories under
-the repair, or a subset) before any further GPU time is spent.
+None. Ablation complete, repair decided (Arm 2), repair re-run complete
+(42/62 rescued). Remaining work (§ Next actions) is CPU-only pooled reanalysis —
+no GPU time needed until a Phase-2 pilot is actually approved.
 
 ---
 
@@ -249,6 +298,7 @@ the repair, or a subset) before any further GPU time is spent.
 | **GPU pilot (250 runs)** | **complete** — 188/250 completed, full analysis, report written |
 | **Repair live validation (6 runs, arm 3)** | **passed** — 6/6 completed where Phase 1 failed 22/30; 87 runaways → 1 |
 | **Repair ablation (72 runs, 3 arms)** | **complete** — see `reports/context_overflow_forensics.md` §10. Decision: Arm 2. |
+| **Repair re-run, all 62 Phase-1 failures (arm 2)** | **complete** — 42/62 rescued (67.7%); 20/62 hit the `max_consecutive_runaway` circuit breaker, concentrated in `rare_disease_diagnosis` (10/13 still fail). |
 
 All bugs found and fixed (pre-pilot + post-pilot + post-ablation) are listed
 with detail in `reports/phase0_environment.md` §8, `reports/phase1_report.md`
@@ -266,6 +316,7 @@ reward-join bug).
 | `abl_arm1` | `configs/ablation_arm1.yaml` | ablation control (Phase-1 behaviour). **24/24 complete**, 19 ok / 5 failed |
 | `abl_arm2` | `configs/ablation_arm2.yaml` | bounding only, no input budget. **24/24 complete**, 22 ok / 2 failed — **selected repair** |
 | `abl_arm3` | `configs/ablation_arm3.yaml` | bounding + soft/hard budgets. **24/24 complete**, 23 ok / 1 failed — rejected, harms control reward |
+| `phase1_5` | `configs/phase1_5.yaml` | repair re-run of all 62 Phase-1 failures under Arm 2. **62/62 attempted, 42 ok / 20 failed.** Map to originals: `manifests/phase1_5_runs.original_map.json`. |
 
 ---
 
@@ -289,29 +340,29 @@ reward-join bug).
 
 ## Next actions
 
-**Ablation done, repair selected (Arm 2).** Remaining items need a fresh GPU
-allocation for the actual repaired re-run, scoped to the failed instances:
+**Ablation done (Arm 2 selected), repair re-run done (42/62 rescued).**
+Everything remaining below is CPU-only pooled reanalysis — no GPU needed:
 
-1. **Freeze Arm 2 as the Phase-1.5 repair config.** `configs/ablation_arm2.yaml`
-   is already the right settings (R1, R2, R4, R5; no R3 budgets); promote it to
-   a named `configs/repair.yaml` (or reuse arm2's config directly) so the
-   re-run below points at an unambiguous, documented config rather than an
-   "ablation arm" name.
-2. **← needs a fresh GPU allocation.** Re-run all 62 Phase-1 `model_context_overflow`
-   failures under Arm 2's settings as experiment `phase1_5`, preserving `phase1`
-   untouched, with an explicit original→repaired run-id mapping. Include the
-   matched previously-completed controls used in the ablation so the same
-   "did this help or hurt" check applies at full scale, not just n=6 per stratum.
-   ≈2–3 node-hours.
-3. Write `reports/phase1_completion_bias_analysis.md` and
+1. **Pool the 42 rescued trajectories into the Phase-1 K=4 instrumented set**
+   (via `manifests/phase1_5_runs.original_map.json`) and re-derive oracle@K,
+   plurality, agreement-AUROC, confidence calibration on the union
+   (188 + 42 = 230/250 complete, up from 75.2%). Keep the original `phase1`
+   experiment untouched; this is a new pooled view, not an edit to frozen data.
+2. Write `reports/phase1_completion_bias_analysis.md` and
    `reports/phase1_repaired_report.md`: observed-completion vs
-   intention-to-evaluate vs matched-paired results.
-4. Adjudicate entry conditions E1–E6 (`reports/phase2_entry_assessment.md` §6).
-   **If the repaired data eliminates the oracle headroom, the plurality gain or
-   the predictive value of agreement, Phase 2 does not proceed as planned** —
-   that outcome selects Track C, not Track A.
-5. Only then: offline policy replay on the repaired K=4 pool (zero new GPU
-   time), before any prospective Phase-2 pilot.
+   intention-to-evaluate vs matched-paired results, and the pooled numbers
+   from step 1 against the original Phase-1 headline numbers.
+3. Adjudicate entry conditions E1–E6 (`reports/phase2_entry_assessment.md` §6)
+   against the pooled numbers. **If the repaired data eliminates the oracle
+   headroom, the plurality gain or the predictive value of agreement, Phase 2
+   does not proceed as planned** — that outcome selects Track C, not Track A.
+4. Decide what to do with `rare_disease_diagnosis`'s residual 10/13 failures —
+   the repair barely touches this task (23% rescue vs 67–100% elsewhere). Either
+   accept it as a known limitation and exclude/flag it in the pooled analysis,
+   or treat it as a fourth, task-specific repair iteration (not yet designed;
+   would need its own small diagnosis before another ablation).
+5. Only then: offline policy replay on the pooled K=4 pool (zero new GPU time),
+   before any prospective Phase-2 pilot.
 
 Deferred, not started: expanding the pilot for tighter CIs; transfer to a second
 agent; expert workflow annotation; adding test coverage for
