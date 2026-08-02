@@ -1,11 +1,70 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-02 (Phase-2A offline replay COMPLETE — awaiting approval to start 2B)
-**Phase:** **PHASE 2A COMPLETE.** Track A selected; offline sequential-policy
-replay done on the repaired pooled K=4 data, zero GPU time. One policy
-recommended for prospective testing. **No GPU job may be launched until the
-Phase-2A recommendation is approved.**
+**Last updated:** 2026-08-02 (Phase-2A committed; Phase-2B protocol FROZEN — awaiting approval to run)
+**Phase:** **PHASE 2A COMPLETE AND COMMITTED (`fd91d26`). PHASE 2B DESIGNED AND
+FROZEN, NOT STARTED.** The held-out manifest, config, controller, outcomes,
+statistical plan and stopping rules are pre-registered in
+`reports/phase2_protocol.md`. **No GPU job has been launched. Neither the smoke
+test nor the full run may start without explicit approval.**
 Phases 1 and 1.5 are complete, frozen and independently re-verified.
+
+## Phase 2B — frozen protocol (2026-08-02, no inference run)
+
+| item | value |
+| --- | --- |
+| Experiment ID | `phase2b` (new) |
+| Protocol | `reports/phase2_protocol.md` — written before any prospective outcome exists |
+| Manifest | `manifests/phase2b.jsonl`, **hash `7cb5da3ac345a4a3274c0c33845cdbf886fcea75867985121511e5dcfa1fb2cd`** |
+| Instances | **150 held-out**, overlap with Phase 1 asserted **= 0** at build time |
+| Trajectories | 600 (K=4/instance; ~422 consumed, ~178 hidden shadows) |
+| Config | `configs/phase2b.yaml` (serving identical to `phase1_5.yaml`; only benchmark + controller differ) |
+| Controller | mandatory K=2 → agreement stop → up to K=4 → abstain when no two of four agree. **No fitted parameter.** |
+| Co-primary | H1 non-inferiority vs fixed K=4 at δ=0.05; H2 mean-K CI upper < 3.0. Both required. |
+| Power | 0.99 / 0.99 at n=150, simulated from the Phase-2A difference distribution; ≥0.84 even if disagreement is 3× worse |
+| Compute | 600 trajectories, **~12–23 h**, 2×12 h jobs on one 4×H100 node, ≈80–96 GPU-hours |
+
+**Held-out pool.** BiomniEval1 is 433 instances, all split `val` (no official
+held-out split). Phase 1 used 50, so **383 were never run**; Phase 2B takes 150
+and reserves 233. Allocation is deliberately **not** uniform:
+`crispr_delivery` takes all 5 that remain in the entire benchmark (pool-limited),
+`rare_disease_diagnosis` takes all 25 remaining (the pre-declared high-risk
+stratum, n=5 → n=25), and the other 8 tasks take 15 each — 3× Phase 1's cell.
+This exhausts the `crispr_delivery` and `rare_disease_diagnosis` pools; that is a
+deliberate, reversible-before-launch spend, flagged in the protocol §3.2.
+
+**Shadow isolation** is enforced by ordering plus commitment, not discipline: the
+controller's decision is appended to a **hash-chained append-only log and flushed
+before the next trajectory is generated**, so a shadow cannot influence an
+earlier decision because it did not exist when that decision was committed.
+Verified after the fact from timestamps and the chain; a broken chain is a
+run-level halt condition.
+
+**Not yet written** (the implementation step that follows approval):
+`scripts/run_phase2b.sh`, `configs/phase2b_smoke.yaml`, the online controller
+driver, `scripts/phase2b_analyze.py`.
+
+## Reconciliation: Phase-2A 0.577 vs Phase-1 0.620 (2026-08-02) — RESOLVED, not a bug
+
+Phase 1's pooled plurality is 0.620; Phase 2A's fixed K=4 is 0.577, on identical
+data. Investigated with `scripts/phase2a_reconcile.py` and written up in
+`reports/phase2_offline_replay.md` §1.1.
+
+**Restricting the Phase-2A replay to Phase 1's native trajectory ordering
+reproduces 0.6200 bit-exactly** (as does first = 0.4800 and Oracle@4 = 0.6400).
+That single fact rules out denominator, replay, failure-handling and aggregation
+causes simultaneously. The entire 0.04333 gap is **4 tied instances of 50** whose
+lowest-index tiebreak happened to select the correct answer all four times; the
+arithmetic closes to five decimals. Across the 24 fixed orderings, K=4 plurality
+ranges **0.540–0.620** and only **6 of 24** reach 0.620 — Phase 1 drew one of the
+six best. Two of the four "ties" are 4-way ties where every cluster has size 1,
+i.e. "plurality" degenerates to returning the first trajectory.
+
+**0.577 is the unbiased estimate for a sequential controller** and is what every
+Phase-2A comparison uses. The frozen Phase-1 report is not wrong — it reports one
+realization, and it was a lucky one. Locked against regression by two tests. The
+consequence is carried into Phase 2B: since a single ordering can move fixed-K=4
+by 8 pp, the protocol pre-registers **both** the realized-ordering paired
+comparison (primary) and the ordering-averaged one (secondary S5).
 
 ## Phase 2A result (2026-08-02) — offline sequential policy replay
 
@@ -433,10 +492,11 @@ preserved below.
 
 ## Current blockers
 
-**One, and it is deliberate: Phase 2A's recommendation is awaiting approval.**
-Standing instruction is to present the offline replay results and stop before
-launching any new GPU inference. Nothing technical blocks Phase 2B; the gate is a
-decision, not an artifact.
+**One, and it is deliberate: the frozen Phase-2B protocol is awaiting approval.**
+Phase 2A is approved and committed. The protocol, manifest, config and controller
+are frozen; the standing instruction is to stop here and present them. **Neither
+the GPU smoke test nor the full prospective run may start without explicit
+approval.** Nothing technical blocks either; the gate is a decision.
 
 ---
 
@@ -444,11 +504,13 @@ decision, not an artifact.
 
 | check | result |
 | --- | --- |
-| `pytest -q` | **329 passed** (274 + 40 policy + 15 calibration) |
+| `pytest -q` | **331 passed** (274 + 42 policy + 15 calibration) |
 | `ruff check src tests scripts` | clean |
 | `ruff format --check src tests scripts` | clean except one pre-existing drift in the untouched `tests/test_resumption.py` (a ruff-version line-wrap difference; left alone rather than reformatting a frozen test file) |
 | Import check inside the Biomni environment | OK |
 | Manifest dry run | OK — 50 instances, 5 per task, stable hash |
+| **Phase-2B manifest build** | OK — 150 held-out instances, overlap with Phase 1 **= 0** (asserted), hash `7cb5da3a…`, dataset fingerprint identical to Phase 1 |
+| **Phase-2A/Phase-1 reconciliation** | **RESOLVED** — native-ordering replay reproduces Phase-1's 0.6200 bit-exactly; gap is 4 tied instances, not a bug (`scripts/phase2a_reconcile.py`) |
 | Mock end-to-end | 20 passed, 13 figures |
 | GPU smoke test | passed — 6 runs, aggregation, analysis, 13 figures |
 | **GPU pilot (250 runs)** | **complete** — 188/250 completed, full analysis, report written |
@@ -477,6 +539,8 @@ reward-join bug).
 | `phase1_5` | `configs/phase1_5.yaml` | repair re-run of all 62 Phase-1 failures under Arm 2. **62/62 attempted, 42 ok / 20 failed.** Map to originals: `manifests/phase1_5_runs.original_map.json`. |
 | `phase1_pooled` | — (analysis-only, no config of its own) | pooled Phase-1 + phase1_5 spec list, **230/250 complete (92.0%)**. Not a run experiment — `manifests/phase1_pooled_runs.jsonl` + `scripts/pool_and_analyze_phase1_5.py`. Entry-condition check: **PASS**, all go-criteria hold. |
 | `phase2a` | — (analysis-only, no config of its own) | offline sequential policy replay on `phase1_pooled`. **No model calls, no GPU.** 32 policies x 50 instances x 24 orderings. `scripts/phase2a_offline_replay.py`; results at `<output_root>/phase2a/results/`. Report: `reports/phase2_offline_replay.md`. |
+| `phase2b` | `configs/phase2b.yaml` | **DESIGNED AND FROZEN, NOT STARTED.** Prospective controller evaluation on 150 held-out instances (`manifests/phase2b.jsonl`, hash `7cb5da3a…`), 600 trajectories. Protocol: `reports/phase2_protocol.md`. Requires explicit approval to launch. |
+| `phase2b_smoke` | `configs/phase2b_smoke.yaml` *(not yet written)* | multi-task GPU smoke test on **reserved** instances, never on the 150. Requires approval. |
 
 ---
 
@@ -525,22 +589,32 @@ written. What remains is decisions, not artifacts:
 5. ~~Offline policy replay on the pooled K=4 pool.~~ **Done**, 2026-08-02 —
    experiment `phase2a`, `reports/phase2_offline_replay.md`.
 
+6. ~~Reconcile Phase-2A's 0.577 against Phase-1's 0.620.~~ **Done** — resolved,
+   not a bug; see the reconciliation section above and
+   `reports/phase2_offline_replay.md` §1.1.
+7. ~~Commit the Phase-2A milestone.~~ **Done**, `fd91d26`. No Phase-1 or
+   Phase-1.5 artifact modified; the frozen `phase1` manifest hash re-verifies.
+8. ~~Select held-out instances, freeze and hash the manifest, write
+   `reports/phase2_protocol.md` before any prospective outcome exists.~~
+   **Done**, 2026-08-02 — 150 instances, hash `7cb5da3a…`, protocol frozen.
+
 ### Next action — **needs approval before anything else happens**
 
-**Present the Phase-2A recommendation and stop.** Per the standing instruction,
-no GPU job is launched and Phase 2B is not begun until the offline replay is
-approved. The recommendation is a single policy (mandatory K=2 with agreement
-stopping, failure override, abstain when no two of four agree).
+**Present the frozen Phase-2B protocol, manifest, sample-size justification and
+compute estimate, then stop.** Remaining steps, each separately gated:
 
-On approval, Phase 2B in order — each step gated, none started:
-
-1. Select held-out BiomniEval1 instances not used in Phase 1 (~100, balanced
-   across task families, retaining the difficult and failure-prone ones).
-2. Freeze and hash the manifest before any inference.
-3. Write `reports/phase2_protocol.md` **before** viewing any prospective
-   outcome: frozen thresholds, stopping rules, primary metrics, analysis plan.
-4. Small multi-task GPU smoke test.
-5. **Pause again for approval before the full GPU launch.**
+1. On approval of the protocol: write the implementation —
+   `scripts/run_phase2b.sh`, `configs/phase2b_smoke.yaml`, the online controller
+   driver with its hash-chained decision log, and `scripts/phase2b_analyze.py`,
+   with tests.
+2. **Approval required:** run the multi-task GPU smoke test on reserved
+   instances (never on the 150), against the pass conditions in
+   `reports/phase2_protocol.md` §10.
+3. Present smoke results.
+4. **Separate approval required:** launch the full 600-trajectory prospective
+   run.
+5. Analysis and `reports/phase2_report.md`. No policy tuning after outcomes are
+   seen.
 
 Deferred, not started: expanding the pilot for tighter CIs; transfer to a second
 agent; expert workflow annotation; Phase 2C controlled-failure study; adding test

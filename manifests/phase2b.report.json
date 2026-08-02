@@ -1,0 +1,143 @@
+{
+  "counts_by_task": {
+    "crispr_delivery": 5,
+    "gwas_causal_gene_gwas_catalog": 15,
+    "gwas_causal_gene_opentargets": 15,
+    "gwas_causal_gene_pharmaprojects": 15,
+    "gwas_variant_prioritization": 15,
+    "lab_bench_dbqa": 15,
+    "lab_bench_seqqa": 15,
+    "patient_gene_detection": 15,
+    "rare_disease_diagnosis": 25,
+    "screen_gene_retrieval": 15
+  },
+  "dataset_fingerprint": "287304c649b14166cce227a9f13239f104df1ca93ea53582c11b4d745b2c423f",
+  "manifest_hash": "7cb5da3ac345a4a3274c0c33845cdbf886fcea75867985121511e5dcfa1fb2cd",
+  "manifest_seed": 20260802,
+  "n_entries": 150,
+  "n_phase1_instances_excluded": 50,
+  "overlap_with_phase1": 0,
+  "phase1_manifest": "manifests/phase1.jsonl",
+  "pool": [
+    {
+      "n_held_out": 5,
+      "n_in_benchmark": 10,
+      "n_reserved_for_future": 0,
+      "n_selected": 5,
+      "n_used_by_phase1": 5,
+      "pool_exhausted": true,
+      "quota": 5,
+      "task_name": "crispr_delivery"
+    },
+    {
+      "n_held_out": 45,
+      "n_in_benchmark": 50,
+      "n_reserved_for_future": 30,
+      "n_selected": 15,
+      "n_used_by_phase1": 5,
+      "pool_exhausted": false,
+      "quota": 15,
+      "task_name": "gwas_causal_gene_gwas_catalog"
+    },
+    {
+      "n_held_out": 45,
+      "n_in_benchmark": 50,
+      "n_reserved_for_future": 30,
+      "n_selected": 15,
+      "n_used_by_phase1": 5,
+      "pool_exhausted": false,
+      "quota": 15,
+      "task_name": "gwas_causal_gene_opentargets"
+    },
+    {
+      "n_held_out": 45,
+      "n_in_benchmark": 50,
+      "n_reserved_for_future": 30,
+      "n_selected": 15,
+      "n_used_by_phase1": 5,
+      "pool_exhausted": false,
+      "quota": 15,
+      "task_name": "gwas_causal_gene_pharmaprojects"
+    },
+    {
+      "n_held_out": 38,
+      "n_in_benchmark": 43,
+      "n_reserved_for_future": 23,
+      "n_selected": 15,
+      "n_used_by_phase1": 5,
+      "pool_exhausted": false,
+      "quota": 15,
+      "task_name": "gwas_variant_prioritization"
+    },
+    {
+      "n_held_out": 45,
+      "n_in_benchmark": 50,
+      "n_reserved_for_future": 30,
+      "n_selected": 15,
+      "n_used_by_phase1": 5,
+      "pool_exhausted": false,
+      "quota": 15,
+      "task_name": "lab_bench_dbqa"
+    },
+    {
+      "n_held_out": 45,
+      "n_in_benchmark": 50,
+      "n_reserved_for_future": 30,
+      "n_selected": 15,
+      "n_used_by_phase1": 5,
+      "pool_exhausted": false,
+      "quota": 15,
+      "task_name": "lab_bench_seqqa"
+    },
+    {
+      "n_held_out": 45,
+      "n_in_benchmark": 50,
+      "n_reserved_for_future": 30,
+      "n_selected": 15,
+      "n_used_by_phase1": 5,
+      "pool_exhausted": false,
+      "quota": 15,
+      "task_name": "patient_gene_detection"
+    },
+    {
+      "n_held_out": 25,
+      "n_in_benchmark": 30,
+      "n_reserved_for_future": 0,
+      "n_selected": 25,
+      "n_used_by_phase1": 5,
+      "pool_exhausted": true,
+      "quota": 25,
+      "task_name": "rare_disease_diagnosis"
+    },
+    {
+      "n_held_out": 45,
+      "n_in_benchmark": 50,
+      "n_reserved_for_future": 30,
+      "n_selected": 15,
+      "n_used_by_phase1": 5,
+      "pool_exhausted": false,
+      "quota": 15,
+      "task_name": "screen_gene_retrieval"
+    }
+  ],
+  "prompt_length_chars": {
+    "max": 5215,
+    "mean": 744.2,
+    "median": 481,
+    "min": 237
+  },
+  "purpose": "Phase-2B prospective held-out sample",
+  "quotas": {
+    "crispr_delivery": 5,
+    "gwas_causal_gene_gwas_catalog": 15,
+    "gwas_causal_gene_opentargets": 15,
+    "gwas_causal_gene_pharmaprojects": 15,
+    "gwas_variant_prioritization": 15,
+    "lab_bench_dbqa": 15,
+    "lab_bench_seqqa": 15,
+    "patient_gene_detection": 15,
+    "rare_disease_diagnosis": 25,
+    "screen_gene_retrieval": 15
+  },
+  "split_used": "val"
+}

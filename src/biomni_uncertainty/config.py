@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 _ENV_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}")
 
@@ -186,6 +186,47 @@ class AnalysisCfg(_Base):
     srlm_epsilon: float = 1e-3
 
 
+class ControllerCfg(_Base):
+    """The prospective reliability controller (Phase 2B).
+
+    Every field here is **frozen before inference** and hashed into the run
+    provenance. Changing any of them once the prospective run has started
+    invalidates the experiment: the point of a pre-registered controller is that
+    its behaviour was fixed before any outcome was visible.
+
+    The Phase-2A recommendation deliberately has no *fitted* parameter —
+    agreement is counted, not modelled — so every setting here is structural.
+    """
+
+    enabled: bool = False
+    #: Policy identifier. `mandatory_k2` is the Phase-2A recommendation
+    #: (reports/phase2_offline_replay.md §11).
+    policy: Literal["mandatory_k2"] = "mandatory_k2"
+    #: Minimum trajectories before any answer may be accepted. 2 means a single
+    #: unverified analysis is never returned.
+    min_trajectories: int = 2
+    #: Hard ceiling, and also the number of trajectories generated per instance:
+    #: whatever the controller does not consume becomes a hidden shadow.
+    max_trajectories: int = 4
+    #: Abstain at the ceiling when no two usable answers agree.
+    abstain_on_no_agreement: bool = True
+    #: A trajectory that did not complete, or produced no parseable answer, never
+    #: counts toward agreement and never wins a tie (D-18).
+    failure_override: bool = True
+    #: Generate unconsumed trajectories as evaluation-only shadows, so paired
+    #: fixed-K and oracle comparisons are computable afterwards. Shadows are
+    #: written to a separate tree and are never visible to the controller.
+    generate_shadows: bool = True
+
+    @model_validator(mode="after")
+    def _check(self) -> ControllerCfg:
+        if self.min_trajectories < 1:
+            raise ValueError("controller.min_trajectories must be at least 1")
+        if self.max_trajectories < self.min_trajectories:
+            raise ValueError("controller.max_trajectories must be >= min_trajectories")
+        return self
+
+
 class Config(_Base):
     experiment: ExperimentCfg
     benchmark: BenchmarkCfg = Field(default_factory=BenchmarkCfg)
@@ -195,6 +236,7 @@ class Config(_Base):
     execution: ExecutionCfg = Field(default_factory=ExecutionCfg)
     logging: LoggingCfg = Field(default_factory=LoggingCfg)
     trajectory_budget: TrajectoryBudgetCfg = Field(default_factory=TrajectoryBudgetCfg)
+    controller: ControllerCfg = Field(default_factory=ControllerCfg)
     analysis: AnalysisCfg = Field(default_factory=AnalysisCfg)
 
     # ---- derived paths -------------------------------------------------

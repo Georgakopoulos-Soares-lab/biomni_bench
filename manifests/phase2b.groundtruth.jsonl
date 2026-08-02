@@ -1,0 +1,150 @@
+{"answer": "b", "global_instance_id": 278, "task_instance_id": 7, "task_name": "crispr_delivery"}
+{"answer": "a", "global_instance_id": 273, "task_instance_id": 10, "task_name": "crispr_delivery"}
+{"answer": "b", "global_instance_id": 275, "task_instance_id": 18, "task_name": "crispr_delivery"}
+{"answer": "f", "global_instance_id": 282, "task_instance_id": 38, "task_name": "crispr_delivery"}
+{"answer": "b", "global_instance_id": 279, "task_instance_id": 42, "task_name": "crispr_delivery"}
+{"answer": "PRAM1", "global_instance_id": 427, "task_instance_id": 64, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "ACY3", "global_instance_id": 386, "task_instance_id": 85, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "APOA4", "global_instance_id": 424, "task_instance_id": 128, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "CETP", "global_instance_id": 411, "task_instance_id": 134, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "SLCO1B1", "global_instance_id": 421, "task_instance_id": 138, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "CETP", "global_instance_id": 429, "task_instance_id": 156, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "PRKAG1", "global_instance_id": 390, "task_instance_id": 170, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "CETP", "global_instance_id": 414, "task_instance_id": 230, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "PKD1L3", "global_instance_id": 432, "task_instance_id": 379, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "ZBTB12", "global_instance_id": 418, "task_instance_id": 418, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "LONP1", "global_instance_id": 431, "task_instance_id": 492, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "NAT8", "global_instance_id": 385, "task_instance_id": 541, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "CETP", "global_instance_id": 404, "task_instance_id": 568, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "CETP", "global_instance_id": 393, "task_instance_id": 601, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "APOA4", "global_instance_id": 383, "task_instance_id": 630, "task_name": "gwas_causal_gene_gwas_catalog"}
+{"answer": "HMGCR", "global_instance_id": 365, "task_instance_id": 4, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "IL5", "global_instance_id": 375, "task_instance_id": 47, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "ANPEP", "global_instance_id": 354, "task_instance_id": 240, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "GCKR", "global_instance_id": 361, "task_instance_id": 392, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "RREB1", "global_instance_id": 362, "task_instance_id": 397, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "GCKR", "global_instance_id": 357, "task_instance_id": 460, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "SUCLG2", "global_instance_id": 346, "task_instance_id": 540, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "HNF4A", "global_instance_id": 369, "task_instance_id": 546, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "ACSL1", "global_instance_id": 353, "task_instance_id": 563, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "GCKR", "global_instance_id": 372, "task_instance_id": 573, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "PPARG", "global_instance_id": 355, "task_instance_id": 574, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "PAM", "global_instance_id": 368, "task_instance_id": 612, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "PAOX", "global_instance_id": 356, "task_instance_id": 690, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "KCNH2", "global_instance_id": 363, "task_instance_id": 721, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "F5", "global_instance_id": 359, "task_instance_id": 745, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "FLT1", "global_instance_id": 238, "task_instance_id": 53, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "IL2RA", "global_instance_id": 242, "task_instance_id": 207, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "VEGFA", "global_instance_id": 230, "task_instance_id": 509, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "HTR7", "global_instance_id": 224, "task_instance_id": 821, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "NR1H4", "global_instance_id": 216, "task_instance_id": 1158, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "IL6R", "global_instance_id": 232, "task_instance_id": 1250, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "DRD2", "global_instance_id": 218, "task_instance_id": 1300, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "GLP1R", "global_instance_id": 209, "task_instance_id": 1435, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "TOP2A", "global_instance_id": 225, "task_instance_id": 1463, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "PLAU", "global_instance_id": 229, "task_instance_id": 1549, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "SERPINA1", "global_instance_id": 236, "task_instance_id": 1572, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "FGFR3", "global_instance_id": 195, "task_instance_id": 1588, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "CCR4", "global_instance_id": 233, "task_instance_id": 1612, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "IL4R", "global_instance_id": 241, "task_instance_id": 1640, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "TUBB", "global_instance_id": 203, "task_instance_id": 1645, "task_name": "gwas_causal_gene_pharmaprojects"}
+{"answer": "rs2270968", "global_instance_id": 19, "task_instance_id": 37, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs3757354", "global_instance_id": 11, "task_instance_id": 48, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs603424", "global_instance_id": 6, "task_instance_id": 50, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs1801725", "global_instance_id": 3, "task_instance_id": 63, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs3017098", "global_instance_id": 30, "task_instance_id": 87, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs4941615", "global_instance_id": 42, "task_instance_id": 102, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs7954638", "global_instance_id": 38, "task_instance_id": 106, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs6048216", "global_instance_id": 5, "task_instance_id": 107, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs10455872", "global_instance_id": 33, "task_instance_id": 121, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs4253772", "global_instance_id": 25, "task_instance_id": 130, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs750472", "global_instance_id": 7, "task_instance_id": 174, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs9369898", "global_instance_id": 1, "task_instance_id": 178, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs2040771", "global_instance_id": 21, "task_instance_id": 203, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs12150660", "global_instance_id": 16, "task_instance_id": 207, "task_name": "gwas_variant_prioritization"}
+{"answer": "rs6687813", "global_instance_id": 8, "task_instance_id": 211, "task_name": "gwas_variant_prioritization"}
+{"answer": "B", "global_instance_id": 309, "task_instance_id": 80, "task_name": "lab_bench_dbqa"}
+{"answer": "B", "global_instance_id": 326, "task_instance_id": 88, "task_name": "lab_bench_dbqa"}
+{"answer": "C", "global_instance_id": 317, "task_instance_id": 91, "task_name": "lab_bench_dbqa"}
+{"answer": "B", "global_instance_id": 301, "task_instance_id": 105, "task_name": "lab_bench_dbqa"}
+{"answer": "A", "global_instance_id": 323, "task_instance_id": 241, "task_name": "lab_bench_dbqa"}
+{"answer": "B", "global_instance_id": 292, "task_instance_id": 269, "task_name": "lab_bench_dbqa"}
+{"answer": "C", "global_instance_id": 328, "task_instance_id": 273, "task_name": "lab_bench_dbqa"}
+{"answer": "A", "global_instance_id": 325, "task_instance_id": 315, "task_name": "lab_bench_dbqa"}
+{"answer": "D", "global_instance_id": 321, "task_instance_id": 345, "task_name": "lab_bench_dbqa"}
+{"answer": "B", "global_instance_id": 291, "task_instance_id": 350, "task_name": "lab_bench_dbqa"}
+{"answer": "A", "global_instance_id": 297, "task_instance_id": 401, "task_name": "lab_bench_dbqa"}
+{"answer": "B", "global_instance_id": 308, "task_instance_id": 419, "task_name": "lab_bench_dbqa"}
+{"answer": "E", "global_instance_id": 312, "task_instance_id": 430, "task_name": "lab_bench_dbqa"}
+{"answer": "B", "global_instance_id": 305, "task_instance_id": 460, "task_name": "lab_bench_dbqa"}
+{"answer": "A", "global_instance_id": 315, "task_instance_id": 493, "task_name": "lab_bench_dbqa"}
+{"answer": "B", "global_instance_id": 135, "task_instance_id": 14, "task_name": "lab_bench_seqqa"}
+{"answer": "A", "global_instance_id": 117, "task_instance_id": 27, "task_name": "lab_bench_seqqa"}
+{"answer": "F", "global_instance_id": 137, "task_instance_id": 40, "task_name": "lab_bench_seqqa"}
+{"answer": "E", "global_instance_id": 131, "task_instance_id": 128, "task_name": "lab_bench_seqqa"}
+{"answer": "C", "global_instance_id": 104, "task_instance_id": 171, "task_name": "lab_bench_seqqa"}
+{"answer": "C", "global_instance_id": 123, "task_instance_id": 378, "task_name": "lab_bench_seqqa"}
+{"answer": "E", "global_instance_id": 139, "task_instance_id": 379, "task_name": "lab_bench_seqqa"}
+{"answer": "D", "global_instance_id": 126, "task_instance_id": 391, "task_name": "lab_bench_seqqa"}
+{"answer": "B", "global_instance_id": 109, "task_instance_id": 406, "task_name": "lab_bench_seqqa"}
+{"answer": "E", "global_instance_id": 96, "task_instance_id": 430, "task_name": "lab_bench_seqqa"}
+{"answer": "A", "global_instance_id": 99, "task_instance_id": 448, "task_name": "lab_bench_seqqa"}
+{"answer": "E", "global_instance_id": 138, "task_instance_id": 492, "task_name": "lab_bench_seqqa"}
+{"answer": "C", "global_instance_id": 127, "task_instance_id": 498, "task_name": "lab_bench_seqqa"}
+{"answer": "D", "global_instance_id": 133, "task_instance_id": 520, "task_name": "lab_bench_seqqa"}
+{"answer": "A", "global_instance_id": 95, "task_instance_id": 533, "task_name": "lab_bench_seqqa"}
+{"answer": "ENSG00000171714", "global_instance_id": 170, "task_instance_id": 34, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000171302", "global_instance_id": 166, "task_instance_id": 49, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000163702", "global_instance_id": 183, "task_instance_id": 88, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000068078", "global_instance_id": 189, "task_instance_id": 134, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000139219", "global_instance_id": 169, "task_instance_id": 205, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000179142", "global_instance_id": 146, "task_instance_id": 251, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000081087", "global_instance_id": 159, "task_instance_id": 259, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000102081", "global_instance_id": 179, "task_instance_id": 264, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000165671", "global_instance_id": 190, "task_instance_id": 306, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000102580", "global_instance_id": 192, "task_instance_id": 319, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000130707", "global_instance_id": 175, "task_instance_id": 339, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000168769", "global_instance_id": 156, "task_instance_id": 401, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000054983", "global_instance_id": 167, "task_instance_id": 419, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000102030", "global_instance_id": 164, "task_instance_id": 441, "task_name": "patient_gene_detection"}
+{"answer": "ENSG00000125779", "global_instance_id": 165, "task_instance_id": 482, "task_name": "patient_gene_detection"}
+{"answer": "{\"disease_name\": \"Congenital Contractures of the Limbs and Face, Hypotonia, and Developmental Delay\", \"OMIM_ID\": \"616266\"}", "global_instance_id": 257, "task_instance_id": 1, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Congenital Contractures of the Limbs and Face, Hypotonia, and Developmental Delay\", \"OMIM_ID\": \"616266\"}", "global_instance_id": 270, "task_instance_id": 14, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Arthrogryposis, Distal, Type 2A\", \"OMIM_ID\": \"193700\"}", "global_instance_id": 267, "task_instance_id": 20, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Nager acrofacial dysostosis\", \"OMIM_ID\": \"154400\"}", "global_instance_id": 250, "task_instance_id": 32, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Nager acrofacial dysostosis\", \"OMIM_ID\": \"154400\"}", "global_instance_id": 255, "task_instance_id": 37, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Encephalopathy, Progressive, Early-Onset, with Brain Atrophy and Thin Corpus Callosum; PEBAT\", \"OMIM_ID\": \"617193\"}", "global_instance_id": 244, "task_instance_id": 48, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Postaxial acrofacial dysostosis\", \"OMIM_ID\": \"263750\"}", "global_instance_id": 258, "task_instance_id": 52, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Schwartz-Jampel syndrome\", \"OMIM_ID\": \"255800\"}", "global_instance_id": 248, "task_instance_id": 57, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Arthrogryposis, Distal, Type 1A\", \"OMIM_ID\": \"108120\"}", "global_instance_id": 253, "task_instance_id": 63, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Scalp-ear-nipple syndrome\", \"OMIM_ID\": \"181270\"}", "global_instance_id": 268, "task_instance_id": 71, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Scalp-ear-nipple syndrome\", \"OMIM_ID\": \"181270\"}", "global_instance_id": 264, "task_instance_id": 74, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Scalp-ear-nipple syndrome\", \"OMIM_ID\": \"181270\"}", "global_instance_id": 249, "task_instance_id": 75, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Gordon syndrome\", \"OMIM_ID\": \"114300\"}", "global_instance_id": 263, "task_instance_id": 87, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Gordon syndrome\", \"OMIM_ID\": \"114300\"}", "global_instance_id": 245, "task_instance_id": 88, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Gordon syndrome\", \"OMIM_ID\": \"114300\"}", "global_instance_id": 243, "task_instance_id": 90, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Gordon syndrome\", \"OMIM_ID\": \"114300\"}", "global_instance_id": 271, "task_instance_id": 92, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Arthrogryposis with oculomotor limitation and electroretinal anomalies\", \"OMIM_ID\": \"108145\"}", "global_instance_id": 272, "task_instance_id": 102, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Arthrogryposis with oculomotor limitation and electroretinal anomalies\", \"OMIM_ID\": \"108145\"}", "global_instance_id": 246, "task_instance_id": 107, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Arthrogryposis with oculomotor limitation and electroretinal anomalies\", \"OMIM_ID\": \"108145\"}", "global_instance_id": 262, "task_instance_id": 116, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Opsismodysplasia\", \"OMIM_ID\": \"258480\"}", "global_instance_id": 265, "task_instance_id": 121, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"lethal arthrogryposis-anterior horn cell disease syndrome\", \"OMIM_ID\": \"611890\"}", "global_instance_id": 259, "task_instance_id": 130, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Syndromic X-linked mental retardation, Cabezas type,Mental Retardation, X-Linked, Syndromic, Cabezas Type,X-linked intellectual disability, Cabezas type\", \"OMIM_ID\": \"300354\"}", "global_instance_id": 254, "task_instance_id": 132, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"autism (disease)\", \"OMIM_ID\": \"209850\"}", "global_instance_id": 256, "task_instance_id": 136, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"DA2B\", \"OMIM_ID\": \"601680\"}", "global_instance_id": 251, "task_instance_id": 140, "task_name": "rare_disease_diagnosis"}
+{"answer": "{\"disease_name\": \"Opitz Gbbb Syndrome, Type 1\", \"OMIM_ID\": \"300000\"}", "global_instance_id": 266, "task_instance_id": 145, "task_name": "rare_disease_diagnosis"}
+{"answer": "SMCHD1", "global_instance_id": 70, "task_instance_id": 13, "task_name": "screen_gene_retrieval"}
+{"answer": "NCKAP1L", "global_instance_id": 64, "task_instance_id": 34, "task_name": "screen_gene_retrieval"}
+{"answer": "MAPK1", "global_instance_id": 87, "task_instance_id": 48, "task_name": "screen_gene_retrieval"}
+{"answer": "ACSL4", "global_instance_id": 66, "task_instance_id": 91, "task_name": "screen_gene_retrieval"}
+{"answer": "TADA2B", "global_instance_id": 92, "task_instance_id": 160, "task_name": "screen_gene_retrieval"}
+{"answer": "COX17", "global_instance_id": 73, "task_instance_id": 166, "task_name": "screen_gene_retrieval"}
+{"answer": "IFNAR2", "global_instance_id": 85, "task_instance_id": 169, "task_name": "screen_gene_retrieval"}
+{"answer": "SPATA5L1", "global_instance_id": 82, "task_instance_id": 189, "task_name": "screen_gene_retrieval"}
+{"answer": "MTHFD1", "global_instance_id": 48, "task_instance_id": 251, "task_name": "screen_gene_retrieval"}
+{"answer": "PFKP", "global_instance_id": 89, "task_instance_id": 252, "task_name": "screen_gene_retrieval"}
+{"answer": "DHODH", "global_instance_id": 57, "task_instance_id": 259, "task_name": "screen_gene_retrieval"}
+{"answer": "NAA10", "global_instance_id": 47, "task_instance_id": 317, "task_name": "screen_gene_retrieval"}
+{"answer": "DOHH", "global_instance_id": 50, "task_instance_id": 318, "task_name": "screen_gene_retrieval"}
+{"answer": "CAB39", "global_instance_id": 49, "task_instance_id": 339, "task_name": "screen_gene_retrieval"}
+{"answer": "IRF8", "global_instance_id": 83, "task_instance_id": 346, "task_name": "screen_gene_retrieval"}
