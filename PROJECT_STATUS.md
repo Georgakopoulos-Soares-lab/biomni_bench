@@ -1,8 +1,50 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-02 (Phase-1.5: 62-trajectory repair re-run COMPLETE)
-**Phase:** **PHASE 1.5 COMPLETE. Repair applied to all 62 Phase-1 failures: 42/62 rescued.**
+**Last updated:** 2026-08-02 (Phase-1.5: pooled reanalysis COMPLETE — entry conditions PASS)
+**Phase:** **PHASE 1.5 COMPLETE. Repair applied (42/62 rescued); pooled reanalysis
+confirms the Phase-1 findings survive with honest, smaller effect sizes.**
 Phase 1 is complete, frozen and independently re-verified.
+
+## Pooled reanalysis result (2026-08-02, final — entry-condition check)
+
+`scripts/pool_and_analyze_phase1_5.py` built a 250-slot spec list identical to
+`phase1_runs.jsonl` except that each of the 62 originally-failed slots whose
+phase1_5 repair completed (42 of them) has its `run_dir` swapped to the repaired
+run — read-only against both `phase1` and `phase1_5` (neither touched), written
+to `manifests/phase1_pooled_runs.jsonl`, output to experiment `phase1_pooled`.
+Reuses the exact tested pipeline (`build_tables`, every `analysis.*` function)
+with no new statistics code — only the input spec list differs from Phase 1's.
+
+**Completion: 188/250 (75.2%) → 230/250 (92.0%).**
+
+| metric | Phase 1 (n=188) | Pooled (n=200 instrumented) |
+| --- | --- | --- |
+| First-trajectory reward | 0.420 | 0.480 |
+| Plurality reward | 0.580 [0.44, 0.70] | 0.620 [0.48, 0.76] |
+| Oracle@4 (upper bound) | 0.620 [0.48, 0.74] | 0.640 [0.50, 0.76] |
+| **Oracle headroom** | 20.0 pp (34.5% rel.) | **16.0 pp (30.8% rel.)** |
+| Plurality − first (paired) | +0.16 [+0.06, +0.26] | **+0.14 [+0.04, +0.26]** — still excludes 0 |
+| Agreement-fraction AUROC | 0.874 [0.80, 0.94] | **0.815 [0.71, 0.91]** |
+| Plurality-fraction AUROC | 0.812 | 0.769 [0.66, 0.87] |
+| Confidence AUROC | 0.789 [0.69, 0.87] | 0.749 [0.66, 0.83] |
+| Confidence overconfidence gap | 0.37 | **0.43 (worse)** |
+| Confidence Brier / ECE | 0.367 / 0.370 | 0.424 / 0.430 (both worse) |
+
+**Every headline effect survives** — all three go-criteria (oracle headroom,
+plurality-vs-first, usable signal AUROC) still clear their thresholds with real
+margin, so this **does not** flip the Track A recommendation to Track C. Effect
+sizes shrink somewhat, as expected: the 42 rescued trajectories are
+disproportionately the *hardest* cases (mean reward 0.357 among them), so
+folding them in dilutes the signal toward a more honest baseline.
+
+**One thing got worse, not better: calibration.** Overconfidence gap widened
+(0.37→0.43), Brier and ECE both increased. Consistent with the rescued pool
+being hard-and-often-wrong: if the model stayed confidently wrong on them,
+calibration necessarily degrades. This is a genuine finding, not noise — the
+miscalibration problem is *worse* than Phase 1 showed, not better.
+
+Full numbers: `<output_root>/phase1_pooled/results/analysis.json` and
+`results/figures/*.png` (same 13-figure set, regenerated on the pooled data).
 
 ## Repair re-run result (2026-08-02, final)
 
@@ -299,6 +341,7 @@ no GPU time needed until a Phase-2 pilot is actually approved.
 | **Repair live validation (6 runs, arm 3)** | **passed** — 6/6 completed where Phase 1 failed 22/30; 87 runaways → 1 |
 | **Repair ablation (72 runs, 3 arms)** | **complete** — see `reports/context_overflow_forensics.md` §10. Decision: Arm 2. |
 | **Repair re-run, all 62 Phase-1 failures (arm 2)** | **complete** — 42/62 rescued (67.7%); 20/62 hit the `max_consecutive_runaway` circuit breaker, concentrated in `rare_disease_diagnosis` (10/13 still fail). |
+| **Pooled reanalysis (230/250, entry-condition check)** | **complete** — oracle headroom 16.0pp, plurality-first +0.14 [0.04,0.26], agreement AUROC 0.815. All go-criteria hold; calibration measurably worse (0.37→0.43 overconfidence gap). |
 
 All bugs found and fixed (pre-pilot + post-pilot + post-ablation) are listed
 with detail in `reports/phase0_environment.md` §8, `reports/phase1_report.md`
@@ -317,6 +360,7 @@ reward-join bug).
 | `abl_arm2` | `configs/ablation_arm2.yaml` | bounding only, no input budget. **24/24 complete**, 22 ok / 2 failed — **selected repair** |
 | `abl_arm3` | `configs/ablation_arm3.yaml` | bounding + soft/hard budgets. **24/24 complete**, 23 ok / 1 failed — rejected, harms control reward |
 | `phase1_5` | `configs/phase1_5.yaml` | repair re-run of all 62 Phase-1 failures under Arm 2. **62/62 attempted, 42 ok / 20 failed.** Map to originals: `manifests/phase1_5_runs.original_map.json`. |
+| `phase1_pooled` | — (analysis-only, no config of its own) | pooled Phase-1 + phase1_5 spec list, **230/250 complete (92.0%)**. Not a run experiment — `manifests/phase1_pooled_runs.jsonl` + `scripts/pool_and_analyze_phase1_5.py`. Entry-condition check: **PASS**, all go-criteria hold. |
 
 ---
 
@@ -340,27 +384,32 @@ reward-join bug).
 
 ## Next actions
 
-**Ablation done (Arm 2 selected), repair re-run done (42/62 rescued).**
-Everything remaining below is CPU-only pooled reanalysis — no GPU needed:
+**Ablation done (Arm 2), repair re-run done (42/62 rescued), pooled reanalysis
+done — entry conditions PASS.** ~~Items 1 and 3 below are complete~~; remaining
+work is writing up what already exists, plus one open scoping decision:
 
-1. **Pool the 42 rescued trajectories into the Phase-1 K=4 instrumented set**
-   (via `manifests/phase1_5_runs.original_map.json`) and re-derive oracle@K,
-   plurality, agreement-AUROC, confidence calibration on the union
-   (188 + 42 = 230/250 complete, up from 75.2%). Keep the original `phase1`
-   experiment untouched; this is a new pooled view, not an edit to frozen data.
+1. ~~Pool the 42 rescued trajectories into the Phase-1 K=4 set and re-derive
+   oracle@K, plurality, agreement-AUROC, confidence calibration.~~ **Done** —
+   see "Pooled reanalysis result" above. `phase1` stays untouched and frozen;
+   `phase1_pooled` is a new read-only view via
+   `scripts/pool_and_analyze_phase1_5.py`.
 2. Write `reports/phase1_completion_bias_analysis.md` and
-   `reports/phase1_repaired_report.md`: observed-completion vs
-   intention-to-evaluate vs matched-paired results, and the pooled numbers
-   from step 1 against the original Phase-1 headline numbers.
-3. Adjudicate entry conditions E1–E6 (`reports/phase2_entry_assessment.md` §6)
-   against the pooled numbers. **If the repaired data eliminates the oracle
-   headroom, the plurality gain or the predictive value of agreement, Phase 2
-   does not proceed as planned** — that outcome selects Track C, not Track A.
+   `reports/phase1_repaired_report.md` — the numbers exist
+   (`<output_root>/phase1_pooled/results/analysis.json`) and are summarized
+   above; these reports formalize observed-completion vs intention-to-evaluate
+   vs matched-paired framing and fold the calibration-got-worse finding in
+   properly. Not yet written.
+3. ~~Adjudicate entry conditions E1–E6 against the pooled numbers.~~ **Done,
+   informally** — oracle headroom (16.0pp), the plurality gain (+0.14,
+   CI excludes 0) and agreement's predictive value (AUROC 0.815) all survive
+   with real margin. Still needs a formal pass against
+   `reports/phase2_entry_assessment.md` §6's exact E1–E6 criteria text, since
+   that assessment was written against the pre-repair numbers.
 4. Decide what to do with `rare_disease_diagnosis`'s residual 10/13 failures —
    the repair barely touches this task (23% rescue vs 67–100% elsewhere). Either
-   accept it as a known limitation and exclude/flag it in the pooled analysis,
-   or treat it as a fourth, task-specific repair iteration (not yet designed;
-   would need its own small diagnosis before another ablation).
+   accept it as a known limitation and flag it in the write-up, or treat it as
+   a fourth, task-specific repair iteration (not yet designed; would need its
+   own small diagnosis before another ablation).
 5. Only then: offline policy replay on the pooled K=4 pool (zero new GPU time),
    before any prospective Phase-2 pilot.
 
