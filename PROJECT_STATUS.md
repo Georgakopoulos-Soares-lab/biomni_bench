@@ -384,39 +384,39 @@ reward-join bug).
 
 ## Next actions
 
-**Ablation done (Arm 2), repair re-run done (42/62 rescued), pooled reanalysis
-done — entry conditions PASS.** ~~Items 1 and 3 below are complete~~; remaining
-work is writing up what already exists, plus one open scoping decision:
+**All write-up items complete.** Ablation (Arm 2 selected) → repair re-run
+(42/62 rescued) → pooled reanalysis → formal E1–E6 adjudication → both reports
+written. What remains is decisions, not artifacts:
 
-1. ~~Pool the 42 rescued trajectories into the Phase-1 K=4 set and re-derive
-   oracle@K, plurality, agreement-AUROC, confidence calibration.~~ **Done** —
-   see "Pooled reanalysis result" above. `phase1` stays untouched and frozen;
-   `phase1_pooled` is a new read-only view via
-   `scripts/pool_and_analyze_phase1_5.py`.
-2. Write `reports/phase1_completion_bias_analysis.md` and
-   `reports/phase1_repaired_report.md` — the numbers exist
-   (`<output_root>/phase1_pooled/results/analysis.json`) and are summarized
-   above; these reports formalize observed-completion vs intention-to-evaluate
-   vs matched-paired framing and fold the calibration-got-worse finding in
-   properly. Not yet written.
-3. ~~Adjudicate entry conditions E1–E6 against the pooled numbers.~~ **Done,
-   informally** — oracle headroom (16.0pp), the plurality gain (+0.14,
-   CI excludes 0) and agreement's predictive value (AUROC 0.815) all survive
-   with real margin. Still needs a formal pass against
-   `reports/phase2_entry_assessment.md` §6's exact E1–E6 criteria text, since
-   that assessment was written against the pre-repair numbers.
-4. Decide what to do with `rare_disease_diagnosis`'s residual 10/13 failures —
-   the repair barely touches this task (23% rescue vs 67–100% elsewhere). Either
-   accept it as a known limitation and flag it in the write-up, or treat it as
-   a fourth, task-specific repair iteration (not yet designed; would need its
-   own small diagnosis before another ablation).
-5. Only then: offline policy replay on the pooled K=4 pool (zero new GPU time),
-   before any prospective Phase-2 pilot.
+1. ~~Pool the 42 rescued trajectories into the Phase-1 K=4 set.~~ **Done.**
+2. ~~Write `reports/phase1_completion_bias_analysis.md` and
+   `reports/phase1_repaired_report.md`.~~ **Done**, 2026-08-02. The former
+   formalizes observed-completion vs. intention-to-evaluate vs. matched-paired;
+   the latter mirrors `phase1_report.md`'s structure with pooled numbers as
+   primary and includes the calibration-got-worse and length-signal-was-
+   partly-circular findings in full.
+3. ~~Adjudicate entry conditions E1–E6.~~ **Done formally** —
+   `reports/phase2_entry_assessment.md` §8. **5 of 6 met; E1 (residual failure
+   <5%) measured at 8.0–8.3%, not met as literally stated** but does not block
+   Track A since E4 (the condition that would flip the recommendation) passed
+   cleanly. Recorded honestly rather than rounded to a pass.
+4. **Open, needs a decision — not yet made:** what to do with
+   `rare_disease_diagnosis`'s residual 65% completion / 23% rescue rate. Two
+   options, both legitimate: (a) accept it as a documented, task-scoped
+   limitation and proceed to Track A with that caveat attached to any pooled
+   statistic that includes this task; (b) treat it as unfinished repair work —
+   scope a fourth, task-specific diagnosis (why does this task's reasoning
+   pattern resist the guards that fixed everything else?) before Track A
+   starts. Nothing computational blocks either choice; it is a judgment call
+   about how much residual risk in one task family is acceptable to carry into
+   a controller.
+5. Only after 4 is decided: offline policy replay on the pooled K=4 pool (zero
+   new GPU time) — the first actual Track A step.
 
 Deferred, not started: expanding the pilot for tighter CIs; transfer to a second
 agent; expert workflow annotation; adding test coverage for
-`scripts/analyze_ablation.py` (flagged in §10e of the forensics report as a gap,
-not closed here due to time).
+`scripts/analyze_ablation.py` and `scripts/pool_and_analyze_phase1_5.py`
+(one-off analysis scripts outside `src/`, flagged as a gap, not closed here).
 
 ---
 
@@ -424,8 +424,10 @@ not closed here due to time).
 
 | document | contents |
 | --- | --- |
-| `reports/context_overflow_forensics.md` | full diagnosis, counterfactuals, proposed repair R1–R6, ablation design |
-| `reports/phase2_entry_assessment.md` | independent verification of every headline number; completion-bias exposure per claim; entry conditions E1–E6 |
+| `reports/context_overflow_forensics.md` | full diagnosis, counterfactuals, proposed repair R1–R6, ablation design, §10 ablation result |
+| `reports/phase2_entry_assessment.md` | independent verification of every headline number; completion-bias exposure per claim; entry conditions E1–E6 (§6) and their post-repair adjudication (§8) |
+| `reports/phase1_completion_bias_analysis.md` | the completion-bias phenomenon on its own terms: observed-completion vs intention-to-evaluate vs matched-paired, quantified |
+| `reports/phase1_repaired_report.md` | pooled (230/250) headline numbers, mirrors `phase1_report.md`'s structure, does not replace it |
 | `reports/research_north_star.md` | the central question, the target result, the five questions, standing constraints |
 | `scripts/context_forensics.py` | reproduces the forensics from stored traces; no model calls, no GPU |
 | `reports/forensics/*` | per-run and per-call token ledgers |
