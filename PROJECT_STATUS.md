@@ -1,9 +1,82 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-02 (Phase-1.5: pooled reanalysis COMPLETE — entry conditions PASS)
-**Phase:** **PHASE 1.5 COMPLETE. Repair applied (42/62 rescued); pooled reanalysis
-confirms the Phase-1 findings survive with honest, smaller effect sizes.**
-Phase 1 is complete, frozen and independently re-verified.
+**Last updated:** 2026-08-02 (Phase-2A offline replay COMPLETE — awaiting approval to start 2B)
+**Phase:** **PHASE 2A COMPLETE.** Track A selected; offline sequential-policy
+replay done on the repaired pooled K=4 data, zero GPU time. One policy
+recommended for prospective testing. **No GPU job may be launched until the
+Phase-2A recommendation is approved.**
+Phases 1 and 1.5 are complete, frozen and independently re-verified.
+
+## Phase 2A result (2026-08-02) — offline sequential policy replay
+
+`scripts/phase2a_offline_replay.py` replays 32 sequential policies over all
+**24 arrival orderings** of every instance's 4 trajectories (50 instances, 200
+trajectories, exhaustive — no ordering artifact). Experiment `phase2a`,
+analysis-only, **no model calls**. Full write-up:
+`reports/phase2_offline_replay.md`.
+
+| policy | reward | mean K | model tokens |
+| --- | ---: | ---: | ---: |
+| fixed K=1 | 0.485 | 1.00 | 181,603 |
+| fixed K=2 plurality | 0.525 | 2.00 | 363,207 |
+| fixed K=3 plurality | 0.555 | 3.00 | 544,810 |
+| **fixed K=4 plurality** (principal baseline) | **0.577** | 4.00 | 726,414 |
+| **mandatory K=2, continue to 4 on disagreement** | **0.577** | **2.70** | **530,726** |
+| K=1 selective (nested threshold) | 0.567 | 2.49 | 490,243 |
+| failure-only escalation | 0.527 | 1.17 | 222,684 |
+| *Oracle@4 — UPPER BOUND, not deployable* | *0.640* | 4.00 | 726,414 |
+
+**Headline: mandatory-K=2 adaptive continuation reproduces fixed-K=4 exactly at
+68% of the trajectories.** Paired instance-level bootstrap: reward difference
+**0.000 [0.000, 0.000]**, mean-K difference **−1.297 [−1.483, −1.100]**. The
+reward CI is degenerate because the two policies return the *same answer on all
+50 instances* and on all 10 tasks — 100% of the fixed-K=4 gain retained, 59.1%
+of the Oracle@4 headroom captured.
+
+**Negative result, preserved: the K=1 acceptance trigger is weak.** Under nested
+(leak-free) threshold selection, **3 of 5 folds chose "never accept after one
+trajectory"**, and the policy that does accept early loses 1.0 reward point for
+0.21 fewer trajectories. Mandatory K=2 is retained as the honest policy, exactly
+as the brief anticipated. Confidence-only escalation is dominated outright
+(costs nearly K=4, scores lower).
+
+**Other findings:**
+
+* **Fixed K=2 plurality cannot beat K=1 by voting** — two trajectories either
+  agree (returning K=1's answer) or tie (tiebreak returns the first). Its +0.040
+  comes entirely from replacing failed trajectories. Ties need a third opinion.
+* **Failure recovery is free and attributable.** 12.5% of replays open on a dead
+  or unparseable trajectory; every continuing policy resolves 100% of them to a
+  real answer and 37.3% to a correct one. Fixed K=1 recovers 0%.
+* **A one-sentence abstention rule.** Abstain when four trajectories give four
+  different answers: 14% of cases, correct 11.9% of the time. Dropping it lifts
+  accuracy 0.577 → **0.651 at 86% coverage**, with no calibration model needed.
+* **Calibration fixes probabilities, not ranking.** Grouped-OOF Platt on
+  verbalized confidence: ECE 0.430 → 0.047, Brier 0.424 → 0.253, AUROC
+  ≈0.75 → 0.70. Isotonic (exploratory) reaches ECE 0.003.
+* **Adaptive allocation works.** Mean K spent ranges 2.10 (`gwas_causal_gene_opentargets`)
+  to **3.73 (`rare_disease_diagnosis`)** — the controller buys the most
+  verification exactly where the agent is weakest, with no access to labels.
+
+**`rare_disease_diagnosis`, analyzed separately** as the documented high-risk
+stratum (not absorbed into any aggregate): it gains the most from verification
+(0.25 → 0.50, the largest of any task), costs the most (mean K 3.73/4.00),
+carries 10 of the pool's 25 failed trajectories, and has the highest
+failure-recovery rate (0.150). Still 10 pp below its own Oracle@4 of 0.60.
+
+**Recommendation: carry ONE policy into Phase 2B, not two** —
+mandatory K=2 with agreement stopping, a failure override, and abstention when
+no two of four agree. It has **no fitted parameter**, is best-or-tied in 99.9%
+of bootstrap resamples and on 10 of 10 tasks, and sits on the reward–cost
+frontier. The K=1-selective second candidate is **deliberately not recommended**:
+the evidence does not support it. `final_confidence == 1.00` (26/27 correct,
+n=27, found post hoc) is logged as a pre-registered *secondary hypothesis* for
+2B, not a policy arm.
+
+Three bugs were found and fixed while producing this — most importantly, **a
+failed trajectory could win a plurality tie against a real answer**, which zeroed
+every failure-recovery replay until caught by a test
+(`reports/phase2_offline_replay.md` §13).
 
 ## Pooled reanalysis result (2026-08-02, final — entry-condition check)
 
@@ -201,6 +274,46 @@ not 36%.
 
 ---
 
+## Forest Check — 2026-08-02, after the Phase-2A offline replay
+
+**1. What scientific uncertainty was resolved?**
+Two. First, whether a sequential controller can reach fixed-K=4 reliability at
+roughly K=2 compute — the north star's stated target result. It can: 0.577 at
+mean K 2.70, the same answers on all 50 instances. Second, whether the K=1
+escalation trigger — named in `phase2_entry_assessment.md` §4 as "genuinely
+open" — is solvable with the signals available. On this data it is not, and
+three of five folds say so unprompted.
+
+**2. Did the main research claim change?**
+Sharpened, not changed. The claim is now specifically that **mandatory
+verification plus agreement-based early stopping** is where the value is, and
+that single-trajectory uncertainty is not. That is a narrower and more defensible
+claim than "uncertainty signals guide allocation", and it is the one the data
+supports. Two Phase-1 framings weaken further: verbalized confidence survives
+only as a rank (calibration is a repair, not an improvement), and every
+effort/length signal is unusable once failures are excluded.
+
+**3. Is the next task necessary for the central contribution?**
+Yes. Everything above is offline replay against trajectories that already exist;
+no policy influenced generation. The contribution claimed in the north star is a
+*prospective, cost-aware reliability controller*, and only Phase 2B tests that.
+
+**4. Are we overfitting to implementation details or the original pilot?**
+This was the live risk and the mitigation held: the recommended policy has **no
+fitted parameter at all**. Everything that *was* fitted — calibration, the K=1
+threshold — was evaluated with nested grouped cross-validation and then
+**recommended against**, because the honest procedure declined to accept. The
+one tempting artifact (confidence==1.00, 26/27 correct) was found post hoc and is
+explicitly demoted to a pre-registered secondary hypothesis rather than promoted
+into the policy.
+
+**5. What is the simplest decisive next experiment?**
+The frozen prospective run on ~100 held-out instances with one policy and hidden
+shadow trajectories through K=4. One policy, not two: adding the K=1-selective
+arm would spend prospective power on a component already shown to be weak.
+
+---
+
 ## Forest Check — 2026-08-01, after the context-overflow forensics
 
 **1. What scientific uncertainty was resolved?**
@@ -320,9 +433,10 @@ preserved below.
 
 ## Current blockers
 
-None. Ablation complete, repair decided (Arm 2), repair re-run complete
-(42/62 rescued). Remaining work (§ Next actions) is CPU-only pooled reanalysis —
-no GPU time needed until a Phase-2 pilot is actually approved.
+**One, and it is deliberate: Phase 2A's recommendation is awaiting approval.**
+Standing instruction is to present the offline replay results and stop before
+launching any new GPU inference. Nothing technical blocks Phase 2B; the gate is a
+decision, not an artifact.
 
 ---
 
@@ -330,9 +444,9 @@ no GPU time needed until a Phase-2 pilot is actually approved.
 
 | check | result |
 | --- | --- |
-| `pytest -q` | **274 passed** |
+| `pytest -q` | **329 passed** (274 + 40 policy + 15 calibration) |
 | `ruff check src tests scripts` | clean |
-| `ruff format --check src tests scripts` | clean |
+| `ruff format --check src tests scripts` | clean except one pre-existing drift in the untouched `tests/test_resumption.py` (a ruff-version line-wrap difference; left alone rather than reformatting a frozen test file) |
 | Import check inside the Biomni environment | OK |
 | Manifest dry run | OK — 50 instances, 5 per task, stable hash |
 | Mock end-to-end | 20 passed, 13 figures |
@@ -342,6 +456,7 @@ no GPU time needed until a Phase-2 pilot is actually approved.
 | **Repair ablation (72 runs, 3 arms)** | **complete** — see `reports/context_overflow_forensics.md` §10. Decision: Arm 2. |
 | **Repair re-run, all 62 Phase-1 failures (arm 2)** | **complete** — 42/62 rescued (67.7%); 20/62 hit the `max_consecutive_runaway` circuit breaker, concentrated in `rare_disease_diagnosis` (10/13 still fail). |
 | **Pooled reanalysis (230/250, entry-condition check)** | **complete** — oracle headroom 16.0pp, plurality-first +0.14 [0.04,0.26], agreement AUROC 0.815. All go-criteria hold; calibration measurably worse (0.37→0.43 overconfidence gap). |
+| **Phase-2A offline replay (32 policies x 50 instances x 24 orderings)** | **complete, CPU only** — mandatory K=2 matches fixed K=4 (0.577) at mean K 2.70; K=1 trigger weak (3/5 folds refuse); abstention rule found. One policy recommended for 2B. |
 
 All bugs found and fixed (pre-pilot + post-pilot + post-ablation) are listed
 with detail in `reports/phase0_environment.md` §8, `reports/phase1_report.md`
@@ -361,6 +476,7 @@ reward-join bug).
 | `abl_arm3` | `configs/ablation_arm3.yaml` | bounding + soft/hard budgets. **24/24 complete**, 23 ok / 1 failed — rejected, harms control reward |
 | `phase1_5` | `configs/phase1_5.yaml` | repair re-run of all 62 Phase-1 failures under Arm 2. **62/62 attempted, 42 ok / 20 failed.** Map to originals: `manifests/phase1_5_runs.original_map.json`. |
 | `phase1_pooled` | — (analysis-only, no config of its own) | pooled Phase-1 + phase1_5 spec list, **230/250 complete (92.0%)**. Not a run experiment — `manifests/phase1_pooled_runs.jsonl` + `scripts/pool_and_analyze_phase1_5.py`. Entry-condition check: **PASS**, all go-criteria hold. |
+| `phase2a` | — (analysis-only, no config of its own) | offline sequential policy replay on `phase1_pooled`. **No model calls, no GPU.** 32 policies x 50 instances x 24 orderings. `scripts/phase2a_offline_replay.py`; results at `<output_root>/phase2a/results/`. Report: `reports/phase2_offline_replay.md`. |
 
 ---
 
@@ -400,23 +516,39 @@ written. What remains is decisions, not artifacts:
    <5%) measured at 8.0–8.3%, not met as literally stated** but does not block
    Track A since E4 (the condition that would flip the recommendation) passed
    cleanly. Recorded honestly rather than rounded to a pass.
-4. **Open, needs a decision — not yet made:** what to do with
-   `rare_disease_diagnosis`'s residual 65% completion / 23% rescue rate. Two
-   options, both legitimate: (a) accept it as a documented, task-scoped
-   limitation and proceed to Track A with that caveat attached to any pooled
-   statistic that includes this task; (b) treat it as unfinished repair work —
-   scope a fourth, task-specific diagnosis (why does this task's reasoning
-   pattern resist the guards that fixed everything else?) before Track A
-   starts. Nothing computational blocks either choice; it is a judgment call
-   about how much residual risk in one task family is acceptable to carry into
-   a controller.
-5. Only after 4 is decided: offline policy replay on the pooled K=4 pool (zero
-   new GPU time) — the first actual Track A step.
+4. ~~Open decision on `rare_disease_diagnosis`'s residual failure rate.~~
+   **Decided 2026-08-02 (option (a), by direction):** treat it as a documented,
+   task-scoped high-risk stress-test stratum, analyze it separately, and do not
+   let it imply uniform performance across tasks. Do **not** spend more effort
+   trying to fully solve it before Track A. Phase 2A honours this —
+   `reports/phase2_offline_replay.md` §10 reports it as its own section.
+5. ~~Offline policy replay on the pooled K=4 pool.~~ **Done**, 2026-08-02 —
+   experiment `phase2a`, `reports/phase2_offline_replay.md`.
+
+### Next action — **needs approval before anything else happens**
+
+**Present the Phase-2A recommendation and stop.** Per the standing instruction,
+no GPU job is launched and Phase 2B is not begun until the offline replay is
+approved. The recommendation is a single policy (mandatory K=2 with agreement
+stopping, failure override, abstain when no two of four agree).
+
+On approval, Phase 2B in order — each step gated, none started:
+
+1. Select held-out BiomniEval1 instances not used in Phase 1 (~100, balanced
+   across task families, retaining the difficult and failure-prone ones).
+2. Freeze and hash the manifest before any inference.
+3. Write `reports/phase2_protocol.md` **before** viewing any prospective
+   outcome: frozen thresholds, stopping rules, primary metrics, analysis plan.
+4. Small multi-task GPU smoke test.
+5. **Pause again for approval before the full GPU launch.**
 
 Deferred, not started: expanding the pilot for tighter CIs; transfer to a second
-agent; expert workflow annotation; adding test coverage for
-`scripts/analyze_ablation.py` and `scripts/pool_and_analyze_phase1_5.py`
-(one-off analysis scripts outside `src/`, flagged as a gap, not closed here).
+agent; expert workflow annotation; Phase 2C controlled-failure study; adding test
+coverage for `scripts/analyze_ablation.py` and
+`scripts/pool_and_analyze_phase1_5.py` (one-off analysis scripts outside `src/`,
+flagged as a gap, not closed here). `scripts/phase2a_offline_replay.py` is also
+outside `src/`, but the logic it drives lives in `src/biomni_uncertainty/policy.py`
+and `calibration.py` and **is** covered (55 tests).
 
 ---
 
@@ -431,3 +563,13 @@ agent; expert workflow annotation; adding test coverage for
 | `reports/research_north_star.md` | the central question, the target result, the five questions, standing constraints |
 | `scripts/context_forensics.py` | reproduces the forensics from stored traces; no model calls, no GPU |
 | `reports/forensics/*` | per-run and per-call token ledgers |
+
+## Documents and code added in Phase 2A
+
+| item | contents |
+| --- | --- |
+| `reports/phase2_offline_replay.md` | the Phase-2A report: method, re-measured K=1 signals, calibration, the K=1 negative result, policy comparison, failure recovery, abstention, task stratification, stability, limitations, bugs, recommendation |
+| `src/biomni_uncertainty/policy.py` | sequential policy replay: `TrajectoryView` (the leakage barrier), `InstancePool` (rewards held apart), task-aware resolution and agreement, the policy set, exhaustive-ordering replay |
+| `src/biomni_uncertainty/calibration.py` | grouped out-of-fold Platt / isotonic / small-logistic calibration, instance-normalized weights, Brier/ECE/reliability, `within_fold_auroc` |
+| `scripts/phase2a_offline_replay.py` | the driver; CPU only, ~1 min, no model calls |
+| `tests/test_policy.py`, `tests/test_calibration.py` | 55 tests: replay, ordering, calibration grouping, cost accounting, abstention accounting, failure overrides, leakage prevention |

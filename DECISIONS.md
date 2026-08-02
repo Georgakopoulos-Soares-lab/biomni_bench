@@ -337,3 +337,91 @@ perturb agent behaviour for no measured gain.
 **Consequence for Phase 1.** The report's framing of overflow as "genuine agent
 behavior ... not a configuration mistake" (§5) is retracted; see the errata
 appended to `reports/phase1_report.md`. The Go/No-Go verdict is unaffected.
+
+---
+
+## D-18 A non-answer never wins a plurality tie
+
+**Decided:** 2026-08-02, during Phase 2A. **Status:** confirmatory for Phase 2;
+does not alter any frozen Phase-1 number.
+
+D-11 makes an unparseable answer its own singleton cluster so that unrelated
+failures cannot manufacture a consensus. That is right, and it is not enough for
+a *sequential* controller. Under the Phase-1 tiebreak — largest cluster, ties to
+the lowest index — an observed prefix of `[dead run, correct answer]` is a 1–1
+tie that the dead run wins because it arrived first, and the controller returns
+nothing when it was holding a good answer.
+
+**Decision.** In `policy.resolve`, a trajectory that did not complete, or that
+completed without a parseable answer, can never *win* the plurality. It remains a
+singleton cluster and still counts against the support fraction — two failures
+out of four is weaker evidence than none out of two — but any real answer beats a
+non-answer regardless of arrival order.
+
+**Why this is legitimate.** The distinction is drawn from `completed` and
+`answer_parse_status`, both observable online with no ground truth. It is a
+capability the controller genuinely has, not a peek at the label.
+
+**How it was found.** Not by inspection. A test asserted that failure-only
+escalation recovers failed trajectories; it recovered none, on all 150 replays
+that opened on a failure, because every one resolved to the failure. Recorded
+because it is the class of bug that silently understates every continuing policy
+while looking like a real negative result.
+
+**Scope.** `policy.py` only. `selectors.py` and every Phase-1 number are
+untouched — Phase 1 always resolved at fixed K=4, where this arises far less
+often, and those results are frozen.
+
+---
+
+## D-19 One policy goes to Phase 2B, not two
+
+**Decided:** 2026-08-02, after seeing the Phase-2A results. Marked as decided
+after seeing data, per the exploratory/confirmatory rule.
+
+The brief permits up to two candidate policies for prospective testing: a robust
+mandatory-K=2 policy, and *optionally* a K=1-selective policy "if the evidence
+supports it."
+
+**Decision.** Carry **one**: mandatory K=2 with agreement-based stopping, a
+failure override, and abstention when no two of four trajectories agree. Do not
+carry a K=1-selective arm.
+
+**Why.** Under nested, leak-free threshold selection, three of five folds chose
+"never accept after one trajectory," and the policy that does accept early loses
+1.0 reward point to save 0.21 trajectories. A prospective arm costs statistical
+power on ~100 instances; spending it on a component this analysis already
+measured as weak is the wrong trade. The recommended policy also has **no fitted
+parameter**, so there is nothing about it to re-validate out of sample.
+
+**What is carried instead.** `final_confidence == 1.00` on a parseable answer was
+correct 26 of 27 times. That threshold was chosen *after* seeing the table, on
+n=27, and the nested procedure — which is not permitted to look — declined to
+find it in three folds. It is registered in `reports/phase2_protocol.md` as a
+**secondary hypothesis to be tested prospectively**, not as a policy arm. If it
+survives a frozen test it becomes a Phase-3 policy; if it does not, nothing was
+spent.
+
+**Reversal condition.** If the prospective run shows mandatory K=2 spending
+materially more than ~2 trajectories per instance, the K=1 trigger becomes worth
+revisiting — but on new data, not by re-reading this one.
+
+---
+
+## D-20 Pooled out-of-fold AUROC is not reported as a discrimination estimate
+
+**Decided:** 2026-08-02, during Phase 2A.
+
+Concatenating out-of-fold predictions and computing one AUROC over the pool is
+standard practice and is **wrong for a ranking metric** when each fold fits its
+own intercept: predictions from different folds are not on a common scale, so the
+pooled ranking mixes them. Measured here, the K=1 confidence calibrator scores a
+pooled OOF AUROC of **0.515** against a mean within-fold AUROC of **0.700**.
+Reporting the pooled figure alone would have supported the false conclusion that
+calibrated confidence carries no signal.
+
+**Decision.** Discrimination is reported as the mean (and range) of **within-fold**
+AUROC. Calibration quality — Brier, ECE, reliability curves — is reported pooled,
+which is correct for those because they are scale-referenced. Both numbers stay
+in `p2a_k1_calibration.csv` so the discrepancy is visible rather than resolved
+silently. Implemented as `calibration.within_fold_auroc` and regression-tested.
