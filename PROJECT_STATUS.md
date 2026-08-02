@@ -1,8 +1,39 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-01 (Phase-1.5: forensics + repair implemented + live validation)
-**Phase:** **PHASE 1.5 — repair built and validated live; full ablation needs a GPU allocation.**
+**Last updated:** 2026-08-01 (Phase-1.5: 72-trajectory ablation COMPLETE, decision made)
+**Phase:** **PHASE 1.5 COMPLETE. Repair selected: Arm 2 (bounding guards only).**
 Phase 1 is complete, frozen and independently re-verified.
+
+## Ablation verdict (2026-08-01, final)
+
+All 72 trajectories done (arm1 24/24, arm2 24/24, arm3 24/24).
+**Recommendation: adopt Arm 2, not Arm 3**, reversing the tentative read from the
+6-run live validation below. Full numbers, decision-rule application and the
+control-stratum evidence are in `reports/context_overflow_forensics.md` §10.
+
+Headline: Arm 3 (all guards, incl. the 2048-token cap and hard budget) fully
+eliminates the target failure (0/6 on `overflow_prone`, reward 0.667 vs
+baseline 0.333) but **collapses reward to 0.000 on two control strata**
+(`same_family_control`, `short_easy_control`) that were fine at baseline —
+pooled control-reward delta **−0.278**. Arm 2 (bounding guards only, no hard
+token cap) nearly matches Arm 3 on the target stratum (1/6 vs 0/6 failed) while
+the controls **improve slightly** (delta **+0.056**). Per the rule fixed before
+any arm ran ("accept the least invasive arm that clears both bars"), Arm 3
+fails the control bar and Arm 2 is the correct choice.
+
+Caveat stated plainly: n=6 per stratum, so these means are noisy — a couple of
+wrong answers move them a lot. The *direction* (arm3 control regression, arm2
+control neutrality-to-improvement) is large enough to act on; the exact deltas
+are not to be treated as precise.
+
+A real bug was found and fixed while producing this: `scripts/analyze_ablation.py`
+read `reward` from raw per-run `metadata.json`, which never contains it (reward
+is only computed by `cli aggregate` against ground truth, into
+`results/tables/trajectories.csv`). Every reward cell was silently `nan` and the
+decision section was uninterpretable until fixed by joining reward in from the
+aggregated table by `run_id`. 274 tests pass; this script has no test coverage
+of its own (it's a one-off analysis script, not part of the package) — flagged
+as a gap, not fixed, given time constraints.
 
 ---
 
@@ -198,9 +229,9 @@ preserved below.
 
 ## Current blockers
 
-**A GPU allocation.** Job 3358875 ended 2026-08-01 09:38 CDT after the 6-run
-live validation. Nothing else blocks: code, tests, configs, manifests and run
-specs for all three ablation arms are committed and frozen.
+None. The ablation is complete and the repair is decided (Arm 2). Next actions
+below need a decision on scope (re-run all 62 failed Phase-1 trajectories under
+the repair, or a subset) before any further GPU time is spent.
 
 ---
 
@@ -208,7 +239,7 @@ specs for all three ablation arms are committed and frozen.
 
 | check | result |
 | --- | --- |
-| `pytest -q` | **270 passed** (247 + 23 budget-guard tests) |
+| `pytest -q` | **274 passed** |
 | `ruff check src tests scripts` | clean |
 | `ruff format --check src tests scripts` | clean |
 | Import check inside the Biomni environment | OK |
@@ -217,9 +248,12 @@ specs for all three ablation arms are committed and frozen.
 | GPU smoke test | passed — 6 runs, aggregation, analysis, 13 figures |
 | **GPU pilot (250 runs)** | **complete** — 188/250 completed, full analysis, report written |
 | **Repair live validation (6 runs, arm 3)** | **passed** — 6/6 completed where Phase 1 failed 22/30; 87 runaways → 1 |
+| **Repair ablation (72 runs, 3 arms)** | **complete** — see `reports/context_overflow_forensics.md` §10. Decision: Arm 2. |
 
-All bugs found and fixed (pre-pilot + post-pilot) are listed with detail in
-`reports/phase0_environment.md` §8 and `reports/phase1_report.md` §3.
+All bugs found and fixed (pre-pilot + post-pilot + post-ablation) are listed
+with detail in `reports/phase0_environment.md` §8, `reports/phase1_report.md`
+§3, and `reports/context_overflow_forensics.md` §10e (the `analyze_ablation.py`
+reward-join bug).
 
 ---
 
@@ -229,9 +263,9 @@ All bugs found and fixed (pre-pilot + post-pilot) are listed with detail in
 | --- | --- | --- |
 | `smoke` | `configs/smoke.yaml` | complete, not pooled with pilot results |
 | `phase1` | `configs/phase1.yaml` | **COMPLETE and frozen.** Results at `<output_root>/phase1/results/`. Report: `reports/phase1_report.md` (+ errata). Never re-run. |
-| `abl_arm1` | `configs/ablation_arm1.yaml` | ablation control (Phase-1 behaviour). Run specs frozen, **0/24 run** |
-| `abl_arm2` | `configs/ablation_arm2.yaml` | bounding only, no input budget. Run specs frozen, **0/24 run** |
-| `abl_arm3` | `configs/ablation_arm3.yaml` | bounding + soft/hard budgets. **6/24 run** (live validation, passed) |
+| `abl_arm1` | `configs/ablation_arm1.yaml` | ablation control (Phase-1 behaviour). **24/24 complete**, 19 ok / 5 failed |
+| `abl_arm2` | `configs/ablation_arm2.yaml` | bounding only, no input budget. **24/24 complete**, 22 ok / 2 failed — **selected repair** |
+| `abl_arm3` | `configs/ablation_arm3.yaml` | bounding + soft/hard budgets. **24/24 complete**, 23 ok / 1 failed — rejected, harms control reward |
 
 ---
 
@@ -255,31 +289,20 @@ All bugs found and fixed (pre-pilot + post-pilot) are listed with detail in
 
 ## Next actions
 
-**Blocking on approval:** the repair ablation (72 trajectories, 3 arms,
-≈1.2–1.5 node-hours). Nothing has been launched.
+**Ablation done, repair selected (Arm 2).** Remaining items need a fresh GPU
+allocation for the actual repaired re-run, scoped to the failed instances:
 
-1. **← needs a fresh GPU allocation.** Run the full repair ablation. Everything
-   is prepared and frozen; the previous allocation ended after the 6-run live
-   validation. Resume with:
-
-   ```bash
-   export BIOMNI_SRC=... BIOMNI_PATH=... HF_HOME=... BIOMNI_UNC_OUTPUT_ROOT=...
-   # servers must be up; endpoints.json points at them
-   for n in 1 2 3; do
-     python -m biomni_uncertainty.cli dispatch \
-       --config configs/ablation_arm$n.yaml \
-       --run-manifest manifests/abl_arm${n}_runs.jsonl \
-       --endpoints <endpoints.json> --max-concurrent-per-endpoint 8
-   done
-   ```
-
-   The 6 arm-3 validation runs are already `COMPLETE` and will be skipped on
-   resume, so arm 3 has 18 runs left. Freeze the least invasive arm that removes
-   the degeneration without moving reward on the controls — on current evidence
-   that may be **arm 2**, since the hard budget never fired in validation.
-2. Re-run all 62 failed runs under the frozen repair as experiment `phase1_5`,
-   preserving `phase1` untouched, with an explicit original→repaired mapping.
-   Include matched previously-completed controls. ≈2–3 node-hours.
+1. **Freeze Arm 2 as the Phase-1.5 repair config.** `configs/ablation_arm2.yaml`
+   is already the right settings (R1, R2, R4, R5; no R3 budgets); promote it to
+   a named `configs/repair.yaml` (or reuse arm2's config directly) so the
+   re-run below points at an unambiguous, documented config rather than an
+   "ablation arm" name.
+2. **← needs a fresh GPU allocation.** Re-run all 62 Phase-1 `model_context_overflow`
+   failures under Arm 2's settings as experiment `phase1_5`, preserving `phase1`
+   untouched, with an explicit original→repaired run-id mapping. Include the
+   matched previously-completed controls used in the ablation so the same
+   "did this help or hurt" check applies at full scale, not just n=6 per stratum.
+   ≈2–3 node-hours.
 3. Write `reports/phase1_completion_bias_analysis.md` and
    `reports/phase1_repaired_report.md`: observed-completion vs
    intention-to-evaluate vs matched-paired results.
@@ -291,7 +314,9 @@ All bugs found and fixed (pre-pilot + post-pilot) are listed with detail in
    time), before any prospective Phase-2 pilot.
 
 Deferred, not started: expanding the pilot for tighter CIs; transfer to a second
-agent; expert workflow annotation.
+agent; expert workflow annotation; adding test coverage for
+`scripts/analyze_ablation.py` (flagged in §10e of the forensics report as a gap,
+not closed here due to time).
 
 ---
 

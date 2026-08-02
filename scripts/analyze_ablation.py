@@ -13,6 +13,7 @@ failures by making the agent worse everywhere has not passed.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import statistics as st
 from collections import defaultdict
@@ -73,6 +74,7 @@ def load_arm(runs_root: Path) -> list[dict]:
             {
                 "task": d.parts[-4],
                 "instance": int(d.parts[-3].lstrip("i")),
+                "run_id": meta.get("run_id") or failed.get("run_id"),
                 "completed": bool(meta.get("completed")),
                 "failure_class": meta.get("failure_class") or failed.get("failure_class"),
                 "wall": meta.get("wall_time_seconds") or failed.get("wall_time_seconds") or 0.0,
@@ -82,11 +84,35 @@ def load_arm(runs_root: Path) -> list[dict]:
                 "n_calls": len(calls),
                 "output_tokens": sum(c[1] or 0 for c in calls),
                 "answer_status": (parsed.get("parsed") or {}).get("status"),
-                "reward": meta.get("reward"),
+                # Reward is NOT in metadata.json - the runner never scores its own
+                # trajectory (ground truth must stay out of the execution process).
+                # It is computed later by `cli aggregate` against the official
+                # evaluator and only lives in results/tables/trajectories.csv,
+                # joined in by run_id below. Left None here as the "not yet
+                # joined" sentinel.
+                "reward": None,
                 "guards": dict(guards),
             }
         )
     return rows
+
+
+def load_rewards(results_root: Path) -> dict[str, float | None]:
+    """run_id -> official reward, from the aggregated trajectories table.
+
+    `cli aggregate` is the only code path that scores a trajectory (it is the
+    one place ground truth and predictions are both in scope); this reads that
+    output rather than re-deriving reward here.
+    """
+    path = results_root / "tables" / "trajectories.csv"
+    if not path.exists():
+        return {}
+    out: dict[str, float | None] = {}
+    with open(path, newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            v = row.get("reward")
+            out[row["run_id"]] = float(v) if v not in (None, "", "nan") else None
+    return out
 
 
 def fmt(x, spec=".3f"):
@@ -105,8 +131,19 @@ def main() -> None:
     for arm in ARMS:
         root = args.output_root / arm / "runs"
         data[arm] = load_arm(root) if root.exists() else []
+        rewards = load_rewards(args.output_root / arm / "results")
+        n_unmatched = 0
         for r in data[arm]:
             r["stratum"] = stratum_of.get((r["task"], r["instance"]), "unknown")
+            if r["run_id"] in rewards:
+                r["reward"] = rewards[r["run_id"]]
+            elif r["completed"]:
+                n_unmatched += 1
+        if n_unmatched:
+            print(
+                f"  [warning] {ARM_LABEL[arm]}: {n_unmatched} completed run(s) have no reward "
+                f"in results/tables/trajectories.csv - re-run `cli aggregate` for this arm]"
+            )
 
     print("=" * 96)
     print("REPAIR ABLATION - 24 balanced instances x 3 arms")

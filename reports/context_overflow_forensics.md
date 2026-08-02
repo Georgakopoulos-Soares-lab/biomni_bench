@@ -417,3 +417,90 @@ that removes the overflow without moving reward on the controls.
 468 s per completed trajectory on one TP2 replica at concurrency 8, ≈ 1.2–1.5
 node-hours. This is below the 2-node-hour threshold, but it is the first GPU
 spend of Phase 1.5, so it is presented for approval rather than launched.
+
+---
+
+## 10. Ablation result and decision — 2026-08-01
+
+All 72 trajectories complete (24/24 each arm). Produced by
+`scripts/analyze_ablation.py`; raw output at
+`<output_root>/_abl_job/ablation_analysis_output.txt`.
+
+### 10a. Primary outcome — does either arm fix the target failure?
+
+| arm | completed | failed | runs w/ runaway | total runaways | median peak input | max peak input |
+| --- | --- | --- | --- | --- | --- | --- |
+| arm1 control (unguarded) | 19/24 | 5 | 5/24 | 15 | 19,872 | 52,701 |
+| arm2 bounding only (R1,R2,R4,R5) | 22/24 | 2 | 5/24 | 10 | 15,652 | 35,197 |
+| arm3 bounding + budgets (+R3) | 23/24 | 1 | 4/24 | 5 | 21,650 | 35,322 |
+
+Both arms cut failures roughly in half-to-quarter and eliminate multi-thousand
+runaway generations. Arm 3 is marginally better on this axis alone (1 failure vs
+2), consistent with the 6-run validation.
+
+### 10b. The decision axis — the control strata
+
+Per the pre-stated rule, an arm that fixes `overflow_prone` by degrading the
+controls has not passed. Mean official reward by stratum (n=6 each):
+
+| stratum | arm1 | arm2 | arm3 |
+| --- | --- | --- | --- |
+| `overflow_prone` (target) | 0.333 | 0.333 | **0.667** |
+| `same_family_control` | 0.167 | **0.333** | **0.000** |
+| `short_easy_control` | 0.667 | 0.500 | **0.000** |
+| `gwas_control` | 0.667 | **0.833** | 0.667 |
+| **pooled control delta vs arm1** | — | **+0.056** | **−0.278** |
+
+Arm 3 wins the target stratum outright — 0/6 failed (vs arm2's 1/6) and reward
+doubles. But on `same_family_control` and `short_easy_control`, arm3's reward
+collapses to **0.000**, including on `short_easy_control` where it still parsed
+5/6 answers — it answered, and was wrong every time. That is consistent with the
+2,048-token cap (R1) and hard budget (R3) forcing premature synthesis on tasks
+that did not need saving. Arm 2 shows no such collapse; its pooled control delta
+is *positive*.
+
+**`budget_terminated_hard_budget` fired once** in the full run (it never fired
+in the 6-run validation), on an already-borderline case — not enough on its own
+to explain the reward collapse, which is spread across multiple instances in
+both affected control strata.
+
+### 10c. Cost
+
+| arm | total wall (h) | median wall (s) | total output tokens |
+| --- | --- | --- | --- |
+| arm1 | 3.74 | 356 | 365,763 |
+| arm2 | 2.23 | 268 | 208,996 |
+| arm3 | 3.19 | 385 | 195,433 |
+
+Arm 2 is also the cheapest of the three, despite fixing most of the failures.
+
+### 10d. Decision
+
+**Adopt Arm 2** (`max_tokens: 2048`, truncate-and-nudge on `finish_reason ==
+"length"`, retrieval cap, observation cap — R1, R2, R4, R5). **Reject Arm 3's
+soft/hard token budgets (R3)** for Phase 2: it fully solves the target failure
+but fails the pre-stated "does not harm the controls" bar, and by a large
+margin. This reverses the tentative reading in `PROJECT_STATUS.md` after the
+6-run validation, where the hard budget never fired and arm 2 was flagged as
+*possibly* sufficient — the full ablation confirms it, with the added finding
+that arm 3 is actively worse where it wasn't needed.
+
+**Caveat, stated plainly:** n=6 per stratum. A control stratum's mean moves by
+0.167 for every single instance that flips. The *direction* — arm3 regressing
+controls that arm2 does not — is large and consistent enough across two
+independent strata to act on; the exact magnitudes (0.278 pooled delta) should
+not be treated as precise, and would benefit from a larger confirmatory run if
+Phase 2 stakes rise.
+
+### 10e. A bug found while producing this result
+
+`scripts/analyze_ablation.py` originally read `reward` from each run's raw
+`metadata.json`. That field does not exist there: reward is computed only by
+`cli aggregate`, against ground truth, into `results/tables/trajectories.csv` —
+deliberately, so the execution process never has ground truth in scope (see
+`DECISIONS.md`). Every reward cell was silently `nan` and §10b above was
+uninterpretable until fixed by joining reward in from the aggregated table by
+`run_id`. The script has no test coverage of its own (it is a one-off analysis
+script outside `src/biomni_uncertainty/`, unlike the package's aggregation
+logic, which is tested) — a gap worth closing before this script is relied on
+again.
