@@ -991,3 +991,72 @@ show anything. The pilot's own launch still requires D-29's preconditions
 
 **Status.** Nothing started. Awaiting direction on whether, and in what order,
 to begin.
+
+---
+
+## D-32 The RESAMPLE-vs-VERIFY distinction is frozen before any environment work begins
+
+**Decided:** 2026-08-10. Full specification: `reports/verify_definition.md`.
+**Specification only — no code, config, or manifest.** Completes prerequisite
+item 5 of D-31, done first and out of dependency order deliberately: the audit
+criteria this note fixes determine what item 2's retrieval-provenance
+instrumentation must record, so item 5 gates item 2 rather than following it.
+
+**Decision.** VERIFY is a distinct trajectory type, triggered by a distinct
+controller action (`policy.Decision.action == "VERIFY"`, alongside `ACCEPT`/
+`CONTINUE`/`ABSTAIN`), required to satisfy five conditions or it is not VERIFY
+whatever it is labelled: starts from a specific candidate claim (not the bare
+task); tests that claim rather than re-solving the task; differs from the
+candidate's method **by construction** — imposed by the harness, not left to
+temperature, because D-30 showed divergence does not occur on its own; never
+sees hidden ground truth; and must not copy the original trajectory's
+reasoning, enforced both structurally (§3) and by a post-hoc audit (§5).
+
+**`VerifyView`**, modelled on `policy.TrajectoryView`/`FORBIDDEN_VIEW_FIELDS`:
+permits only `task_prompt`, `candidate_answer`, `verification_mode`, an
+optional structured claim decomposition, and its own run id. A new
+`FORBIDDEN_VERIFY_FIELDS` list, stricter than `FORBIDDEN_VIEW_FIELDS`, adds the
+original transcript/plan/tool-calls/code (structurally prevents copying) and
+**the original's stated confidence** (prevents anchoring a supposedly
+independent judgement on it — relevant because S4, `final_confidence == 1.00`,
+is a live candidate signal and must not be partly re-derived through VERIFY).
+
+**Three modes, kept minimal per the north star's standing constraint against
+building machinery ahead of evidence:** A (computational — independently
+re-derive a quantity from raw inputs, verdict by comparison, not by
+wording — the diagnostic's `lab_bench_seqqa/i0027` case is its target);
+B (evidence — retrieve from a source distinct from the candidate's, gated on
+`reports/verify_prerequisites.md` item 1's evidence-channel repair, since a
+68–80%-error channel would make an `inconclusive` verdict indistinguishable
+from infrastructure failure — D-30 §4's confound recurring one level up);
+C (adversarial — B's query strategy inverted, explicitly seeking
+disconfirmation). All three require a `confirmed`/`refuted`/`inconclusive`
+verdict with a stated basis, and **none may return `confirmed` on agreement
+alone** — that would be RESAMPLE wearing a VERIFY label.
+
+**The audit criterion is a rejection test against a measured null, not an
+arbitrary constant**, per the brief's explicit instruction. The null is D-30's
+own RESAMPLE reference band — same-instance trajectory pairs, agreeing or not,
+land at plan Jaccard 0.540 [0.515, 0.566], tool-sequence similarity 0.409
+[0.358, 0.463], query Jaccard 0.328 [0.287, 0.372]. A mode-B/C VERIFY
+trajectory passes only if its query or tool-sequence similarity to the
+candidate falls **below the band's lower CI bound**, not merely numerically
+lower. Mode A's audit is structural (a code execution deriving the checked
+value from inputs), not lexical. The strongest audit — evidence-identity
+overlap — **cannot be computed yet** and is left uncalibrated on purpose,
+pending real data from item 2's retrieval-identity instrumentation; this
+document is now that instrumentation's requirements source.
+
+**A failed audit is logged, never silently discarded or silently
+recategorized as RESAMPLE** — the same discipline `reward_abstain_zero`
+already enforces for abstention.
+
+**What remains open, explicitly.** Whether VERIFY beats RESAMPLE (an efficacy
+question, not addressed here); controller wiring for when VERIFY fires;
+mode-selection policy; and the §5.3 numeric evidence-overlap threshold, held
+uncalibrated until there is data to calibrate it from.
+
+**Reversal condition.** Frozen for the purpose of proceeding to prerequisite
+item 2. Any later revision — including after seeing VERIFY trial data — must
+be an explicit, labelled amendment, never a silent edit, matching the standing
+rule for every other frozen protocol in this project.

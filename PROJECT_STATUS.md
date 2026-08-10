@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-10 (Track-C diagnostic committed `e8d5731`; VERIFY prerequisite design note written — **nothing implemented, awaiting approval**)
+**Last updated:** 2026-08-10 (VERIFY prerequisites approved and underway — item 5 (RESAMPLE/VERIFY definition) DONE, D-32; items 1–4 not started)
 **Phase:** **PHASE 2B COMPLETE.** Track A does not survive prospective test as
 frozen. Full report: `reports/phase2_report.md`. `reports/phase2_plan.md` §1's
 decision rule for "both co-primary hypotheses fail" selects **Track C**
@@ -875,35 +875,42 @@ written. What remains is decisions, not artifacts:
     **Both co-primary hypotheses FAIL.** No policy tuning occurred after
     outcomes were seen — the frozen controller is reported exactly as it ran.
 
-### Next action — awaiting operator approval on the prerequisite work
+### VERIFY prerequisites — in progress (2026-08-10, operator-approved)
 
-Three closed items below are done. **Nothing is running. No GPU job, no new
-manifest, no prompt change, no diversity mechanism, no VERIFY implementation.**
+**Nothing is running. No GPU job, no new manifest, no prompt change, no
+diversity mechanism, no VERIFY implementation.** `reports/verify_prerequisites.md`
+(D-31) lists five scientific prerequisites for a constructed-verification pilot
+to be valid. Working through them in dependency order:
 
-The Track-C diagnostic (D-30) supports exactly one future intervention: a
-**constructed-verification pilot**, where a verification trajectory is given a
-*different plan by construction* rather than sampled freely. Per D-29 that
-pilot cannot launch until the tree is committed at launch time and residual
-failure is under threshold. Going further, `reports/verify_prerequisites.md`
-(2026-08-10, design note only, nothing implemented) lays out five **scientific**
-prerequisites the pilot needs to be valid, not just launchable:
+| # | item | status |
+| --- | --- | --- |
+| **5** | freeze the RESAMPLE-vs-VERIFY definition | **DONE 2026-08-10 — D-32, `reports/verify_definition.md`** (done first, out of numeric order: its audit criteria set item 2's requirements) |
+| 1 | repair the literature/evidence channel | not started |
+| 2 | instrument retrieval identity/content | not started |
+| 3 | re-measure residual failure on the repaired environment | not started |
+| 4 | validate against healthy controls | not started |
 
-1. repair the literature/evidence channel (69–80% error where VERIFY would
-   live, vs 6–11% on structured databases — known imports missing, not a
-   design problem);
-2. instrument retrieval **identity/content**, not just counts — otherwise
-   "VERIFY used independent evidence" is unfalsifiable, the same gap the
-   hash-chained decision log was built to close for shadow isolation;
-3. bring residual failure under the 15% halt threshold (currently 15.5%) so a
-   VERIFY-vs-RESAMPLE comparison isn't confounded with failure-vs-disagreement,
-   the exact confound D-30 §4 separated out;
-4. validate the repairs against previously-healthy controls before trusting
-   them — Phase 1.5's Arm-3 regression (reward collapsed to 0.000 on two
-   control strata) is the standing cautionary example;
-5. fix an operational, checkable definition of VERIFY vs RESAMPLE **before**
-   any trajectory is generated under either label, reusing
-   `diversity.py`'s plan-Jaccard metric as the after-the-fact audit that the
-   distinction was actually honoured.
+**Item 5, closed.** VERIFY is a distinct trajectory type + controller action,
+gated by five conditions (starts from a specific candidate claim; tests the
+claim rather than re-solving the task; differs from the candidate's method **by
+construction**, not by temperature; never sees ground truth; cannot copy the
+original's reasoning — enforced structurally by a new `VerifyView`/
+`FORBIDDEN_VERIFY_FIELDS` barrier *and* by a post-hoc audit). Three modes kept
+deliberately minimal: A (computational re-derivation), B (evidence, gated on
+item 1's repair), C (adversarial, B's query strategy inverted). The audit is a
+**rejection test against D-30's own measured RESAMPLE band** (plan Jaccard
+0.540 [0.515, 0.566], tool-seq similarity 0.409 [0.358, 0.463], query Jaccard
+0.328 [0.287, 0.372]) — not an arbitrary threshold, per instruction. The
+strongest audit (evidence-identity overlap) is left uncalibrated on purpose,
+pending item 2's data. `VerifyView`'s forbidden list is **stricter** than
+`TrajectoryView`'s: it also excludes the original's stated confidence, to
+prevent anchoring a VERIFY verdict on it — relevant because S4 is a live
+candidate signal.
+
+**Next: item 1** — diagnose the literature/evidence-channel failures (30.0%
+overall tool-call error, 68–80% on the tools VERIFY would need) and produce the
+narrowest reproducible fix, per `reports/verify_prerequisites.md` — not the
+full E1 environment.
 
 **Awaiting direction on whether, and in what order, to begin items 1–5.** None
 started.
