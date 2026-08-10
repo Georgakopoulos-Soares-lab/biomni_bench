@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-10 (Steps 0-1 closed (D-36/D-37); Step 2's Arm 1 complete, Arm 2 running in background against a frozen acceptance rule; Step 3 write-up skeleton drafted in parallel)
+**Last updated:** 2026-08-10 (Steps 0-2 closed (D-36/D-37/D-38); Step 2 is **NO-GO** — Step 4 not indicated, node idle; Step 5 remains gated pending explicit approval; Step 3 write-up updated with the real result)
 
 ## Live-GPU-window plan underway (2026-08-10)
 
@@ -71,44 +71,52 @@ mixed computational verification.
 
 11 new tests (444 total). No frozen artifact touched.
 
-### Step 2, in progress (2026-08-10) — candidate-adjudication pilot
+### Step 2, closed (2026-08-10, D-38) — candidate-adjudication pilot: NO-GO
 
-Acceptance rule frozen before any trajectory (`step2_acceptance_rule.md`,
-throwaway scratch, not committed by design — floor 0.4103 / ceiling 0.6026 /
-gap 0.1923 over the 78 pooled stratum-B instances; GO if Δ's 95% CI lower
-bound > 0, NO-GO if Δ's CI upper bound < gap/3 = 0.0641, else INCONCLUSIVE).
+Full report: `reports/track_c_step2.md`. Acceptance rule frozen before any
+trajectory (floor 0.4103 / ceiling 0.6026 / gap 0.1923 over 78 pooled
+stratum-B instances; GO if Δ's 95% CI lower bound > 0, NO-GO if Δ's CI upper
+bound < gap/3 = 0.0641, else INCONCLUSIVE).
 `scripts/track_c_adjudication_pilot.py` (`prep`/`arm1`/`arm2`, committed
-`cddf96c`) builds the 78-instance candidate set from frozen `phase2b` +
-`phase1_pooled` trajectories only — zero held-out instances touched; exclusion
-list written for future VERIFY manifests before any pilot result.
+`cddf96c`) built the 78-instance candidate set from frozen `phase2b` +
+`phase1_pooled` trajectories only — zero held-out instances touched.
 
-**Arm 1** (one-shot, no tools, 234 chat completions) — **complete**. Caught and
-fixed a token-truncation bug pre-launch (512→2048 max tokens; Biomni-R0 always
-emits `<think>` before answering) via a 3-instance smoke test before spending
-the full budget.
+**Arm 1** (one-shot, no tools, 234/234 complete) — descriptive NO-GO (Δ =
+−0.218, CI [−0.333, −0.103]).
 
-**Arm 2** (tool-enabled agent, the kill-shot arm — only its failure licenses
-NO-GO for VERIFY) — **launched from a clean tree, in progress**
-(`/scratch/11034/atzanakak/biomni_unc_runs/track_c_adjudication_pilot`, throwaway
-experiment tree, not registered as an Active Experiment ID). Real per-trajectory
-cost (~150–320s incl. tool calls) puts completion closer to ~3h than the
-original 1.5–2h estimate.
+**Arm 2** (tool-enabled agent, the kill-shot arm — strictly more information
+than a real VERIFY trajectory ever has, D-32) — 234/234 attempted, 190
+succeeded / 44 failed (17.9% degeneration-failure rate, same
+`model_context_overflow`/`budget_terminated` definition used throughout).
+**Pooled verdict: NO-GO** — Δ = −0.077, 95% CI **[−0.192, 0.038]**, entirely
+below the 0.0641 bar, point estimate negative. Replicates independently on
+`phase1_pooled` alone (Δ = −0.16, CI entirely negative). Mechanism: 47% of
+instances produce no majority-resolved answer at all (not "confidently
+wrong" but "frequently no answer"); 46% of instances have at least one
+off-menu sample; 96% show at least one soft runaway-generation event.
 
-`scripts/track_c_adjudication_analyze.py` (committed `95cf660`) implements the
-frozen rule end-to-end — majority-resolution (2-of-3), paired instance-clustered
-bootstrap, GO/NO-GO/INCONCLUSIVE, task-family and per-pool secondary cuts,
-on/off-menu rate, Arm-2 budget/degeneration secondary metrics — and is verified
-against live Arm-1 (complete) and partial Arm-2 data. It refuses to compute a
-verdict until all 234 Arm-2 trajectories are complete; a partial run is reported
-descriptively only, tagged INCOMPLETE. 11 new tests (455 total).
+**Consequence.** Because Arm 2 upper-bounds any real VERIFY mode-A
+trajectory, this licenses treating the result as evidence against the
+VERIFY mode-A/evidence-based-adjudication family generally, not only this
+pilot's framing. **Step 4 (K=2 characterization) is not indicated** — the
+node is left idle per the standing instruction rather than spending the
+reserved ~120-instance pool on a premise this pilot falsified. **Step 5
+(VERIFY implementation) remains gated** on the user's separate, explicit
+approval — this finding is evidence for that decision, not a substitute for
+it.
 
-**Next:** once Arm 2 reaches 234/234, run the analysis, read the verdict, write
-`reports/track_c_step2.md`, add the next `D-` entry, update this file, commit —
-then decide Step 4 (K=2 characterization, conditional on GO or
-INCONCLUSIVE-leaning-GO) accordingly. Step 3 (write-up skeleton,
-`reports/writeup_draft.md`) is drafted in parallel per the plan, with every
-already-final section written; only §7 (Track C's Step-2 outcome) waits on
-this.
+`scripts/track_c_adjudication_analyze.py` (committed `95cf660`) implements
+the frozen rule end-to-end and was verified against live partial data
+(14–20/234) before the full run completed, then re-run against the
+completed 234/234 result. 11 new tests. **Full suite: 455 passed.**
+
+Step 3 write-up (`reports/writeup_draft.md`) updated the same day with the
+real Step-2 result in §7 — every section is now final, nothing left as a
+placeholder.
+
+**Next:** none of Steps 0–4 remain open. Step 5 is the only remaining item
+in the live-GPU-window plan, and it does not proceed without the user's
+separate explicit "yes."
 
 ## VERIFY prerequisites — all five adjudicated (2026-08-10)
 

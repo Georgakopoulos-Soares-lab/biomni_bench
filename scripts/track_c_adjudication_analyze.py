@@ -180,6 +180,43 @@ def _arm2_specs(candidates: list[dict], cfg) -> list[RunSpec]:
     return specs
 
 
+def _retrieval_provenance_present(run_dir: str) -> bool:
+    """D-33 lightweight coverage check: does this run's events.jsonl contain
+    at least one retrieval-provenance event (`retrieval_selected_identities`
+    / `evidence_output_hash`)? Presence-only, not a structured extraction -
+    consistent with the acceptance rule's "also measured, since near-free"
+    framing; a full per-tool-call audit is out of scope for this pilot."""
+    path = Path(run_dir) / "events.jsonl"
+    if not path.exists():
+        return False
+    text = path.read_text(errors="ignore")
+    return "retrieval_selected_identities" in text or "evidence_output_hash" in text
+
+
+def _degeneration_failure_rate(traj: pd.DataFrame) -> float:
+    """Same definition used throughout this project (phase2b_analyze.py,
+    phase2b_verify.py, track_c_preflight.py): failure_class starting with
+    `model_context_overflow` or `budget_terminated`."""
+    fc = traj["failure_class"].fillna("").astype(str)
+    return float(fc.str.startswith(("model_context_overflow", "budget_terminated")).mean())
+
+
+def _budget_stats(run_dir: str) -> dict:
+    """`collect_run_records` only flattens `trajectory_stats`; `budget_stats`
+    (peak_input_tokens, runaway_generations, hard_budget_hits - the D-34
+    degeneration fields) lives in the same metadata.json under a separate
+    key and is read directly here, once per run, for both completed and
+    FAILED trajectories (both write a full metadata.json)."""
+    meta_path = Path(run_dir) / "metadata.json"
+    if not meta_path.exists():
+        return {}
+    try:
+        meta = json.loads(meta_path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return meta.get("budget_stats") or {}
+
+
 def analyze_arm2(
     candidates: list[dict], config_path: Path, evaluator: OfficialEvaluator
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -188,6 +225,13 @@ def analyze_arm2(
     specs = _arm2_specs(candidates, cfg)
     traj = collect_run_records(specs)
     traj = attach_rewards(traj, evaluator, cfg.analysis.binary_reward_threshold)
+
+    budget = traj["run_dir"].map(_budget_stats)
+    traj = traj.assign(
+        peak_input_tokens=budget.map(lambda d: d.get("peak_input_tokens")),
+        runaway_generations=budget.map(lambda d: d.get("runaway_generations")),
+        hard_budget_hits=budget.map(lambda d: d.get("hard_budget_hits")),
+    )
 
     by_instance = {(r["task_name"], int(r["task_instance_id"])): r for r in candidates}
     rows = []
@@ -218,9 +262,9 @@ def analyze_arm2(
                 "majority_status": status,
                 "n_off_menu": n_off_menu,
                 "reward": res.reward,
-                "peak_input_tokens_max": g["peak_input_tokens"].max() if "peak_input_tokens" in g else None,
-                "any_runaway": bool((g.get("runaway_generations", pd.Series(dtype=float)).fillna(0) > 0).any()),
-                "any_hard_budget_hit": bool((g.get("hard_budget_hits", pd.Series(dtype=float)).fillna(0) > 0).any()),
+                "peak_input_tokens_max": g["peak_input_tokens"].max(),
+                "any_runaway": bool((g["runaway_generations"].fillna(0) > 0).any()),
+                "any_hard_budget_hit": bool((g["hard_budget_hits"].fillna(0) > 0).any()),
             }
         )
     return traj, pd.DataFrame(rows)
@@ -275,14 +319,28 @@ def main() -> int:
     arm2.to_csv(args.out / "arm2_per_instance.csv", index=False)
 
     n_expected = len(candidates) * N_SAMPLES_PER_ARM
-    n_complete_traj = int(traj2["completed"].fillna(False).sum())
-    arm2_complete = n_complete_traj >= n_expected
+    # Completeness means "dispatch has attempted every planned trajectory and
+    # each has a terminal marker" (run_present), NOT "every trajectory
+    # succeeded" (completed) - a real Arm-2 run has a nonzero failure rate by
+    # this project's own prior findings (context-overflow degeneration), and
+    # those failures are legitimate terminal outcomes the majority-resolution
+    # rule already accounts for (a missing sample just can't contribute to a
+    # 2-of-3 majority), not runs still in flight.
+    n_attempted_traj = int(traj2["run_present"].fillna(False).sum())
+    n_succeeded_traj = int(traj2["completed"].fillna(False).sum())
+    arm2_complete = n_attempted_traj >= n_expected
 
     report = {
         "n_instances": len(candidates),
-        "arm2_trajectories_complete": n_complete_traj,
+        "arm2_trajectories_attempted": n_attempted_traj,
+        "arm2_trajectories_succeeded": n_succeeded_traj,
         "arm2_trajectories_expected": n_expected,
         "arm2_status": "COMPLETE" if arm2_complete else "INCOMPLETE",
+        "arm2_failure_class_counts": traj2["failure_class"].fillna("none").value_counts().to_dict()
+        if "failure_class" in traj2
+        else {},
+        "arm2_degeneration_failure_rate": _degeneration_failure_rate(traj2),
+        "arm2_retrieval_provenance_coverage": float(traj2["run_dir"].map(_retrieval_provenance_present).mean()),
         "arm1_descriptive": {
             "mean_reward": float(arm1["reward"].mean()),
             "mean_plurality_floor": float(arm1["plurality_reward"].mean()),
@@ -318,7 +376,7 @@ def main() -> int:
     else:
         report["arm2_verdict"] = None
         report["note"] = (
-            f"Arm 2 incomplete ({n_complete_traj}/{n_expected} trajectories) - "
+            f"Arm 2 incomplete ({n_attempted_traj}/{n_expected} trajectories attempted) - "
             "NO VERDICT COMPUTED. Descriptive numbers above are not final."
         )
 

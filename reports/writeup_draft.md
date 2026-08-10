@@ -1,9 +1,9 @@
 # Reliability control for biomedical AI agents: what a pre-registered prospective test found
 
 **Status: DRAFT.** Written 2026-08-10, Step 3 of the live-GPU-window plan,
-in parallel with Step 2 (the candidate-adjudication pilot). Every section
-below cites only frozen, already-reported numbers — nothing here depends on
-Step 2's outcome. §7 (Track C) is a placeholder pending that result.
+started in parallel with Step 2 (the candidate-adjudication pilot) and
+updated the same day once Step 2 completed (D-38, NO-GO). Every number below
+is frozen and cited to a specific report.
 
 ---
 
@@ -199,7 +199,7 @@ deliver.
   it does not by itself resolve the mechanism-level problem in §5, but the
   discrimination itself is real and prospectively validated.
 
-## 7. Track C — is disagreement addressable at all? [PLACEHOLDER — pending Step 2]
+## 7. Track C — is disagreement addressable at all?
 
 Two CPU-only diagnostics, both on the same held-out prospective pool,
 established the shape of the remaining question before any further GPU time
@@ -230,13 +230,43 @@ prompt itself, rather than one requiring external evidence or domain
 judgment — the tasks with re-derivable structure are already the tasks that
 work well; the tasks with headroom are not.
 
-**[Step 2's result goes here: a two-arm test of whether handing an agent the
-existing disagreeing candidates and asking it to adjudicate — using tools,
-not resampling — can recover the minority-held answer. This is the most
-information any verification mechanism could have, so a null result here is
-close to decisive against the whole family; a positive result would be the
-first prospective-adjacent evidence that independent verification, as
-opposed to independent sampling, is the right next mechanism.]**
+**Can active adjudication recover it, where passive resampling cannot? No —
+and decisively.** A two-arm pilot tested this directly: hand the real,
+tool-enabled agent the existing disagreeing candidates for the 78 stratum-B
+instances across both pools (53 + 25) and ask it to adjudicate between
+them, majority-resolved over 3 samples. This arm was deliberately
+constructed to have *strictly more* information than a real VERIFY
+trajectory ever could — the full candidate set, an explicit adjudication
+framing, and unrestricted tool access, against a real VERIFY's task prompt
+plus a single candidate — making it an upper bound on what any
+evidence-based verification mechanism could achieve, not merely one
+implementation of it. The result: Δ (adjudicated majority reward minus the
+plurality floor already achieved by voting) = **−0.077, 95% CI [−0.192,
+0.038]**, entirely below the pre-registered bar for even partial recovery
+(a third of the 0.192 available gap). The point estimate is *negative*:
+tool-enabled adjudication scores worse on average than doing nothing but
+voting on the trajectories already in hand. This replicates as an
+independent, standalone negative result on one of the two source pools
+(phase1-derived instances alone: Δ = −0.16, 95% CI entirely below zero) and
+is not reversed by any pre-registered secondary cut.
+
+The mechanism is not "confidently wrong" but "frequently no answer at all":
+47% of instances produce no majority-resolved answer under adjudication (no
+2-of-3 sample agreement, or every sample failing outright), and 46% of
+instances have at least one sample that ignores the explicit instruction to
+answer from the given candidate list. A companion, near-universal signal —
+96% of instances show at least one over-length "runaway" generation event,
+though only 18% of trajectories are terminated by it — indicates this
+prompt shape (a full original task plus a candidate-adjudication framing)
+pushes this reasoning model into long-generation territory almost routinely,
+not just in rare failure cases. Because the tested arm strictly upper-bounds
+any real verification mechanism's available information, this null result
+generalizes: a more-constrained implementation has no plausible path to
+succeeding where this idealized version did not, on the same population,
+model, and tooling. Independent verification via tool-mediated adjudication,
+on this evidence, is not the right next mechanism either — the candidate
+answer may sit latent in the disagreement, but neither passive resampling
+nor active, maximally-informed adjudication reliably surfaces it.
 
 ## 8. Process findings, reported with equal prominence
 
@@ -276,12 +306,22 @@ The mechanism is understood well enough to show that the natural repair
 fails for a structural reason, not a tuning one, and that result
 generalizes past this specific rule: any policy confined to an action set of
 {accept, resample, abstain} cannot use information about *how* trajectories
-came to agree, only *whether* they did. Two narrower, genuinely useful
-results survive — a safety property and a calibration signal — and neither
-depends on the controller working. What remains open is whether disagreement
-itself is a resolvable epistemic state at all, and the offline evidence
-before any further experiment says the resolution, if one exists, is not
-going to come from sampling more of the same thing.
+came to agree, only *whether* they did. A follow-up, deliberately
+upper-bound test of the remaining alternative — active, tool-mediated
+adjudication among already-disagreeing candidates, rather than more passive
+resampling — closes off that direction too: it does not merely fail to
+recover headroom, its point estimate is negative, and the failure
+replicates independently on one of its two source pools. Two narrower,
+genuinely useful results survive from the original controller — a safety
+property and a calibration signal — and neither depends on the controller
+working. What began as an open question — is disagreement a resolvable
+epistemic state at all? — now has a specific, evidenced answer for the two
+most natural mechanisms tried: neither generating more samples nor handing
+the existing ones to a tool-enabled adjudicator reliably surfaces the
+correct answer when trajectories disagree, even though that answer is
+often present, just minority-held. Building a real VERIFY implementation on
+top of either mechanism is not supported by this evidence; that remains the
+user's decision to make, not one this project makes on its own.
 
 ---
 
@@ -289,5 +329,6 @@ going to come from sampling more of the same thing.
 
 Every number above traces to a specific commit, table, and (where
 prospective) a hash-chained decision log verified end-to-end; nothing here
-is asserted without a cited artifact in the underlying reports. §7's
-placeholder is the only section awaiting new data as of this draft.
+is asserted without a cited artifact in the underlying reports. §7's Step-2
+result is documented in full in `reports/track_c_step2.md` and `DECISIONS.md`
+D-38.

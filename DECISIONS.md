@@ -1492,3 +1492,94 @@ justification, not a bare label. **Full suite: 444 passed.**
 not a policy choice. The mode-A eligibility classification is task-level and
 fixed; revisiting it requires a new, explicitly-labelled classification pass
 with its own justification, not a silent edit to `MODE_A_ELIGIBLE_TASKS`.
+
+## D-38 Step 2 candidate-adjudication pilot: NO-GO — Step 4 not indicated, Step 5 remains gated
+
+**Decided:** 2026-08-10. Full report: `reports/track_c_step2.md`. Step 2 of
+the "Next steps — live GPU node" plan. Acceptance rule frozen before any
+Arm-1/Arm-2 trajectory (floor 0.4103 / ceiling 0.6026 / gap 0.1923 on 78
+pooled `B_substantive_disagreement` instances; GO if Δ's 95% CI lower bound
+> 0, NO-GO if Δ's CI upper bound < gap/3 = 0.0641, else INCONCLUSIVE, where
+Δ = Arm-2 majority reward − plurality floor, paired instance-clustered
+bootstrap, 10,000 replicates).
+
+**Design.** Two arms, 3 samples/instance/arm, majority-resolved (≥2-of-3
+agreement), on candidates drawn only from already-completed, frozen
+`phase2b`/`phase1_pooled` trajectories — zero held-out instances consumed.
+Arm 1: one-shot, no tools (descriptive only). **Arm 2: the real Biomni A1
+agent, adjudication-framed prompt, full tool access — the kill-shot arm.**
+Arm 2 has strictly more information than a real VERIFY mode-A trajectory
+ever could (D-32's `VerifyView` sees the task prompt and *one* candidate,
+not the full disagreeing set), so it is a deliberate upper bound on what
+VERIFY could achieve, not a lower bound.
+
+**Result: NO-GO.** Arm 2 pooled (n=78): Δ = **−0.0769**, 95% CI **[−0.1923,
+0.0385]** — the CI upper bound (0.0385) falls below the pre-registered NO-GO
+bar (0.0641). The point estimate is negative: majority-resolved,
+tool-enabled adjudication scores *worse* on average than plain plurality
+voting on the trajectories already in hand. Replicates independently on
+`phase1_pooled` alone (n=25, Δ = −0.16, CI [−0.32, −0.04], entirely
+negative — a second, standalone NO-GO, not just a pooled artifact);
+`phase2b` alone and both task-family cuts (evidence-retrievable vs.
+domain-judgment, D-37-revised) are individually INCONCLUSIVE at n=38-53 but
+point the same direction. Arm 1 (descriptive) is a clean NO-GO too (Δ =
+−0.2179, CI [−0.3333, −0.1026]) — worse than Arm 2, consistent with the
+rule's own framing that any recovery would require active tool work, not
+passive re-selection, except that even the tool-enabled version recovers
+nothing.
+
+**Mechanism, from the same artifacts, not a post-hoc story.** Arm 2's low
+mean reward is not "confidently wrong" — it is "frequently no answer at
+all": 47.4% of instances (37/78) produce no majority-resolved answer (28
+splits with no 2-of-3 agreement + 9 all-sample failures); 46.2% of instances
+have at least one sample that answers *off-menu*, generalizing a single case
+caught in Arm 2's pre-launch smoke test
+(`crispr_delivery`/i0018 answered `'e'` against candidates `['c','f']` in
+all 3 samples — genuinely `all_wrong`, so scoring was unaffected, but it
+flagged a real instruction-compliance gap now confirmed systematic); a
+**17.9% degeneration-failure rate** (`budget_terminated_consecutive_runaway`
+× 42 + `dependency_failure` × 2 of 234 attempted, same
+`model_context_overflow`/`budget_terminated` definition used throughout this
+project) removes samples before majority resolution runs; and 96.2% of
+instances show at least one *soft* runaway-generation event (survived, not
+fatal — distinct from the 17.9% hard-failure rate), meaning this prompt
+shape pushes the model into long-generation territory almost universally,
+not just in the tail. D-33 retrieval-provenance field coverage is 59.8%
+(presence-only check) — a majority of trajectories did engage the
+instrumented retrieval path, so the null is not simply "the agent never used
+a tool."
+
+**Consequence.** Because Arm 2 is a deliberate upper bound on VERIFY mode-A
+adjudication, this result licenses treating a NO-GO here as evidence against
+the VERIFY mode-A/evidence-based-adjudication family generally, not only
+against this pilot's specific framing — a real, more-constrained VERIFY
+trajectory has no plausible path to succeeding where this idealized,
+maximally-empowered version did not, on the same population, model, and
+tooling. **Step 4 (K=2 characterization run) is not indicated** — the plan's
+condition was GO or INCONCLUSIVE-leaning-GO, and this is a decisive
+pooled NO-GO replicated independently on one of the two pools; per the
+standing instruction, the GPU node is left idle rather than spending the
+reserved ~120-instance pool on a characterization run whose premise this
+pilot just falsified. **Step 5 (VERIFY implementation) remains gated** — this
+finding is offered as evidence for that decision, not a substitute for the
+user's separate, explicit approval, which was never conditioned on this
+pilot's outcome.
+
+**Tests.** `tests/test_track_c_adjudication_analyze.py` (11): majority
+resolution requires genuine 2-of-3 agreement (a single surviving answer
+after filtering failures is `no_majority`, not promoted to a majority);
+GO/NO-GO/INCONCLUSIVE boundary cases against synthetic paired arrays; the
+frozen `gap/3` constant is pinned against the acceptance rule's own
+arithmetic so a future edit cannot silently move the NO-GO bar; the
+task-family stratification is checked to partition all 10 BiomniEval1 tasks
+with no overlap. Verified end-to-end against live data at two points: a
+14-20/234 partial Arm-2 run (correctly reported INCOMPLETE, no verdict
+computed) and the completed 234/234 run. Full suite: 455 passed.
+
+**Reversal condition.** A materially different adjudication design (e.g. a
+different prompt framing that measurably fixes the 46.2% off-menu rate, or a
+non-reasoning/differently-tuned model less prone to the 96.2% soft-runaway
+rate) could in principle be tested — but that is a new, separately-designed
+pilot with its own frozen acceptance rule, not a reinterpretation of this
+one. This result does not license lowering the NO-GO bar or re-reading the
+pooled CI as "close enough."
