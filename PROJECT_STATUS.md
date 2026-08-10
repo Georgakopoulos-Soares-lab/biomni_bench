@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-10 (Phase-2B provenance recovered and committed; **Track C first diagnostic complete — NO-GO for diversity-by-resampling**)
+**Last updated:** 2026-08-10 (Track-C diagnostic committed `e8d5731`; VERIFY prerequisite design note written — **nothing implemented, awaiting approval**)
 **Phase:** **PHASE 2B COMPLETE.** Track A does not survive prospective test as
 frozen. Full report: `reports/phase2_report.md`. `reports/phase2_plan.md` §1's
 decision rule for "both co-primary hypotheses fail" selects **Track C**
@@ -875,18 +875,38 @@ written. What remains is decisions, not artifacts:
     **Both co-primary hypotheses FAIL.** No policy tuning occurred after
     outcomes were seen — the frozen controller is reported exactly as it ran.
 
-### Next action — awaiting operator approval
+### Next action — awaiting operator approval on the prerequisite work
 
-Both closed items below are done. **Nothing is running. No GPU job, no new
-manifest, no prompt change, no diversity mechanism.**
+Three closed items below are done. **Nothing is running. No GPU job, no new
+manifest, no prompt change, no diversity mechanism, no VERIFY implementation.**
 
-The open question is whether to design a **constructed-verification pilot** —
-the only intervention the Track-C diagnostic supports (D-30 §11): a verification
-trajectory given a *different plan by construction*, on a task whose evidence
-channel is known to work. That would be a new prospective design needing its own
-pre-registration, and per D-29 it cannot launch until (a) the tree is committed
-and the launcher refuses a dirty tree, and (b) residual trajectory failure is
-under the 15% threshold (currently **15.5%**, unrepaired by design).
+The Track-C diagnostic (D-30) supports exactly one future intervention: a
+**constructed-verification pilot**, where a verification trajectory is given a
+*different plan by construction* rather than sampled freely. Per D-29 that
+pilot cannot launch until the tree is committed at launch time and residual
+failure is under threshold. Going further, `reports/verify_prerequisites.md`
+(2026-08-10, design note only, nothing implemented) lays out five **scientific**
+prerequisites the pilot needs to be valid, not just launchable:
+
+1. repair the literature/evidence channel (69–80% error where VERIFY would
+   live, vs 6–11% on structured databases — known imports missing, not a
+   design problem);
+2. instrument retrieval **identity/content**, not just counts — otherwise
+   "VERIFY used independent evidence" is unfalsifiable, the same gap the
+   hash-chained decision log was built to close for shadow isolation;
+3. bring residual failure under the 15% halt threshold (currently 15.5%) so a
+   VERIFY-vs-RESAMPLE comparison isn't confounded with failure-vs-disagreement,
+   the exact confound D-30 §4 separated out;
+4. validate the repairs against previously-healthy controls before trusting
+   them — Phase 1.5's Arm-3 regression (reward collapsed to 0.000 on two
+   control strata) is the standing cautionary example;
+5. fix an operational, checkable definition of VERIFY vs RESAMPLE **before**
+   any trajectory is generated under either label, reusing
+   `diversity.py`'s plan-Jaccard metric as the after-the-fact audit that the
+   distinction was actually honoured.
+
+**Awaiting direction on whether, and in what order, to begin items 1–5.** None
+started.
 
 ### Closed 2026-08-10 (D-30): Track C's first diagnostic — NO-GO for diversity
 

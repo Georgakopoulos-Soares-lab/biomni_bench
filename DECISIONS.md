@@ -933,3 +933,61 @@ verification trajectory on stratum A.
 would be a new prospective design needing its own pre-registration, and per D-29
 a committed tree and a residual failure rate under the 15% threshold before it
 launches. **No GPU work, no new manifest, no prompt change was performed.**
+
+---
+
+## D-31 A constructed-verification pilot has five scientific prerequisites, none yet started
+
+**Decided:** 2026-08-10, immediately after D-30. Full note:
+`reports/verify_prerequisites.md`. **Design note only — no code, config, or
+manifest.**
+
+D-30 found exactly one intervention the evidence supports: a verification
+trajectory whose plan differs *by construction*, not by resampling. Before
+building that, this decision records that three of D-30's own headline numbers
+sit on measurement infrastructure already known to be compromised, so building
+`VERIFY` on top of it would test the infrastructure, not the hypothesis — the
+same distinction `research_north_star.md` draws between necessary unblocking
+work and scope creep.
+
+**Decision.** Treat the following as prerequisites to a *valid* experiment, not
+general cleanup, and do not start implementing any of them without separate
+approval:
+
+1. **Repair the literature/evidence channel.** 30.0% overall tool-call error,
+   concentrated exactly where VERIFY would operate (`query_pubmed` 68.9%,
+   `advanced_web_search_claude` 77.0%, `query_scholar` 80.0%) against 6–11% on
+   structured databases. Root cause is missing imports (`pymed`, `anthropic`,
+   a misnamed function), not query design — a narrow fix, not the full E1
+   environment Phase 0 already declined as disproportionate.
+2. **Instrument retrieval identity/content, not counts.** `retrieval_end`
+   currently logs only `{tools: N, data_lake: N, ...}`. Without recording
+   *which* evidence was retrieved, "VERIFY used independent evidence" is
+   unfalsifiable — the identical gap the hash-chained decision log was built to
+   close for shadow isolation (`controller.py`'s own rationale).
+3. **Bring residual failure under the 15% halt threshold** (currently 15.5%,
+   D-29). Otherwise a VERIFY-vs-RESAMPLE contrast risks the same confound D-30
+   §4 separated out for Controller v1: failure mistaken for disagreement.
+4. **Validate 1–3 against previously-healthy controls before trusting them**,
+   using the method already validated in this project — Phase 1.5's Arm-3
+   regression (reward collapsed to 0.000 on two control strata that were fine
+   at baseline) is the standing cautionary example for why a repair that fixes
+   the target failure can silently break something that worked.
+5. **Fix an operational, checkable VERIFY-vs-RESAMPLE definition before
+   generating a single trajectory under either label**, reusing
+   `diversity.py`'s plan-Jaccard metric as an after-the-fact audit, and a
+   `TrajectoryView`-style visibility barrier so VERIFY cannot reproduce the
+   plan it is meant to check by reading it.
+
+**Why now, not folded into D-30.** D-30 is a completed, defensible diagnostic
+on its own terms. Conflating "here is what we found" with "here is what to
+build next" would blur exactly the confirmatory/exploratory line this project
+insists on everywhere else.
+
+**Reversal condition.** None of the five is claimed to be sufficient on its
+own; together they are the floor for validity, not a guarantee the pilot will
+show anything. The pilot's own launch still requires D-29's preconditions
+(committed tree, gate re-exercised) independently of this list.
+
+**Status.** Nothing started. Awaiting direction on whether, and in what order,
+to begin.
