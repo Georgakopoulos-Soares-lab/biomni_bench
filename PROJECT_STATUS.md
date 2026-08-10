@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-10 (VERIFY prerequisites underway — items 5, 1, 2 DONE (D-32, D-33); items 3–4 not started)
+**Last updated:** 2026-08-10 (VERIFY prerequisites — items 5, 1, 2, 3 DONE (D-32/D-33/D-34); item 3 result: residual failure NOT improved, 28.1%; item 4 awaiting approval)
 **Phase:** **PHASE 2B COMPLETE.** Track A does not survive prospective test as
 frozen. Full report: `reports/phase2_report.md`. `reports/phase2_plan.md` §1's
 decision rule for "both co-primary hypotheses fail" selects **Track C**
@@ -887,8 +887,8 @@ to be valid. Working through them in dependency order:
 | **5** | freeze the RESAMPLE-vs-VERIFY definition | **DONE 2026-08-10 — D-32, `reports/verify_definition.md`** (done first, out of numeric order: its audit criteria set item 2's requirements) |
 | **1** | repair the literature/evidence channel | **DONE 2026-08-10 — D-33, `reports/evidence_channel_repair.md`** |
 | **2** | instrument retrieval identity/content | **DONE 2026-08-10 — D-33** (addressed together with item 1) |
-| 3 | re-measure residual failure on the repaired environment | not started |
-| 4 | validate against healthy controls | not started |
+| **3** | re-measure residual failure on the repaired environment | **DONE 2026-08-10 — D-34, `reports/residual_failure_remeasurement.md`. NOT MET: 28.1% [15.6%, 45.4%], not improved** |
+| 4 | validate against healthy controls | not started — **needs explicit approval, more live GPU trajectories** |
 
 **Item 5, closed.** VERIFY is a distinct trajectory type + controller action,
 gated by five conditions (starts from a specific candidate claim; tests the
@@ -934,11 +934,57 @@ redefined. **14 new regression tests** (423 total, up from 409) prove the
 fields are populated. No frozen artifact touched; environment change only
 (3 packages installed) plus source instrumentation.
 
-**Next: item 3** — re-measure residual trajectory failure on the repaired
-environment. Per instruction, do **not** assume the old 15.5% number still
-applies or launch a repair merely because it was once above threshold — run
-the smallest fresh diagnostic sample, exercise the corrected gate's BLOCKED
-path again, and only localize/fix further if evidence requires it.
+## Item 3, closed (2026-08-10, D-34) — residual failure re-measured: NOT improved
+
+**First live-GPU step of this engagement**, launched only after explicit
+approval given the real cost involved. Job `3388121` (the same job that
+served Phase 2B) was still live, so no new allocation was requested. 8 fresh
+instances (zero overlap with any prior manifest; `crispr_delivery` and
+`rare_disease_diagnosis` excluded — their pools are exhausted by D-22), config
+byte-identical to `configs/phase2b.yaml`, 32 real trajectories, ~62 min wall
+clock. **Throwaway: no file written to `manifests/` or `configs/`, no
+experiment ID registered.**
+
+**Result: `9/32 = 28.1%`, 95% Wilson CI **[15.6%, 45.4%]** — the point
+estimate is *above* the historical 15.5%, and the CI's lower bound sits at the
+threshold itself. Prerequisite 3 is **NOT met.** Task-matched against Phase
+2B's own rates on these same four tasks, every CI overlaps — nothing here is
+statistically distinguishable from before at this sample size, in either
+direction.
+
+**Mechanism, confirmed identical to Phase 1.5's diagnosis and confirmed
+unrelated to D-33's repair.** Every failure carries
+`terminated_reason: "consecutive_runaway"` with `peak_input_tokens` at
+32,936–40,637 — the model's ~32,768-token trained-context boundary, exactly
+the known degeneration mechanism. Only 5/9 failed trajectories even called
+`query_pubmed`, none called `query_arxiv`; the single worst instance
+(`patient_gene_detection/i0273`, 4/4 trajectories failed, 44% of this
+sample's failures) failed identically whether or not it used the repaired
+tools — ruling out the evidence-channel repair as a cause. Excluding that one
+instance: 5/28 = 17.9% [7.9%, 35.6%] — closer to, still not comfortably under,
+threshold.
+
+**No broad Arm-1/2/3-style search proposed**, per instruction — the evidence
+confirms an already-diagnosed mechanism rather than pointing at anything new.
+**Smallest targeted intervention proposed, not implemented:** screen candidate
+instances with one cheap trajectory before committing K=4 in a future
+protocol, excluding ones that hit `consecutive_runaway` — a selection-layer
+mitigation, since Phase 1.5 already tried and rejected the serving-layer fix
+(raising the context ceiling made things worse).
+
+**The gate exercise succeeded cleanly on live, first-time-seen data**: exit
+code 1, `VERDICT: BLOCKED`, correctly triggered by the residual-failure gate;
+every other gate (chain integrity, shadow isolation, leakage, failure
+override, cost accounting) passed — D-32/D-33's changes broke nothing
+upstream.
+
+**Consequence: do not launch a real prospective run assuming this number has
+improved.** It has not, on the evidence available.
+
+**Next: item 4** — validate the repaired environment against healthy
+controls. This needs its own explicit approval before launch: it requires
+more live GPU trajectories (a small paired before/after design, Phase-1.5-style),
+a second live-inference step beyond what's been approved so far.
 
 ### Closed 2026-08-10 (D-30): Track C's first diagnostic — NO-GO for diversity
 

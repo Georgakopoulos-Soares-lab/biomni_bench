@@ -1155,3 +1155,78 @@ assumption — each was decided on direct evidence and could be revisited if
 that evidence changes (e.g., a compatible `scholarly`/`free_proxy` pairing is
 released, or a non-scraping open search API becomes available). Any reversal
 must cite new measurement, not merely a change of mind.
+
+---
+
+## D-34 Residual trajectory failure re-measured: NOT improved, same known mechanism, confirmed unrelated to the evidence-channel repair
+
+**Decided:** 2026-08-10, after D-33. Full report:
+`reports/residual_failure_remeasurement.md`. Prerequisite item 3 of D-31,
+performed only after items 1 and 2 (D-33) were complete, as instructed. The
+old 15.5% number was **not** assumed to still apply, and no repair was begun
+merely because it had once been above threshold — a small, fresh, live sample
+was generated first (32 real trajectories, 8 instances, zero overlap with any
+prior manifest, throwaway — not written to `manifests/`, not a registered
+experiment ID), and the corrected gate was exercised against it live for the
+first time (not a replay of historical artifacts, as D-29's audit was).
+
+**Result.** **9/32 = 28.1%, 95% Wilson CI [15.6%, 45.4%].** The point estimate
+is *above*, not below, the historical 15.5%, and the CI's lower bound sits
+essentially at the 15% threshold itself. **Prerequisite 3 is NOT met.**
+Task-matched against Phase 2B's own per-task rates on the same four tasks
+(the only ones with unused reserved pool — `crispr_delivery` and
+`rare_disease_diagnosis` are pool-exhausted by D-22), every "after" CI
+overlaps its "before" CI: nothing here is statistically distinguishable from
+the historical rate at n=8/task, in either direction.
+
+**Mechanism, confirmed identical to Phase 1.5's diagnosis.** All 9 failures
+carry `terminated_reason: "consecutive_runaway"` and `peak_input_tokens` in
+32,936–40,637 — the model's ~32,768-token trained-context boundary, exactly
+the mechanism `context_overflow_forensics.md` diagnosed: the guard bounds the
+cost of a re-degenerating trajectory, it does not prevent the degeneration.
+Nothing about this mechanism is new.
+
+**Confirmed NOT caused by D-33's evidence-channel repair, on two independent
+pieces of evidence from this same run.** Only 5 of 9 failed trajectories
+called `query_pubmed` at all, and none called `query_arxiv` — the other 4
+failed using only already-healthy structured database tools. More decisively:
+the single worst instance (`patient_gene_detection/i0273`) failed on **all 4**
+of its independent trajectories — 44% of this sample's failures from one
+instance — and two of those four never called the repaired tools at all. The
+same degeneration occurred with or without the repaired evidence route, which
+rules out the repair as a contributing cause.
+
+**Localization.** Failure concentrates in specific pathological instances
+rather than being spread evenly — excluding `i0273` alone drops the sample to
+5/28 = 17.9% [7.9%, 35.6%], closer to but still not comfortably under the
+historical rate. This is the same concentration pattern already documented
+for `rare_disease_diagnosis` in Phase 1.5 ("10 of its 13 failures persist even
+with the repair… a residual limitation, not a repair bug") — specific
+instances degenerate regardless of task identity or which tools are called.
+
+**Decision: no broad Arm-1/2/3-style search is proposed**, per instruction —
+the evidence does not call for one. This run added no new mechanistic
+information; it confirmed the existing Arm-2 guard behaves exactly as
+designed and confirmed the evidence-channel change is not implicated.
+Re-running the 72-trajectory ablation would spend real GPU time re-measuring
+something already measured.
+
+**Smallest targeted intervention, proposed but not implemented:** screen
+candidate instances for a future held-out sample with one cheap trajectory
+before committing K=4, excluding ones that hit `consecutive_runaway` on that
+screen — a selection-layer mitigation, since Phase 1.5 already tried and
+explicitly rejected the serving-layer fix (raising the context ceiling, shown
+to make things worse). Two options left for whoever designs the next
+protocol: accept the current rate and size the statistical plan around it, or
+adopt pre-screening and re-measure before trusting the number.
+
+**The gate exercise itself succeeded cleanly.** Live, first-time-seen data,
+correctly BLOCKED (exit code 1) on the residual-failure gate; every other gate
+(chain integrity, shadow isolation, leakage, failure-override, cost
+accounting) passed — nothing about D-32/D-33's changes broke the controller,
+instrumentation, or gate machinery.
+
+**Reversal condition.** None claimed — this is a measurement, not a policy.
+A future prospective run must not assume this number has improved without its
+own fresh measurement, and per D-29 must launch from a committed tree with the
+gate's BLOCKED path already proven (done, again, here).
