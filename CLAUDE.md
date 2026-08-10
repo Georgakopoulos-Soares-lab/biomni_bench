@@ -10,8 +10,12 @@ verbalized confidence, and observable trajectory effort.
 ## Current phase
 
 **Phase 2B complete. Track A does not survive prospective test as frozen.
-The Controller-v2 redesign was adjudicated offline and REJECTED (D-28);
-Track C stands as selected, awaiting operator approval.**
+The Controller-v2 redesign was adjudicated offline and REJECTED (D-28).
+Track C's first diagnostic is also NO-GO for diversity-by-resampling (D-30):
+trajectories that disagree have the *same plans* as trajectories that agree
+(plan Jaccard 0.546 vs 0.538 against a 0.301 different-question control), and
+workflow independence does not predict error correction. Do not build a
+diversity mechanism. Awaiting operator approval on next steps.**
 Read `PROJECT_STATUS.md` first — it is the source of truth for what is done,
 what is running and what is next.
 
@@ -39,9 +43,20 @@ action set whose only non-terminal move is *resample*. **Do not rebuild it.**
 The controller question reopens only if a `VERIFY` or `REPAIR` action exists.
 
 **Two preconditions block any future prospective run** (`PROJECT_STATUS.md`,
-Current blockers): the Phase-2B code is untracked in git (`project_git.dirty =
-true` in every run record), and the residual trajectory failure rate is 15.5%,
-above the 15% halt threshold.
+Current blockers). The first is now audited (D-29,
+`reports/phase2b_provenance.md`): Phase 2B ran from an uncommitted tree, so
+**no commit is the Phase-2B execution commit** — `56b1362` is a labelled
+post-hoc recovery snapshot and must never be cited as the one that ran. The
+second is open by design: residual trajectory failure is **15.5%**, above the
+15% halt threshold, and was deliberately not repaired.
+
+Before the next prospective run: commit first and make the launcher refuse a
+dirty tree; hash every imported source file into `metadata.json` at run start;
+never overwrite a tool that produced a gating decision.
+
+**Track-C instrumentation gap worth fixing first:** retrieval events log only
+*counts* of selected tools, never their names, so evidence overlap between
+trajectories is unmeasurable from the current traces (D-30).
 
 Explicitly **out of scope** until a Track-C or redesigned-controller decision is
 made: Phase 2C's controlled-failure study (does not proceed on the frozen

@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-10 (post-Phase-2B review complete — Controller-v2 redesign REJECTED offline; **Track C confirmed**)
+**Last updated:** 2026-08-10 (Phase-2B provenance recovered and committed; **Track C first diagnostic complete — NO-GO for diversity-by-resampling**)
 **Phase:** **PHASE 2B COMPLETE.** Track A does not survive prospective test as
 frozen. Full report: `reports/phase2_report.md`. `reports/phase2_plan.md` §1's
 decision rule for "both co-primary hypotheses fail" selects **Track C**
@@ -77,6 +77,49 @@ result, which reproduces exactly from artifacts.
   had ≤1 usable trajectory** — i.e. the abstention rule fired mostly on failure,
   not on disagreement. **Not repaired; stands exactly as measured.** Any next
   prospective run needs this under threshold first.
+
+## Track C — first diagnostic (2026-08-10) — **NO-GO for diversity-by-resampling** (D-30)
+
+CPU only, ~4 min, no GPU, no model calls; no prompt, temperature, tool, model or
+generation change. Report: `reports/track_c_diversity_diagnostic.md`. Driver:
+`scripts/track_c_diversity.py`. Reusable primitives:
+`src/biomni_uncertainty/diversity.py`. Tests: `tests/test_diversity.py` (19).
+17 tables + 1 figure at `<output_root>/track_c/results/`. The three-way
+interpretation rule was fixed in the script's docstring **before** any outcome
+association was computed.
+
+**Verdict: Outcome B (correlated upstream, noisy downstream), secondary
+component of Outcome C. Do not build a diversity mechanism.**
+
+| finding | value |
+| --- | --- |
+| **plan Jaccard, disagreeing vs agreeing pairs** | 0.546 vs 0.538, **+0.008 [−0.040, +0.058]** — against a "different question" control of **0.301** |
+| composite workflow distance | +0.020 [−0.034, +0.074] (below the pre-registered 0.05 bar) |
+| **P(other correct \| this one wrong) by distance quartile** | 0.308 / 0.190 / 0.263 / 0.359 — **non-monotone**; high−low **+0.056 [−0.074, +0.180]** vs a ≥10 pp bar |
+| **correct-minority isolation from the wrong plurality** | **−0.037 [−0.131, +0.046]** — wrong sign, 6/4 split, n=10 |
+| tool-sequence similarity, disagree vs agree | −0.105 [−0.207, −0.005] — real divergence, but tool choice is barely question-specific (0.442 vs a 0.396 control) and it predicts nothing |
+
+**Failure vs disagreement, kept separate** (150 instances): 82 unanimous,
+**53 substantive disagreement (B)**, **15 insufficient evidence (A)**. Stratum A
+is an infrastructure problem — the same phenomenon as the 15.5% residual failure
+rate — and is excluded from every diversity statistic.
+
+**Three findings that reframe the track:**
+
+* **35.7% of trajectories make zero tool calls**, and are *more* accurate (0.724)
+  than tool-using ones (0.652).
+* **The evidence channel is substantially broken**: 30.0% of 1,395 tool calls
+  error, concentrated where a VERIFY action would live — `query_pubmed` **68.9%**,
+  `advanced_web_search_claude` **77.0%**, `query_scholar` **80.0%** — while
+  structured databases work (Ensembl 6.6%, ClinVar 6.4%, GWAS Catalog 7.3%).
+  Known Phase-0 limitation (E1 environment skipped); its cost is now quantified.
+* **Retrieval content was never logged** (counts only, never names) — evidence
+  overlap is unmeasurable from these traces. Top instrumentation priority.
+
+**What a VERIFY action must do differently from RESAMPLE** (§11 of the report):
+change the plan by construction, not by sampling; check the computation rather
+than re-ask for a conclusion; repair or avoid the literature channel; log
+retrieval by name; never spend a verification trajectory on stratum A.
 
 ## Phase-2B provenance recovery (2026-08-10) — D-29
 
@@ -720,7 +763,7 @@ review and neither yet closed:
 
 | check | result |
 | --- | --- |
-| `pytest -q` | **382 passed** (274 + 42 policy + 15 calibration + 25 controller + 13 phase2b_analyze + 13 controller_v2_rules) |
+| `pytest -q` | **409 passed** (382 + 8 phase2b_provenance_audit + 19 diversity) |
 | `ruff check src tests scripts` | clean |
 | `ruff format --check src tests scripts` | clean except one pre-existing drift in the untouched `tests/test_resumption.py` (a ruff-version line-wrap difference; left alone rather than reformatting a frozen test file) |
 | Import check inside the Biomni environment | OK |
@@ -759,6 +802,7 @@ reward-join bug).
 | `phase2a` | — (analysis-only, no config of its own) | offline sequential policy replay on `phase1_pooled`. **No model calls, no GPU.** 32 policies x 50 instances x 24 orderings. `scripts/phase2a_offline_replay.py`; results at `<output_root>/phase2a/results/`. Report: `reports/phase2_offline_replay.md`. |
 | `phase2b` | `configs/phase2b.yaml` | **COMPLETE.** Prospective controller evaluation, 150 held-out instances (`manifests/phase2b.jsonl`, hash `7cb5da3a…`), 600 trajectories, run 2026-08-09→10. **Both co-primary hypotheses FAIL** — `reports/phase2_report.md`. Analysis: `scripts/phase2b_analyze.py`, results at `<output_root>/phase2b/results/`. |
 | `phase2b_smoke` | `configs/phase2b_smoke.yaml` | **Complete**, 2026-08-02, 6 instances on reserved pool (+1 reused Phase-1 instance for `rare_disease_diagnosis`, DEV-1 — never pooled into analysis). |
+| `track_c_diversity` | — (analysis-only, no config of its own) | **Complete**, 2026-08-10. Structural diversity of the 600 Phase-2B traces at four levels (answer / plan / tool path / evidence), plus a different-question control. **CPU only, ~4 min, no GPU, no model calls, no generation change.** `scripts/track_c_diversity.py`; results at `<output_root>/track_c/results/`. Report: `reports/track_c_diversity_diagnostic.md`. **Verdict: Outcome B — NO-GO for diversity-by-resampling.** |
 | `controller_v2_offline` | — (analysis-only, no config of its own) | **Complete**, 2026-08-10. 18 parameter-free policies replayed over `phase2b` (realized order + all 24 orderings) and `phase1_pooled` (all 24). **CPU only, ~40 s, no model calls, no GPU, no held-out instance consumed.** `scripts/controller_v2_offline.py`; results at `<output_root>/controller_v2_offline/results/` (12 tables). Report: `reports/controller_v2_offline_assessment.md`. **Verdict: Recommendation B, no Controller v2.** |
 
 ---
@@ -831,7 +875,26 @@ written. What remains is decisions, not artifacts:
     **Both co-primary hypotheses FAIL.** No policy tuning occurred after
     outcomes were seen — the frozen controller is reported exactly as it ran.
 
-### Next action — **CLOSED 2026-08-10 (D-28): Track C, no Controller v2**
+### Next action — awaiting operator approval
+
+Both closed items below are done. **Nothing is running. No GPU job, no new
+manifest, no prompt change, no diversity mechanism.**
+
+The open question is whether to design a **constructed-verification pilot** —
+the only intervention the Track-C diagnostic supports (D-30 §11): a verification
+trajectory given a *different plan by construction*, on a task whose evidence
+channel is known to work. That would be a new prospective design needing its own
+pre-registration, and per D-29 it cannot launch until (a) the tree is committed
+and the launcher refuses a dirty tree, and (b) residual trajectory failure is
+under the 15% threshold (currently **15.5%**, unrepaired by design).
+
+### Closed 2026-08-10 (D-30): Track C's first diagnostic — NO-GO for diversity
+
+See the Track-C section above. Outcome B: trajectories that disagree have the
+same plans as trajectories that agree, and workflow independence does not
+predict error correction.
+
+### Closed 2026-08-10 (D-28): Track C, no Controller v2
 
 ~~Whether to pursue the §11 redesign as a new prospective run, or take Track C
 as literally selected, is the open decision.~~ **Resolved.** The redesign was

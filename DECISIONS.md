@@ -853,3 +853,83 @@ decision — fix forward in a commit.
 **Not addressed here, deliberately.** The second prospective blocker stands
 exactly as measured: residual trajectory failure **15.5%** (93/600), above the
 pre-registered 15% threshold. No repair was attempted.
+
+---
+
+## D-30 Track C's first diagnostic is NO-GO for diversity-by-resampling: trajectories that disagree have the same plans
+
+**Decided:** 2026-08-10, from `reports/track_c_diversity_diagnostic.md`
+(experiment `track_c_diversity`, CPU only, no GPU, no model calls, nothing about
+prompts/temperature/tools/generation changed). The three-way interpretation rule
+was written into `scripts/track_c_diversity.py`'s docstring **before any outcome
+association was computed**, so the label could not be fitted to the result.
+
+**Question.** When Biomni trajectories disagree, are they performing
+meaningfully different analyses, or following correlated reasoning paths and
+producing noisy different final answers?
+
+**Decision. Outcome B (correlated upstream, noisy downstream), with a secondary
+component of Outcome C. NO-GO for "generate more diverse trajectories" as the
+Track-C intervention.** Do not build a diversity mechanism.
+
+**The decisive numbers**, all instance-clustered bootstraps on 150 held-out
+instances / 566 both-usable within-instance pairs:
+
+* **Plans are identical whether or not the conclusions agree**: plan Jaccard
+  0.546 (disagreeing pairs) vs 0.538 (agreeing), difference **+0.008, 95% CI
+  [−0.040, +0.058]** — against a "different question, same task" control of
+  **0.301**. The control is what makes this readable: the metric has real
+  discriminative power, and it finds no difference. **Divergence happens
+  downstream of the plan, not in it.**
+* Composite workflow distance: +0.020 [−0.034, +0.074]. Below the 0.05 bar and
+  CI covering 0 ⇒ Outcome B by its pre-registered criterion.
+* **Independence does not predict correction.** P(the other trajectory is
+  correct | this one is wrong), by workflow-distance quartile: 0.308 / 0.190 /
+  0.263 / 0.359 — **non-monotone**. High-minus-low **+0.056, 95% CI [−0.074,
+  +0.180]**, against a pre-registered ≥10 pp bar.
+* **A correct minority is not more isolated** from the wrong plurality than that
+  plurality is from itself: **−0.037, 95% CI [−0.131, +0.046]**, the wrong sign,
+  splitting 6/4 across only 10 instances.
+* Outcome A is rejected on both of its conditions. Tool paths *do* diverge when
+  answers do (tool-sequence similarity −0.105, CI excluding 0) — that is the
+  Outcome-C component — but the control shows tool choice is barely
+  question-specific at all (0.442 within-instance vs **0.396** on unrelated
+  questions), so it is variation within a task-level habit, and it buys nothing.
+
+**Failure is separated from disagreement, and stays separated.** Of 150
+instances: 82 unanimous, **53 substantive disagreement (B)**, **15 insufficient
+evidence (A: fewer than two usable trajectories)**. Stratum A is reported as an
+agent/infrastructure reliability problem and is excluded from every diversity
+statistic. It is the same phenomenon as the unresolved 15.5% residual failure
+rate, and 12 of its 15 instances have no correct trajectory to find.
+
+**Three findings that reframe the track.**
+
+1. **35.7% of trajectories make zero tool calls**, and they are *more* accurate
+   (0.724) than tool-using ones (0.652). Correct answers on this benchmark come
+   largely from parametric memory, not from evidence retrieval.
+2. **The evidence channel is substantially broken**: 30.0% of 1,395 tool calls
+   error, concentrated exactly where a VERIFY action would live —
+   `query_pubmed` **68.9%**, `advanced_web_search_claude` **77.0%**,
+   `query_scholar` **80.0%** — while structured databases work (GWAS Catalog
+   7.3%, Ensembl 6.6%, ClinVar 6.4%). This is the known Phase-0 decision to skip
+   the full E1 environment (`reports/phase0_environment.md`), whose cost has now
+   been quantified against the mechanism it blocks;
+   `reports/phase2_plan.md` §2.3 anticipated precisely this.
+3. **Retrieval content was never logged** — only counts of selected tools, never
+   names. Evidence overlap is therefore unmeasurable from these traces. This is
+   the single most valuable thing to instrument before any Track-C run.
+
+**What a useful VERIFY action must do differently from RESAMPLE**, which is the
+deliverable this diagnostic existed to produce: change the *plan* by
+construction rather than by sampling; check the *computation* rather than
+re-ask for a conclusion (the clearest case in the sample has four trajectories
+sharing a near-verbatim plan, Jaccard up to 0.931, returning four different
+answers to one deterministic ORF computation); repair or avoid the literature
+channel; make retrieval mandatory and logged by name; and never spend a
+verification trajectory on stratum A.
+
+**Not decided here.** Whether to run a constructed-verification pilot. That
+would be a new prospective design needing its own pre-registration, and per D-29
+a committed tree and a residual failure rate under the 15% threshold before it
+launches. **No GPU work, no new manifest, no prompt change was performed.**
