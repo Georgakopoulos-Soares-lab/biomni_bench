@@ -1410,3 +1410,85 @@ passed.**
 scientific claim. `--allow-dirty` is the intentional escape hatch for
 exploratory work (e.g. a future item-3-style diagnostic) and is not itself a
 reversal of the rule; using it for anything confirmatory would be.
+
+---
+
+## D-37 Step 1 offline preflight: the stratum partitions reconciled; mode-A headroom is 7.1% (below the 15% floor) — reshapes Step 2
+
+**Decided:** 2026-08-10. Full report: `reports/track_c_preflight.md`. Step 1
+of the "Next steps — live GPU node" plan. **CPU-only, ~15 s, no GPU, no model
+calls, no held-out instance touched.**
+
+**1a — reconciliation, not a decision.** Two partitions of the same 150
+`phase2b` instances had been quoted without stating they are different,
+non-nested classifications: D-30's `evidence_state` scheme (82 unanimous /
+53 substantive disagreement / 15 insufficient evidence, based on *how much
+usable evidence exists*) versus a "91 unanimous / 51 split / 45
+no-correct-trajectory" framing (based on *distinct-answer count* and
+*outcome*, two further different axes). Recomputed directly and
+cross-tabulated: the "91" figure is 82 genuine unanimous instances **plus 9
+single-usable-trajectory instances** that trivially have "1 distinct answer"
+but are not unanimity in any real sense (correctly classified into stratum A
+by `evidence_state`); "51 split" is the 2-3-distinct-answer slice of stratum
+B's full 53 (which also holds 2 four-way-disagreement instances); "45
+no-correct-trajectory" is an orthogonal, outcome-based axis cutting across
+all three strata, including **13 of the 82 true-unanimous instances**
+(unanimously wrong). One canonical evidence_state × outcome table now exists
+and is what every later step cites. **100% of recoverable headroom sits in
+stratum B by construction** (`oracle == plurality` on every stratum-A and
+unanimous row, asserted by test) — 0.093 [0.047, 0.140] overall, 0.264
+[0.151, 0.377] on stratum B's 53 instances alone.
+
+**1b — decisive, and it reshapes Step 2.** Mode-A eligibility (computable
+from raw prompt data, no external lookup) was fixed *before* classification,
+from one full prompt read per task (all 10, template-generated so one
+template determines every instance of a task): **only `lab_bench_seqqa`
+qualifies.** `screen_gene_retrieval` was the one case that could plausibly
+have gone the other way from its name ("strongest perturbation effect")
+and was resolved by reading the full prompt — no perturbation data is
+supplied, only a research description and a candidate list, so it is not
+mode-A like every other non-`seqqa` task. **Only 1 of stratum B's 53
+instances is `lab_bench_seqqa`** — the task is already 86.7% accurate
+(D-30 §9), so almost nothing is left to disagree about there. Mode-A
+headroom share: **1.0 of 14.0 = 7.1%**, below the pre-registered 15% floor.
+**Verdict, per the rule fixed before this number existed: "the
+computational-verification route is not where the headroom is."** This
+confirms, as a measured fact rather than a hunch, the reservation raised
+before any of this work started: tasks with re-derivable structure are the
+tasks that already work; tasks with headroom require external knowledge, not
+computation.
+
+**1c — replicates on both pools.** Degeneration (`consecutive_runaway`)
+concentrates in the no-correct-trajectory bucket, not the split stratum, on
+both `phase2b` (68.9% vs 27.3%, n=45/33) and `phase1_pooled` (33.3% vs
+21.4%, n=18/14) — same direction, `phase1_pooled`'s gap smaller and its CIs
+wide at this n. D-34's proposed pre-screening mitigation is **substantially,
+though not completely, dissolved** as a bias concern: it would remove
+instances with nothing to learn far more than it trims the target
+population, but split-stratum instances are not immune (21-27% still
+degenerate).
+
+**Consequence for Step 2.** The two-arm adjudication design (one-shot vs.
+tool-enabled) is unaffected in mechanics — it was never mode-A-specific.
+What changes: the originally planned "computational vs. inferential"
+task-family stratification is no longer a meaningful two-group split (one
+mode-A instance total in stratum B); it is restated as
+**evidence-retrievable-via-a-working-tool** (structured-database tasks, the
+D-33-repaired/already-healthy route) versus **domain-judgment tasks with no
+reliable retrieval route** (the tasks whose evidence needs D-33 already
+found unmet). Step 2 is understood, before it runs, as principally a test of
+evidence-based/inferential adjudication, not a mixed computational test.
+
+**Tests.** `tests/test_track_c_preflight.py` (11): the exact reconciliation
+point (a single usable trajectory is stratum A, not unanimity, though its
+`distinct_usable` count is trivially 1); headroom is exactly zero whenever
+oracle equals plurality and positive exactly when a wrong plurality misses a
+present correct minority; the mode-A eligible set is pinned to exactly
+`{lab_bench_seqqa}` so a future edit cannot silently widen or narrow it
+without the test failing; every task has a written eligibility
+justification, not a bare label. **Full suite: 444 passed.**
+
+**Reversal condition.** None claimed — this is measurement and accounting,
+not a policy choice. The mode-A eligibility classification is task-level and
+fixed; revisiting it requires a new, explicitly-labelled classification pass
+with its own justification, not a silent edit to `MODE_A_ELIGIBLE_TASKS`.

@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-10 (D-29 process debt closed (D-36); starting the "Next steps — live GPU node" plan: Step 0 done, Step 1 (offline preflight) next)
+**Last updated:** 2026-08-10 (Steps 0-1 of the live-GPU-window plan closed (D-36/D-37); mode-A headroom is 7.1%, below the 15% floor — Step 2's pilot reframed around evidence-based adjudication; Step 2 next)
 
 ## Live-GPU-window plan underway (2026-08-10)
 
@@ -33,9 +33,47 @@ count unchanged at 150) — but the methodology was wrong and is not to be
 repeated. Corrected to a nonexistent-path check, which proves the guard's
 ordering without risk.
 
-**Next: Step 1** — CPU-only offline preflight (stratum reconciliation,
-verifiability×headroom crossing, degeneration×stratum contingency), decision
-rules frozen in the script before any number is computed.
+### Step 1, closed (2026-08-10, D-37) — preflight complete; 1b reshapes Step 2
+
+`reports/track_c_preflight.md`. CPU-only, ~15 s.
+
+**1a (reconciliation).** Two previously-quoted stratum partitions of the same
+150 instances are different, non-nested classifications, now reconciled into
+one canonical table. The "91 unanimous" figure = 82 genuine unanimous + 9
+single-usable-trajectory instances (correctly stratum A, not unanimity); "51
+split" = the 2–3-distinct-answer slice of stratum B's full 53; "45
+no-correct-trajectory" is an orthogonal outcome axis including 13 of the 82
+true-unanimous instances (unanimously wrong). **100% of recoverable headroom
+sits in stratum B by construction** — 0.093 [0.047, 0.140] overall, 0.264
+[0.151, 0.377] on stratum B's 53 instances.
+
+**1b (decisive).** Mode-A eligibility fixed *before* classification from one
+full prompt per task: **only `lab_bench_seqqa` qualifies**, and only 1 of
+stratum B's 53 instances is that task (it's already 86.7% accurate — almost
+nothing left to disagree about). **Mode-A headroom share: 7.1%, below the
+15% floor.** Verdict, per the pre-fixed rule: **"the computational-verification
+route is not where the headroom is."** Confirms, as measurement, the
+reservation raised before this work started.
+
+**1c (replicates on both pools).** Degeneration concentrates in the
+no-correct-trajectory bucket, not the split stratum: `phase2b` 68.9% vs
+27.3%; `phase1_pooled` 33.3% vs 21.4% — same direction, smaller gap, wide
+CIs at n=14–18. D-34's pre-screening idea is substantially, not completely,
+de-risked on the bias objection.
+
+**Consequence for Step 2 (already applied there):** the two-arm design
+(one-shot vs. tool-enabled adjudication) is unaffected in mechanics. The
+"computational vs. inferential" stratification is no longer meaningful (one
+mode-A instance in stratum B); restated as
+evidence-retrievable-via-a-working-tool vs. domain-judgment-with-no-reliable-
+route. Step 2 is now understood as testing evidence-based adjudication, not
+mixed computational verification.
+
+11 new tests (444 total). No frozen artifact touched.
+
+**Next: Step 2** — freeze the acceptance rule (floor/ceiling from 1a's
+canonical table, GO/NO-GO/INCONCLUSIVE bars), then the GPU candidate-
+adjudication pilot, 2 arms, on stratum B instances from both pools.
 
 ## VERIFY prerequisites — all five adjudicated (2026-08-10)
 
