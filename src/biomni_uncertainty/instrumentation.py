@@ -41,6 +41,30 @@ def _arg_hash(payload: Any) -> str:
     return hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()[:16]
 
 
+def _resource_identity(resource: Any) -> str:
+    """A stable, short identifier for a retrieval-selected resource.
+
+    Mirrors ``biomni.model.retriever._format_resources_for_prompt``'s own
+    three-way handling (dict / str / attribute-bearing object) so the logged
+    identity is the same name the retrieval prompt itself showed the model -
+    never the full description, which stays out of the event log.
+    """
+    if isinstance(resource, dict):
+        name = resource.get("name")
+        if name:
+            return str(name)
+    elif isinstance(resource, str):
+        return resource
+    else:
+        name = getattr(resource, "name", None)
+        if name:
+            return str(name)
+    # No usable name field: fall back to a content hash so two occurrences of
+    # the same nameless resource still compare equal, and two different ones
+    # do not silently collide under a shared placeholder.
+    return f"unnamed:{_arg_hash(resource)}"
+
+
 @dataclass
 class TrajectoryStats:
     """Running counters that become the run record's trajectory statistics."""
@@ -351,6 +375,17 @@ class AgentInstrumentation:
                     status, error_text = _classify_execution_result(text, timeout)
                 if status != "ok":
                     inst.stats.failed_tool_call_count += 1
+                # Content hash of the whole block's output - the evidence a
+                # VERIFY-vs-RESAMPLE audit (reports/verify_definition.md SS5.3)
+                # needs to tell "retrieved the same thing" from "retrieved
+                # something different". Block-level, not per-tool: Biomni
+                # tools run inside one <execute> block whose combined stdout
+                # is the only observable output, so when a block calls more
+                # than one tool this hash cannot be attributed to a single
+                # call. That limitation is inherent to how tools execute, not
+                # a shortcut taken here, and is carried into every downstream
+                # user of this field rather than papered over.
+                output_hash = hashlib.sha256(text.encode("utf-8", "ignore")).hexdigest()[:16] if text else None
                 inst.logger.emit(
                     "code_execution_end",
                     step_index=step,
@@ -360,6 +395,7 @@ class AgentInstrumentation:
                     status=status,
                     error=error_text,
                     output_bytes=len(text.encode("utf-8", "ignore")),
+                    output_hash=output_hash,
                     stdout_excerpt=text[: inst.stdout_limit],
                     stdout_tail=text[-inst.stdout_limit :] if len(text) > inst.stdout_limit else None,
                 )
@@ -370,6 +406,7 @@ class AgentInstrumentation:
                         tool_name=name,
                         status=status,
                         duration_seconds=dt,
+                        evidence_output_hash=output_hash,
                     )
             return result
 
@@ -445,6 +482,13 @@ class AgentInstrumentation:
                 "retrieval_end",
                 duration_seconds=time.perf_counter() - t0,
                 selected={k: len(v) for k, v in (out or {}).items()},
+                # Identities of what was actually selected, not just how many -
+                # a Track-C limitation (D-30 SS10): counts alone cannot say
+                # whether two trajectories drew on the same or different
+                # resources. Names only, bounded by the existing retrieval
+                # caps (configs/*.yaml `trajectory_budget.retrieval_max_*`),
+                # never full descriptions or content.
+                selected_identities={k: [_resource_identity(r) for r in v] for k, v in (out or {}).items()},
             )
             return out
 

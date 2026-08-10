@@ -1060,3 +1060,98 @@ uncalibrated until there is data to calibrate it from.
 item 2. Any later revision — including after seeing VERIFY trial data — must
 be an explicit, labelled amendment, never a silent edit, matching the standing
 rule for every other frozen protocol in this project.
+
+---
+
+## D-33 Evidence-channel repair: two tools fixed, three excluded on evidence, retrieval provenance instrumented
+
+**Decided:** 2026-08-10. Full report: `reports/evidence_channel_repair.md`.
+Prerequisite items 1 and 2 of D-31, addressed together since a route is only a
+valid VERIFY evidence source if it is both reliable and auditable.
+**CPU-only, no GPU, no agent driver, no manifest.** Environment change only:
+`pymed`, `arxiv`, `scholarly` (+`free_proxy`) installed into `biomni_unc`; two
+source files instrumented; no upstream Biomni code touched.
+
+**Repaired (local dependency, reproducibly fixed, no proprietary or fragile
+mechanism):**
+
+* `query_pubmed` — `from pymed import PubMed` was failing on a missing local
+  package (`No module named 'pymed'`, D-30's 68.9% error). `pip install pymed`
+  (a thin wrapper over NCBI's public E-utilities, no key required). **8/8
+  (100%) real Phase-2B queries succeeded after the fix**, tested directly
+  against the tool function, no agent involved.
+* `query_arxiv` — same class of fix (`arxiv` package, public API, no key).
+  **8/8 (100%)**.
+
+**Excluded, each for a reason confirmed by direct measurement, not assumed:**
+
+* `query_scholar` — installing `scholarly` does **not** fix it: a version
+  mismatch between `scholarly` 1.7.11 and its own `free_proxy` 1.2.2 dependency
+  makes `FreeProxies()` raise deterministically
+  (`TypeError: FreeProxy.get_proxy_list() missing 1 required positional
+  argument: 'repeat'`), reproduced identically on every trial (**0/8, 100%
+  error**). Even pinned to compatible versions, the underlying mechanism —
+  scraping Google Scholar through free, unauthenticated rotating proxies — is
+  inherently fragile. Repair rejected as disproportionate and non-durable;
+  no open substitute exists; excluded.
+* `advanced_web_search_claude` — requires `anthropic` + `ANTHROPIC_API_KEY`.
+  **Never tested.** Repair rejected outright per instruction and per the
+  standing rule against proprietary API dependencies (`CLAUDE.md`, extended
+  from Phase 1): it would add an unaccounted-for closed model to a testbed
+  whose subject is an open-weights agent, and would confound any VERIFY result
+  with "a stronger model did the verifying" — a different, larger, explicitly
+  deferred experiment (`reports/phase2_plan.md` §2.9).
+* **`search_google` — a new finding, not anticipated going in.** D-30 read it
+  as healthy (3.4% error, 2/59). Direct testing on 8 real queries plus a
+  maximally-easy control query found **0/8 (0%) succeeded, with zero
+  exceptions raised** — the underlying `googlesearch-python` scraper returns
+  an empty generator, most likely because Google serves non-browser-like
+  requests a blocking/consent response rather than results. **The old
+  error-rate metric missed this entirely** because the tool catches its own
+  exceptions and returns an empty string, which the runner's failure
+  classification counts as `status: "ok"`. This is exactly the "empty vs
+  error" distinction this diagnosis was designed to surface, and it removes
+  what would otherwise have been VERIFY's fallback general-search route.
+
+**Consequence.** VERIFY's evidence route is `query_pubmed` + `query_arxiv` +
+the eight already-healthy structured databases (unchanged, not re-tested — no
+reason to expect drift, and re-testing everything already healthy would be the
+"install everything" scope explicitly ruled out). **No general web-search tool
+is currently reliable for VERIFY.** This is a real coverage limit, not a gap in
+the repair: tasks whose evidence need is general web search may have no
+currently-reliable independent-evidence route.
+
+**Retrieval provenance instrumented**, closing the gap D-30 §10.2 and
+`reports/verify_definition.md` §5.3 both flagged: `retrieval_end` now logs
+`selected_identities` (actual resource names, mirroring
+`retriever._format_resources_for_prompt`'s three input shapes) alongside the
+existing counts; `code_execution_end`/`tool_call_end` now carry a content hash
+of tool output (`output_hash`/`evidence_output_hash`), stated as **block-level,
+not call-level** — Biomni tools execute inside one `<execute>` block, so a
+block calling more than one tool cannot have its hash attributed to a single
+call, and that limitation is documented rather than hidden. `diversity.py`
+exposes `retrieval_identity_jaccard` and `evidence_output_jaccard`, kept
+**outside `SIMILARITY_COMPONENTS`** so D-30's already-reported
+`workflow_distance` is not silently redefined by data that postdates it.
+Traces from every prior run (Phase 1 through Phase 2B) have empty
+identity/hash fields, which read as "not comparable," never "no overlap" —
+the same discipline the rest of `diversity.py` already enforces, now checked
+by test for these two fields specifically.
+
+**Regression tests: 14 new** (`tests/test_instrumentation.py`, 9;
+`tests/test_diversity.py`, +5), proving the fields are populated, not merely
+present in the code — including that identical output hashes identically and
+different output does not, that empty output hashes to `None` rather than a
+collision-prone placeholder, and that the two new metrics never enter
+`workflow_distance`. **Full suite: 423 passed.**
+
+**What remains open.** Coverage for non-literature evidence needs; whether the
+repaired channel changes behaviour on healthy controls (item 4, next);
+whether residual failure has moved (item 3); the §5.3 audit threshold, still
+uncalibrated pending real VERIFY trial data.
+
+**Reversal condition.** None of the three exclusions is permanent by
+assumption — each was decided on direct evidence and could be revisited if
+that evidence changes (e.g., a compatible `scholarly`/`free_proxy` pairing is
+released, or a non-scraping open search API becomes available). Any reversal
+must cite new measurement, not merely a change of mind.

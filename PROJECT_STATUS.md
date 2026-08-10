@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-10 (VERIFY prerequisites approved and underway — item 5 (RESAMPLE/VERIFY definition) DONE, D-32; items 1–4 not started)
+**Last updated:** 2026-08-10 (VERIFY prerequisites underway — items 5, 1, 2 DONE (D-32, D-33); items 3–4 not started)
 **Phase:** **PHASE 2B COMPLETE.** Track A does not survive prospective test as
 frozen. Full report: `reports/phase2_report.md`. `reports/phase2_plan.md` §1's
 decision rule for "both co-primary hypotheses fail" selects **Track C**
@@ -885,8 +885,8 @@ to be valid. Working through them in dependency order:
 | # | item | status |
 | --- | --- | --- |
 | **5** | freeze the RESAMPLE-vs-VERIFY definition | **DONE 2026-08-10 — D-32, `reports/verify_definition.md`** (done first, out of numeric order: its audit criteria set item 2's requirements) |
-| 1 | repair the literature/evidence channel | not started |
-| 2 | instrument retrieval identity/content | not started |
+| **1** | repair the literature/evidence channel | **DONE 2026-08-10 — D-33, `reports/evidence_channel_repair.md`** |
+| **2** | instrument retrieval identity/content | **DONE 2026-08-10 — D-33** (addressed together with item 1) |
 | 3 | re-measure residual failure on the repaired environment | not started |
 | 4 | validate against healthy controls | not started |
 
@@ -907,13 +907,38 @@ pending item 2's data. `VerifyView`'s forbidden list is **stricter** than
 prevent anchoring a VERIFY verdict on it — relevant because S4 is a live
 candidate signal.
 
-**Next: item 1** — diagnose the literature/evidence-channel failures (30.0%
-overall tool-call error, 68–80% on the tools VERIFY would need) and produce the
-narrowest reproducible fix, per `reports/verify_prerequisites.md` — not the
-full E1 environment.
+**Items 1+2, closed.** Two tools genuinely repaired by installing missing pure
+Python packages: `query_pubmed` (68.9% error → **0/8, 100% success** on real
+Phase-2B queries after `pip install pymed`) and `query_arxiv` (→ **0/8, 100%**
+after `pip install arxiv`). Three excluded on direct evidence: `query_scholar`
+(installing `scholarly` does not fix it — a version mismatch with its own
+`free_proxy` dependency makes it fail deterministically, 8/8, and the
+underlying free-proxy-scraping mechanism is inherently fragile regardless);
+`advanced_web_search_claude` (never tested — requires a proprietary Anthropic
+API key, rejected per the standing rule against that dependency and the
+confound it would introduce); and **`search_google`, a new finding** — D-30
+read it as healthy (3.4% error) but direct testing found **0/8 (0%) succeed,
+zero exceptions raised**, because the scraper returns empty silently and the
+old failure classification only catches exceptions. **VERIFY's evidence route
+is therefore `query_pubmed` + `query_arxiv` + the 8 already-healthy structured
+databases — no general web-search tool is currently reliable.**
 
-**Awaiting direction on whether, and in what order, to begin items 1–5.** None
-started.
+Retrieval provenance instrumented in the same pass: `retrieval_end` now logs
+`selected_identities` (actual resource names) alongside counts;
+`code_execution_end`/`tool_call_end` now carry a content hash of tool output
+(block-level, not call-level — Biomni's execution model doesn't allow finer
+attribution, stated not hidden). `diversity.py` exposes
+`retrieval_identity_jaccard`/`evidence_output_jaccard`, kept **outside**
+`SIMILARITY_COMPONENTS` so D-30's `workflow_distance` is not silently
+redefined. **14 new regression tests** (423 total, up from 409) prove the
+fields are populated. No frozen artifact touched; environment change only
+(3 packages installed) plus source instrumentation.
+
+**Next: item 3** — re-measure residual trajectory failure on the repaired
+environment. Per instruction, do **not** assume the old 15.5% number still
+applies or launch a repair merely because it was once above threshold — run
+the smallest fresh diagnostic sample, exercise the corrected gate's BLOCKED
+path again, and only localize/fix further if evidence requires it.
 
 ### Closed 2026-08-10 (D-30): Track C's first diagnostic — NO-GO for diversity
 

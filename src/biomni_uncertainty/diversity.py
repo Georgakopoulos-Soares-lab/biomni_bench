@@ -12,7 +12,7 @@ level                   what is compared
 answer                  canonical cluster keys (already computed upstream)
 plan                    content words of the **first** ``<think>`` block
 tool path               the ordered list of tool names actually invoked
-evidence                query arguments issued, and exact code-block hashes
+evidence                query arguments; retrieval-selected identities and evidence-output content hashes where available (see below)
 ======================  ====================================================
 
 **Why the first ``<think>`` block is the plan.** It is emitted before any tool
@@ -24,11 +24,21 @@ did.
 
 **What is deliberately not used.** ``system_prompt.txt`` takes exactly two
 distinct values across all 600 Phase-2B trajectories (one per condition), so it
-is a static base prompt and carries no per-trajectory retrieval signal. The
-``retrieval_end`` event records only *counts* of selected tools, never their
-names, so retrieval overlap cannot be measured directly; the counts are carried
-as a coarse descriptor and nothing is inferred from them about *which* evidence
-was retrieved.
+is a static base prompt and carries no per-trajectory retrieval signal.
+
+**Retrieval and evidence identity (added for the VERIFY prerequisites,
+`reports/verify_prerequisites.md` item 2 / `reports/evidence_channel_repair.md`).**
+Traces extracted from runs generated *after* the instrumentation change carry
+``retrieval_selected_identities`` (the actual names retrieval chose, not just
+counts) and ``evidence_output_hashes`` (a content hash per code-execution block
+that made a tool call). ``pairwise_diversity`` exposes these as
+``retrieval_identity_jaccard`` and ``evidence_output_jaccard`` - kept **outside**
+``SIMILARITY_COMPONENTS`` and never folded into ``workflow_distance``, so the
+figures already reported in D-30 stay exactly as reported. Traces from earlier
+runs (all of Phase 1 through Phase 2B) simply have empty identity/hash fields,
+which `jaccard()` correctly reports as "not comparable" rather than "no
+overlap" - the same missing-vs-zero distinction the rest of this module
+already enforces.
 
 No embedding model and no LLM judge is used. If those become necessary the
 report says so explicitly and labels the result exploratory.
@@ -116,6 +126,15 @@ class TrajectoryTrace:
     n_tool_calls: int = 0
     n_failed_tool_calls: int = 0
     retrieval_selected: dict[str, int] = field(default_factory=dict)
+    #: names of the resources retrieval actually selected, added by the VERIFY
+    #: prerequisite instrumentation (reports/evidence_channel_repair.md). Older
+    #: run directories predate this field and yield an empty dict here, which
+    #: `pairwise_diversity` treats as "not comparable", never as "no overlap".
+    retrieval_selected_identities: dict[str, tuple[str, ...]] = field(default_factory=dict)
+    #: content hashes of tool-call output, one per code-execution block that
+    #: contained at least one detected tool call. Block-level, not per-call -
+    #: see the caveat in instrumentation.py's `_patch_execution`.
+    evidence_output_hashes: tuple[str, ...] = ()
     extras: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -155,6 +174,8 @@ def extract_trace(run_dir: str | Path, meta: dict[str, Any]) -> TrajectoryTrace:
     code_hashes: list[str] = []
     query_text: list[str] = []
     retrieval: dict[str, int] = {}
+    retrieval_identities: dict[str, tuple[str, ...]] = {}
+    evidence_hashes: list[str] = []
     n_failed = 0
 
     ev = d / "events.jsonl"
@@ -179,11 +200,15 @@ def extract_trace(run_dir: str | Path, meta: dict[str, Any]) -> TrajectoryTrace:
                     n_failed += 1
                 else:
                     tool_ok.append(str(p.get("tool_name") or ""))
+                if p.get("evidence_output_hash"):
+                    evidence_hashes.append(str(p["evidence_output_hash"]))
             elif et == "code_execution_start":
                 if p.get("code_hash"):
                     code_hashes.append(str(p["code_hash"]))
             elif et == "retrieval_end":
                 retrieval = dict(p.get("selected") or {})
+                raw_ids = p.get("selected_identities") or {}
+                retrieval_identities = {k: tuple(str(x) for x in v) for k, v in raw_ids.items()}
 
     plan_text = ""
     n_think = 0
@@ -214,6 +239,8 @@ def extract_trace(run_dir: str | Path, meta: dict[str, Any]) -> TrajectoryTrace:
         n_tool_calls=len(tool_seq),
         n_failed_tool_calls=n_failed,
         retrieval_selected=retrieval,
+        retrieval_selected_identities=retrieval_identities,
+        evidence_output_hashes=tuple(evidence_hashes),
     )
 
 
@@ -228,6 +255,15 @@ SIMILARITY_COMPONENTS: tuple[str, ...] = (
 )
 
 
+def _pooled_identities(selected: dict[str, tuple[str, ...]]) -> frozenset[str]:
+    """Flatten a per-category selected-identity dict into one pooled set.
+
+    Category-qualified (``"tools:query_pubmed"``, not bare ``"query_pubmed"``)
+    so a data-lake entry and a tool that happen to share a name never collide.
+    """
+    return frozenset(f"{cat}:{name}" for cat, names in selected.items() for name in names)
+
+
 def pairwise_diversity(a: TrajectoryTrace, b: TrajectoryTrace) -> dict[str, float | None]:
     """Every structural comparison between two trajectories of one instance.
 
@@ -235,6 +271,13 @@ def pairwise_diversity(a: TrajectoryTrace, b: TrajectoryTrace) -> dict[str, floa
     ``None`` when no component is computable - which happens exactly when one of
     the two trajectories produced neither a plan nor a tool call, i.e. when there
     is nothing to compare rather than nothing in common.
+
+    ``retrieval_identity_jaccard`` and ``evidence_output_jaccard`` are **not**
+    part of ``SIMILARITY_COMPONENTS`` and never enter ``workflow_distance`` -
+    they were added after D-30's numbers were reported, and folding them in
+    would silently redefine an already-cited figure. They exist to support the
+    VERIFY audit in `reports/verify_definition.md` SS5.3, which needs the
+    identity/content overlap directly rather than as a proxy through query text.
     """
     out: dict[str, float | None] = {
         "plan_jaccard": jaccard(a.plan_tokens, b.plan_tokens),
@@ -249,6 +292,11 @@ def pairwise_diversity(a: TrajectoryTrace, b: TrajectoryTrace) -> dict[str, floa
         "code_hash_jaccard": jaccard(frozenset(a.code_hashes), frozenset(b.code_hashes)),
         "shared_code_blocks": float(len(set(a.code_hashes) & set(b.code_hashes))),
         "both_used_no_tools": float(not a.has_tools and not b.has_tools),
+        # -- prerequisite-item-2 metrics: identity/content, not proxies -----
+        "retrieval_identity_jaccard": jaccard(
+            _pooled_identities(a.retrieval_selected_identities), _pooled_identities(b.retrieval_selected_identities)
+        ),
+        "evidence_output_jaccard": jaccard(frozenset(a.evidence_output_hashes), frozenset(b.evidence_output_hashes)),
     }
     comps = [out[k] for k in SIMILARITY_COMPONENTS if out.get(k) is not None]
     out["n_components"] = float(len(comps))

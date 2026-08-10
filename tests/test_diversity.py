@@ -157,6 +157,65 @@ def test_shared_code_blocks_detect_literal_workflow_duplication():
 
 
 # --------------------------------------------------------------------------
+# Retrieval identity / evidence content (VERIFY prerequisite item 2)
+# --------------------------------------------------------------------------
+
+
+def trace_with_evidence(name: str, *, identities=None, output_hashes=()) -> TrajectoryTrace:
+    return TrajectoryTrace(
+        run_id=name,
+        task_name="t",
+        task_instance_id=1,
+        trajectory_index=0,
+        condition="instrumented",
+        completed=True,
+        failure_class=None,
+        retrieval_selected_identities=identities or {},
+        evidence_output_hashes=tuple(output_hashes),
+    )
+
+
+def test_retrieval_identity_jaccard_is_category_qualified():
+    """A data-lake entry and a tool that happen to share a bare name must not
+    collide - the category prefix is what prevents that."""
+    a = trace_with_evidence("a", identities={"tools": ("query_pubmed",), "data_lake": ("query_pubmed",)})
+    b = trace_with_evidence("b", identities={"tools": ("query_pubmed",)})
+    d = pairwise_diversity(a, b)
+    # a has 2 distinct qualified identities, b has 1, intersection is 1 -> 1/2
+    assert d["retrieval_identity_jaccard"] == pytest.approx(1 / 2)
+
+
+def test_retrieval_identity_jaccard_is_none_for_traces_predating_the_instrumentation():
+    """Old runs (all of Phase 1 through Phase 2B) have no identity field at all -
+    this must read as 'not comparable', not as 'zero overlap', exactly like every
+    other empty-side case in this module."""
+    a = trace_with_evidence("a")
+    b = trace_with_evidence("b", identities={"tools": ("query_pubmed",)})
+    d = pairwise_diversity(a, b)
+    assert d["retrieval_identity_jaccard"] is None
+
+
+def test_evidence_output_jaccard_detects_shared_retrieved_content():
+    a = trace_with_evidence("a", output_hashes=["h1", "h2"])
+    b = trace_with_evidence("b", output_hashes=["h2", "h3"])
+    d = pairwise_diversity(a, b)
+    assert d["evidence_output_jaccard"] == pytest.approx(1 / 3)
+
+
+def test_evidence_and_retrieval_metrics_never_enter_workflow_distance():
+    """D-30's workflow_distance number must not silently change when this new
+    data becomes available - these two metrics were added after it was reported."""
+    a = trace_with_evidence("a", identities={"tools": ("x",)}, output_hashes=["h1"])
+    b = trace_with_evidence("b", identities={"tools": ("y",)}, output_hashes=["h2"])
+    assert "retrieval_identity_jaccard" not in SIMILARITY_COMPONENTS
+    assert "evidence_output_jaccard" not in SIMILARITY_COMPONENTS
+    d = pairwise_diversity(a, b)
+    # both traces have no plan/tools/query/code in the ORIGINAL sense, so the
+    # composite must stay None regardless of the new fields being populated.
+    assert d["workflow_distance"] is None
+
+
+# --------------------------------------------------------------------------
 # Extraction from artifacts
 # --------------------------------------------------------------------------
 
@@ -169,10 +228,17 @@ def test_extract_trace_reads_events_and_transcript(tmp_path):
             "payload": {"tool_name": "query_pubmed", "argument_excerpt": "BRCA1 breast cancer"},
         },
         {"event_type": "code_execution_start", "step_index": 1, "payload": {"code_hash": "abc"}},
-        {"event_type": "tool_call_end", "step_index": 1, "payload": {"tool_name": "query_pubmed", "status": "ok"}},
+        {
+            "event_type": "tool_call_end",
+            "step_index": 1,
+            "payload": {"tool_name": "query_pubmed", "status": "ok", "evidence_output_hash": "outhash1"},
+        },
         {"event_type": "tool_call_start", "step_index": 2, "payload": {"tool_name": "query_monarch"}},
         {"event_type": "tool_call_end", "step_index": 2, "payload": {"tool_name": "query_monarch", "status": "error"}},
-        {"event_type": "retrieval_end", "payload": {"selected": {"tools": 7}}},
+        {
+            "event_type": "retrieval_end",
+            "payload": {"selected": {"tools": 7}, "selected_identities": {"tools": ["query_pubmed", "query_monarch"]}},
+        },
     ]
     (tmp_path / "events.jsonl").write_text("\n".join(json.dumps(e) for e in events))
     (tmp_path / "transcript.json").write_text(
@@ -197,6 +263,34 @@ def test_extract_trace_reads_events_and_transcript(tmp_path):
     assert "brca1" in t.query_tokens
     assert t.plan_text == "the opening plan"
     assert t.retrieval_selected == {"tools": 7}
+    assert t.retrieval_selected_identities == {"tools": ("query_pubmed", "query_monarch")}
+    assert t.evidence_output_hashes == ("outhash1",)
+
+
+def test_extract_trace_on_a_run_predating_the_instrumentation_yields_empty_identity_fields(tmp_path):
+    """Every Phase-1 through Phase-2B run has no `selected_identities` or
+    `evidence_output_hash` key at all - old event payloads, not malformed ones.
+    This must not raise and must not fabricate data."""
+    events = [
+        {"event_type": "tool_call_start", "step_index": 1, "payload": {"tool_name": "query_pubmed"}},
+        {"event_type": "tool_call_end", "step_index": 1, "payload": {"tool_name": "query_pubmed", "status": "ok"}},
+        {"event_type": "retrieval_end", "payload": {"selected": {"tools": 3}}},
+    ]
+    (tmp_path / "events.jsonl").write_text("\n".join(json.dumps(e) for e in events))
+    t = extract_trace(
+        tmp_path,
+        {
+            "run_id": "r",
+            "task_name": "x",
+            "task_instance_id": 1,
+            "trajectory_index": 0,
+            "condition": "instrumented",
+            "completed": True,
+            "failure_class": None,
+        },
+    )
+    assert t.retrieval_selected_identities == {}
+    assert t.evidence_output_hashes == ()
 
 
 def test_extract_trace_survives_a_truncated_event_line(tmp_path):
