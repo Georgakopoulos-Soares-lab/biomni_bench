@@ -1230,3 +1230,112 @@ instrumentation, or gate machinery.
 A future prospective run must not assume this number has improved without its
 own fresh measurement, and per D-29 must launch from a committed tree with the
 gate's BLOCKED path already proven (done, again, here).
+
+---
+
+## D-35 Healthy-control validation: PASS — repaired environment does not regress previously-healthy behavior; item 3 remains failed
+
+**Decided:** 2026-08-10, after D-34. Full report:
+`reports/verify_prerequisite_control_validation.md`. Prerequisite item 4 of
+D-31, performed only after items 5, 1, 2 and 3 (D-32/D-33/D-34) were
+complete. **Second live-inference step of this engagement** — same live
+allocation (job 3388121), no new SLURM request.
+
+**Scope, stated precisely and not exceeded.** Does the repaired/instrumented
+environment (D-33) cause a material regression on previously-healthy
+instances? Not a repair of the 28.1% residual-failure problem (D-34), not a
+test of VERIFY, not a new benchmark, not evidence that item 3 has passed.
+
+**Acceptance rule frozen before the first trajectory**, in a separate
+timestamped file: PASS only if reward degradation ≤10pp, completion/usable-
+answer degradation ≤10pp, no new failure class affecting more than one
+control, no gross unexplained cost increase — on a paired 6-instance sample
+(same task prompt, same trajectory index, same `requested_seed`, same
+model/budget/controller config as the matched Phase-2B baseline). If 1–2
+instances dominate a small-sample effect, report BORDERLINE rather than
+widen the rule.
+
+**Controls, drawn from `manifests/phase2b.jsonl`** (reusing already-used
+instances is correct for a *paired* design — pool exhaustion, which blocked
+item 3's fresh sample, does not apply). Six instances, none selected because
+it previously failed: `crispr_delivery/i0007` (literature/evidence, the
+category most exposed to D-33 — historically used `advanced_web_search_claude`
++ `query_pubmed`, both broken pre-repair); `gwas_variant_prioritization/i0207`
+and `gwas_causal_gene_gwas_catalog/i0418` (structured-database);
+`lab_bench_seqqa/i0492` and `/i0379` (computational/sequence, zero and one
+tool call respectively); `patient_gene_detection/i0251` (structured-database,
+distinct task family).
+
+**Result: PASS**, on the pre-declared primary comparison (trajectory index 0,
+n=6): mean reward **0.500 → 0.667 (+16.7pp, an improvement)**, completion and
+usable-answer **100% → 100%, unchanged**, no new failure. Every quantitative
+bar clears with margin on the comparison the rule names primary.
+
+**Supplementary (all 4 indices, n=24, reported because the rule asked for
+it, not because it is the primary bar):** reward −4.2pp, completion −4.2pp,
+usable-answer −8.3pp — all inside the ±10pp bars. **One new failure**
+(`gwas_causal_gene_gwas_catalog/418`, index 2: healthy before, now
+`budget_terminated_consecutive_runaway`) — confirmed the *identical*
+mechanism D-34 already characterized (`peak_input_tokens=36,968`,
+`consecutive_runaway`), affecting exactly 1 of 6 controls, not "multiple."
+Combined with `seed_supported: False` (confirmed both historically and now —
+this endpoint does not honor seeds deterministically), the defensible reading
+is stochastic variation landing on an already-known failure mode, not a new
+one introduced by D-33.
+
+**Cost: the exact "1–2 instances dominate" case the rule anticipated
+reporting rather than absorbing.** Aggregate tokens rose 1.36×, but a single
+trajectory (`gwas_causal_gene_gwas_catalog/418`, index 1, **zero tool calls**)
+accounts for roughly 59% of the entire increase on its own — unexplainable by
+either the evidence-channel repair or the instrumentation (neither touches a
+trajectory that calls no tools), and by elimination ordinary trajectory-length
+variance. The primary (index-0) comparison, unaffected by this outlier's
+index, shows tokens *decreasing*. Reported explicitly per instruction rather
+than smoothed into a clean PASS.
+
+**Evidence-channel behavior, confirmed live for the first time.** Every
+`query_pubmed` error in this run was a **model behavioral error**, not a
+package failure: `invalid syntax` (a code-generation mistake) and
+`cannot import name 'query_pubmed' from 'biomni.tool.database'` (the model
+guessing the wrong module path) — neither is `No module named 'pymed'`; that
+failure mode is gone. Every other `query_pubmed` call succeeded, confirming
+D-33's isolated 8/8 measurement inside a real, live, agent-driven trajectory.
+**Retrieval-provenance instrumentation: 15/15 trajectories that made any tool
+call had `retrieval_selected_identities` and `evidence_output_hash`
+populated — 100% coverage, zero gaps**, confirmed by direct inspection.
+
+**Causes distinguished, as instructed:** the repaired literature channel
+shows no observable reward effect and a plausible token *reduction* (real
+short abstracts vs. an error-retry loop) on the two literature-touching
+trajectories; the added instrumentation is purely observational and
+mechanistically cannot alter model behavior — none detected, none plausible;
+the dominant explanation for both the one new failure and the cost outlier is
+ordinary stochastic variation, consistent with confirmed seed
+non-determinism. No inference is drawn that more tool use is automatically
+better.
+
+**Gate exercise, both paths, live for the first time.** BLOCKED re-exercised
+immediately before launch (item 3's data, 28.1%, exit 1); this run's own gate
+returned **`VERDICT: ALL GATES PASS`, exit code 0**, residual failure
+1/24 = 4.2%. The first time this project has shown the corrected gate
+producing a clean PASS on real trajectories, not only a BLOCKED.
+
+**What PASS does and does not mean, stated without hedging.** The repaired,
+instrumented environment does not cause a material regression on
+previously-healthy instances and is safe to build on for that narrow
+purpose. **It does not mean item 3 has improved** — D-34's 28.1% was measured
+on fresh, unscreened, high-base-rate-stratified instances; this validation
+was deliberately drawn from previously-healthy ones and cannot speak to the
+population-wide rate either way. **Item 3 remains FAILED.** A prospective
+VERIFY experiment remains blocked on that basis alone, independent of this
+result. This validation does not constitute progress on it, and no attempt to
+repair it was made here — that repair was explicitly out of scope for item 4
+and remains a separate, undecided question.
+
+**Reversal condition.** None claimed — this is a screening validation
+(n=6/24), not a powered equivalence test. A future prospective protocol
+citing this result should note its limitations (§8 of the report): best-effort
+pairing under confirmed seed non-determinism, one literature-oriented
+instance, five of ten tasks touched, `rare_disease_diagnosis` deliberately
+excluded as the pool-exhausted high-risk stratum rather than a healthy
+control.

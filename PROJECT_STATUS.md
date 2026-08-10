@@ -1,6 +1,22 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-10 (VERIFY prerequisites — items 5, 1, 2, 3 DONE (D-32/D-33/D-34); item 3 result: residual failure NOT improved, 28.1%; item 4 awaiting approval)
+**Last updated:** 2026-08-10 (**All 5 VERIFY prerequisites adjudicated** — D-32/D-33/D-34/D-35. Items 5,1,2,4 PASS/DONE; **item 3 (residual failure) FAILED at 28.1%** — a prospective VERIFY experiment stays BLOCKED on that alone)
+
+## VERIFY prerequisites — all five adjudicated (2026-08-10)
+
+| item | verdict | evidence |
+| --- | --- | --- |
+| 5 — RESAMPLE/VERIFY definition | ✅ DONE | D-32, `reports/verify_definition.md` |
+| 1 — evidence-channel repair | ✅ DONE | D-33, `reports/evidence_channel_repair.md` |
+| 2 — retrieval provenance | ✅ DONE | D-33 (same report) |
+| 3 — residual failure re-measured | ❌ **FAILED — 28.1% [15.6%, 45.4%]** | D-34, `reports/residual_failure_remeasurement.md` |
+| 4 — healthy-control validation | ✅ **PASS** | D-35, `reports/verify_prerequisite_control_validation.md` |
+
+**A prospective VERIFY experiment is BLOCKED**, independent of item 4's
+result. Item 4 passing establishes the repaired environment is safe to build
+on; it does not touch item 3's already-measured 28.1% residual failure rate,
+which remains the open, unresolved blocker. No repair of item 3 was started
+automatically — that decision is separate and has not been made.
 **Phase:** **PHASE 2B COMPLETE.** Track A does not survive prospective test as
 frozen. Full report: `reports/phase2_report.md`. `reports/phase2_plan.md` §1's
 decision rule for "both co-primary hypotheses fail" selects **Track C**
@@ -888,7 +904,7 @@ to be valid. Working through them in dependency order:
 | **1** | repair the literature/evidence channel | **DONE 2026-08-10 — D-33, `reports/evidence_channel_repair.md`** |
 | **2** | instrument retrieval identity/content | **DONE 2026-08-10 — D-33** (addressed together with item 1) |
 | **3** | re-measure residual failure on the repaired environment | **DONE 2026-08-10 — D-34, `reports/residual_failure_remeasurement.md`. NOT MET: 28.1% [15.6%, 45.4%], not improved** |
-| 4 | validate against healthy controls | not started — **needs explicit approval, more live GPU trajectories** |
+| **4** | validate against healthy controls | **DONE 2026-08-10 — D-35, `reports/verify_prerequisite_control_validation.md`. PASS — no material regression; item 3 remains FAILED regardless** |
 
 **Item 5, closed.** VERIFY is a distinct trajectory type + controller action,
 gated by five conditions (starts from a specific candidate claim; tests the
@@ -981,10 +997,51 @@ upstream.
 **Consequence: do not launch a real prospective run assuming this number has
 improved.** It has not, on the evidence available.
 
-**Next: item 4** — validate the repaired environment against healthy
-controls. This needs its own explicit approval before launch: it requires
-more live GPU trajectories (a small paired before/after design, Phase-1.5-style),
-a second live-inference step beyond what's been approved so far.
+## Item 4, closed (2026-08-10, D-35) — healthy-control validation: PASS
+
+**Second live-GPU step**, approved separately. Same live allocation (job
+3388121), no new SLURM request. 6 previously-healthy Phase-2B instances
+re-run under the D-33-repaired environment via `scripts/phase2b_run.py` (same
+controller-driven flow as item 3, so the same gate applies unmodified),
+matching task prompt / trajectory index / `requested_seed` to the historical
+baseline. Acceptance rule frozen in a separate file before the first
+trajectory. 24 trajectories, ~54 min wall clock, 0 chain failures.
+
+**PASS**, on the pre-declared primary comparison (trajectory index 0, n=6):
+mean reward **0.500 → 0.667 (+16.7pp, an improvement)**, completion and
+usable-answer **100% → 100%, unchanged**, no new failure. Every quantitative
+bar clears with margin on the comparison the rule names primary.
+
+**Supplementary (all 4 indices, n=24):** reward −4.2pp, completion −4.2pp,
+usable-answer −8.3pp — all inside the ±10pp bars. One new failure
+(`gwas_causal_gene_gwas_catalog/418`, index 2) confirmed the *identical*
+mechanism D-34 already characterized (`peak_input_tokens=36,968`,
+`consecutive_runaway`), affecting 1 of 6 controls, not "multiple" — combined
+with `seed_supported: False` (confirmed both before and now), the defensible
+reading is stochastic variation on an already-known mechanism. **Cost is the
+exact "1–2 instances dominate" case the rule anticipated**: aggregate tokens
+rose 1.36×, but one zero-tool-call trajectory accounts for ~59% of the entire
+increase — unexplainable by the repair or the instrumentation, reported
+explicitly rather than smoothed over.
+
+**Evidence-channel confirmed live for the first time.** Every `query_pubmed`
+error in this run was a model behavioral error (wrong import path, one syntax
+mistake) — not `No module named 'pymed'`; that failure mode is gone. Every
+other call succeeded. **Retrieval-provenance instrumentation: 15/15
+trajectories with any tool call had both new fields populated — 100%
+coverage, zero gaps.**
+
+**Gate exercised on both paths, live, for the first time**: BLOCKED
+re-confirmed on item 3's data (28.1%, exit 1) immediately before launch; this
+run's own gate returned **`VERDICT: ALL GATES PASS`, exit code 0** (1/24 =
+4.2%).
+
+**What PASS does not mean, stated without hedging: item 3 remains FAILED.**
+D-34's 28.1% was measured on fresh, unscreened, high-base-rate instances;
+this validation was deliberately drawn from previously-healthy ones and says
+nothing about the population-wide rate. **A prospective VERIFY experiment
+remains blocked on item 3 alone**, regardless of item 4's result. No attempt
+to repair item 3 was made here.
 
 ### Closed 2026-08-10 (D-30): Track C's first diagnostic — NO-GO for diversity
 
