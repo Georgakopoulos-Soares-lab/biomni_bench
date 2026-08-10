@@ -1,0 +1,6 @@
+{"answer": "GSC", "global_instance_id": 381, "task_instance_id": 230, "task_name": "gwas_causal_gene_opentargets"}
+{"answer": "B", "global_instance_id": 290, "task_instance_id": 303, "task_name": "lab_bench_dbqa"}
+{"answer": "C", "global_instance_id": 93, "task_instance_id": 256, "task_name": "lab_bench_seqqa"}
+{"answer": "ENSG00000161011", "global_instance_id": 143, "task_instance_id": 212, "task_name": "patient_gene_detection"}
+{"answer": "{\"disease_name\": \"Arthrogryposis with oculomotor limitation and electroretinal anomalies\", \"OMIM_ID\": \"108145\"}", "global_instance_id": 269, "task_instance_id": 106, "task_name": "rare_disease_diagnosis"}
+{"answer": "ZNF561-AS1", "global_instance_id": 43, "task_instance_id": 302, "task_name": "screen_gene_retrieval"}

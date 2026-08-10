@@ -458,7 +458,129 @@ and the experiment restarts under a **new experiment ID**.
 
 ## 13. Deviations from this protocol
 
-*(none yet — this section is appended to during the run, never rewritten)*
+*(appended to during the run, never rewritten)*
+
+### DEV-1 — smoke-test coverage: `rare_disease_diagnosis` reuses a Phase-1 instance
+**Logged 2026-08-02, before the smoke test ran.**
+
+§10 requires the smoke to span ≥4 task families "including `rare_disease_diagnosis`".
+That is **impossible as written**: D-22 spends every remaining
+`rare_disease_diagnosis` and `crispr_delivery` instance on the frozen sample, so
+neither task has a reserved instance left. The requirement collided with the
+allocation decision recorded one section earlier — caught when the smoke manifest
+builder asserted its way out rather than silently dropping the task.
+
+**Resolution.** The smoke manifest prefers reserved instances and, for tasks
+whose reserved pool is empty, falls back to a **Phase-1** instance. This is sound
+here and only here: the smoke runs under its own experiment ID
+(`phase2b_smoke`), its outputs are never pooled into any analysis, and no design
+decision is taken from them — it is a plumbing check. The builder **asserts** the
+smoke manifest never intersects the frozen 150.
+
+Smoke manifest: `manifests/phase2b_smoke.jsonl`, hash
+`a6ed4e8731393db46004ea1c01ec403085c0a96ddd99370f2350e1556817b52c`, 6 instances
+across 6 task families; `rare_disease_diagnosis/i0106` is the reused Phase-1
+instance, the other five are reserved.
+
+**No effect on the prospective sample.** The frozen 150 and its hash are unchanged.
+
+### DEV-2 — compressed launch sequencing (smoke → auto-launch)
+**Logged 2026-08-02, before the smoke test ran, at the operator's explicit direction.**
+
+§10 says the smoke results are presented and the full run then requires separate
+approval. The available Slurm allocation is **15.1 h** against a run that needs
+~16–24 h on the single available replica, so an approval pause costs roughly an
+hour of GPU time that the run cannot spare.
+
+**Resolution.** The operator approved compressing the sequence: if **every fatal
+gate in §10 passes**, the full run launches immediately and the smoke results are
+reported together with the launch. If **any fatal gate fails**, nothing launches
+and the failure is reported instead. Gates are machine-checked by
+`scripts/phase2b_verify.py`, not by inspection, so the criterion cannot drift
+under time pressure.
+
+**No threshold, controller setting, outcome definition or statistical rule was
+changed.** This is a change to when a human looks, not to what is measured.
+
+### DEV-3 — hardware: one replica, not two; run spans allocations
+**Logged 2026-08-02, before the full run launched.**
+
+§9 assumed one 4×H100 node (2 tp2 replicas). Only **GPUs 0–1** are available —
+GPUs 2–3 are held throughout by an unrelated job (`run_turboquant_extract.py`),
+as in Phase 1.5. The run therefore uses **one tp2 replica** and will **not**
+finish inside one allocation; it is expected to resume across at least two.
+
+The already-serving endpoint on port 30000 is reused rather than relaunched: its
+arguments (`--tp 2`, bf16, `--context-length 65536`, YaRN factor 1.0,
+`max_position_embeddings 131072`) are identical to `configs/phase2b.yaml`.
+
+**Consequences recorded for the analysis:** trajectories generated after a
+resume come from a freshly loaded server process. Same weights, same revision,
+same serving arguments, and `endpoint`/`hostname`/timing are already recorded
+per trajectory, so a server-restart effect is checkable rather than assumed. The
+driver's `--reserve-minutes` guard stops *starting* trajectories before the
+allocation ends, so a boundary leaves clean, resumable state rather than
+half-written run directories.
+
+**Update, 2026-08-09.** The prior allocation (`3364308`) hit its own wall-clock
+TIMEOUT at 2026-08-03T02:29 before the full run was launched — only the smoke
+had run at that point. `nohup`/`setsid` protect a process against a lost
+terminal/SSH session; they do **not** protect against the SLURM job itself
+ending, which kills every process in the job's cgroup unconditionally. That is
+a hard boundary distinct from DEV-3's "endpoint restart" scenario and is
+recorded as its own event, not folded into DEV-3.
+
+Re-verified against completed data on resumption: `scripts/phase2b_verify.py
+--smoke` on the completed smoke run (6/6 terminated, 0 errors) passes all 12
+gates, including chain integrity and shadow isolation. Per DEV-2, the full run
+was launched immediately on that basis.
+
+Full run launched 2026-08-09 18:33 CDT on a new allocation (job `3388121`,
+`c561-007`, 47.3h to deadline at launch), one tp2 replica on **GPUs 0-1 only**
+(GPUs 2-3 intentionally left untouched, per operator instruction), fully
+detached (`setsid`+`nohup`, reparented to PID 1, verified to survive the
+launching shell). Log: `logs/phase2b_full_20260809_183320.log`.
+
+**Completed** 2026-08-10, 08:33 CDT: 150/150 instances, 8.5 h wall clock, 0
+errors, 0 chain-verification failures.
+
+### DEV-4 — the residual-failure-rate gate was broken; a halt condition tripped and was not caught
+**Discovered 2026-08-10, during analysis. Not caught in real time.**
+
+`scripts/phase2b_verify.py`'s §11 halt-condition check tested
+`failure_class in ("model_context_overflow", "budget_terminated")` — an exact
+match — against a runner that records the fuller
+`"budget_terminated_consecutive_runaway"`. The check matched nothing, in
+every run it was ever applied to, and reported a spurious 0.0% instead of the
+true rate.
+
+**Recomputed correctly:** the full run's residual failure rate is **93/600 =
+15.5%**, and the smoke test's was **9/24 = 37.5%** — both above the
+pre-registered 15% threshold. Per §11 ("halt, report, and do not analyze as
+planned"), the smoke test's true rate should have **blocked** DEV-2's
+compressed auto-launch. It did not, because the broken gate reported PASS.
+
+**Why it went unnoticed:** the check was never exercised against a failing
+case before this run — `tests/test_phase2b_analyze.py`'s regression test for
+this exact bug was written *after* it was found, not before.
+
+**Consequence for the result.** `reports/phase2_report.md` §7 recomputes H1
+and H2 excluding `rare_disease_diagnosis` — the task responsible for most of
+the excess rate (33.0% vs 12.0% for the rest of the sample, and 16.7% of the
+sample by the deliberate D-22 oversample). Both hypotheses fail almost
+identically with it removed (H1 −0.032 vs −0.033; H2 mean K 2.856 vs 2.893).
+**The halt-condition breach does not explain the substantive result.** It is
+reported with full prominence anyway, because a monitoring failure that let a
+tripped halt condition go unreported is a finding about this project's process,
+independent of what it did or did not change about the science.
+
+**Fixed and regression-tested**: `scripts/phase2b_verify.py` now matches on
+prefix; `tests/test_phase2b_analyze.py` locks the fix against the exact
+failure-class string this bug missed. See `DECISIONS.md` D-26.
+
+**No retroactive re-launch.** The run is not re-run under a corrected gate.
+It is reported as it happened, per the same rule that has governed every
+correction in this project since D-01.
 
 ---
 

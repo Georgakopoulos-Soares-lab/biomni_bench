@@ -1,0 +1,2 @@
+[2026-08-02 12:10:41] supervisor pid 2552124 starting; endpoints=/scratch/11034/atzanakak/biomni_unc_runs/endpoints_phase2b.json reserve=25min
+[2026-08-02 12:10:41] STATUS -> WAITING_FOR_SMOKE

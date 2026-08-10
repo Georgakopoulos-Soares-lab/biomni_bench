@@ -1,0 +1,126 @@
+# Phase 2B SMOKE TEST - infrastructure check only, NOT prospective evidence.
+#
+# Separate experiment id (`phase2b_smoke`), separate manifest
+# (`manifests/phase2b_smoke.jsonl`), separate output tree. Its results are NEVER
+# pooled into any analysis and no design decision is taken from them.
+#
+# The manifest draws from RESERVED instances. Two tasks have no reserved
+# instances left because D-22 spent their entire pools on the frozen sample
+# (`rare_disease_diagnosis`, `crispr_delivery`); for those the smoke reuses a
+# PHASE-1 instance. That is sound here and only here: this is a plumbing check
+# whose outputs are discarded, and it never touches the frozen phase2b 150
+# (asserted at build time).
+#
+# Everything else is byte-identical to configs/phase2b.yaml, so the smoke tests
+# the configuration that will actually run.
+
+experiment:
+  name: phase2b_smoke
+  seed: 20260802
+  output_root: ${BIOMNI_UNC_OUTPUT_ROOT:-./runs}
+
+benchmark:
+  dataset: biomni/Eval1
+  parquet_uri: hf://datasets/biomni/Eval1/biomni_eval1_dataset.parquet
+  local_parquet: ${BIOMNI_UNC_EVAL1_PARQUET:-}
+  # Explicit per-task quotas live in scripts/prepare_phase2b_manifest.py because
+  # they are NOT uniform (two tasks are pool-limited, one is deliberately
+  # over-sampled). These two fields record the resulting totals.
+  target_total_instances: 6
+  per_task_target: 1
+  preferred_split: val
+  # New seed: reusing 20260731 would re-derive Phase 1's ordering.
+  manifest_seed: 20260802
+  exclude_tasks: []
+  max_prompt_chars: null
+
+model:
+  identifier: biomni/Biomni-R0-32B-Preview
+  revision: 71432eb3d5e583bee757e0f9437a17e711e8e3d1
+  source: Custom
+  temperature: 0.7
+  max_tokens: 2048
+  request_timeout_seconds: 1800
+  context_length: 65536
+  dtype: bfloat16
+  json_model_override_args: '{"rope_scaling":{"rope_type":"yarn","factor":1.0,"original_max_position_embeddings":32768}, "max_position_embeddings": 131072}'
+  request_seed_enabled: true
+
+confidence:
+  # Kept ON. The controller does not use confidence (Phase 2A found the K=1
+  # trigger too weak - D-19), but the pre-registered SECONDARY hypothesis about
+  # final_confidence == 1.00 needs the value logged. Eliciting it is free and
+  # Phase 1 measured no effect of elicitation on reward.
+  mode: final_only
+  open_delimiter: "<BIOMNI_CONFIDENCE>"
+  close_delimiter: "</BIOMNI_CONFIDENCE>"
+  epsilon: 0.001
+
+trajectories:
+  # 4 trajectories are GENERATED per instance. The controller consumes a prefix
+  # (offline estimate: 2.70 on average); the rest are hidden shadows used only
+  # by the after-the-fact paired analysis.
+  instrumented_k: 4
+  # No standard/no-confidence arm in Phase 2B. Phase 1 answered the prompt-
+  # perturbation question (+0.06 [-0.10, +0.22], null) and re-running it would
+  # spend a fifth of the compute re-measuring a settled question.
+  standard_k: 0
+  # Distinct from Phase 1's 1000 so no prospective trajectory reuses a
+  # Phase-1 seed.
+  seed_base: 2000
+
+controller:
+  enabled: true
+  policy: mandatory_k2
+  min_trajectories: 2
+  max_trajectories: 4
+  abstain_on_no_agreement: true
+  failure_override: true
+  generate_shadows: true
+
+execution:
+  max_concurrency: 6
+  run_timeout_seconds: 3600
+  tool_timeout_seconds: 600
+  scratch_root: ${BIOMNI_UNC_SCRATCH:-/tmp/biomni_unc_scratch}
+  data_path: ${BIOMNI_PATH:-./biomni_data_root}
+  use_tool_retriever: true
+  retry_policy:
+    # Infrastructure failures are retried and the original is preserved (D-14).
+    # Agent-side outcomes - budget termination, degeneration, unparseable
+    # answers - are NEVER retried: they are exactly what the controller's
+    # failure override is there to observe.
+    max_attempts: 2
+    retryable_failure_classes:
+      - model_server_failure
+      - model_timeout
+      - external_resource_failure
+    backoff_seconds: 20.0
+
+logging:
+  stdout_limit: 4000
+  stderr_limit: 4000
+  max_event_payload_chars: 20000
+
+# Identical to configs/phase1_5.yaml: the ablation-selected Arm 2 (R1, R2, R4,
+# R5; no R3 input budget).
+trajectory_budget:
+  enabled: true
+  soft_input_tokens: 0
+  hard_input_tokens: 0
+  runaway_keep_tokens: 512
+  max_consecutive_runaway: 3
+  max_observation_tokens: 4000
+  retrieval_max_tools: 40
+  retrieval_max_data_lake: 20
+  retrieval_max_libraries: 20
+
+analysis:
+  # 10000 replicates, matching Phase 2A. Seed differs from Phase 1's so the
+  # prospective CIs are not resampled on the same pseudo-random stream.
+  bootstrap_replicates: 10000
+  bootstrap_seed: 20260802
+  calibration_bins: 5
+  primary_length_field: total_output_tokens
+  binary_reward_threshold: 0.5
+  srlm_epsilon: 0.001

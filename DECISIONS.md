@@ -593,3 +593,263 @@ and it is achievable at n=150 (power 0.99, and ≥0.84 even if the prospective
 disagreement rate is 3× worse than offline).
 
 **Fixed before the sample was drawn**, so it cannot be widened to fit a result.
+
+---
+
+## D-26 Phase 2B's prospective test fails both co-primary hypotheses — reported as failure, not reframed
+
+**Decided:** 2026-08-10, immediately after the frozen analysis pipeline ran
+against the completed prospective run (`reports/phase2_report.md`).
+
+H1 (reward retention, δ=0.05): controller − fixed K=4 = −0.033, 95% CI
+[−0.067, −0.007] — entirely below the −0.05 margin's *sign*, i.e. the CI does
+not clear the required lower bound. **FAIL.** H2 (cost, mean K < 3.0): mean K
+2.893, 95% CI upper bound 3.033. **FAIL**, narrowly.
+
+**Decision.** Report both as failures, exactly as `reports/phase2_protocol.md`
+§7.5 pre-registered for this outcome: *"Both fail: Track A's premise does not
+survive prospective test, and `reports/phase2_plan.md` §1 selects Track C."*
+No threshold was widened, no metric substituted, no result reframed as a
+partial success after seeing it.
+
+**Why the result is trusted rather than attributed to noise or a data-quality
+problem.** Two independent checks rule out the obvious escape hatches:
+(a) a sensitivity analysis excluding `rare_disease_diagnosis` — the task
+responsible for most of the elevated residual-failure rate found in D-26's
+sibling incident (see D-27, `reports/phase2_protocol.md` DEV-4) — reproduces
+almost the same H1/H2 numbers (−0.032, mean K 2.856); (b) S5's ordering-averaged
+offline replay of the same 600 trajectories shows the same direction
+(0.577 vs fixed K=4's 0.613). The failure is real, not an artifact of the
+realized order or of the one bad task.
+
+**What the failure mechanism actually is**, established from three
+pre-registered deliverables, not a post hoc story: the controller is accurate
+when it answers (0.711 among the 80.7% it accepts) but abstains on 19.3% of
+instances, each charged 0 by the protocol-mandated accounting
+(`reward_abstain_zero`); the selective-risk table shows every acceptance has
+identical support (=2, by construction of "stop the instant two agree"), which
+erases the distinction between a confident 2-of-2 stop (87.7% accurate) and a
+reluctant 2-of-4 plurality (35.0% accurate — *below* fixed K=1's blind 51.3%);
+and the same-cost matched-compute baseline (D-24) beats the controller outright
+(0.592–0.593 vs 0.573) — a non-adaptive policy that looks at nothing does
+better than the adaptive one at equal spend.
+
+**What is not touched.** Two secondary results survive cleanly and are carried
+forward as findings independent of the headline failure: S1 (0% confidently-wrong
+for the controller vs 5.3% for fixed K=4 — a genuine safety property) and S4
+(`final_confidence == 1.00` correct 89.8% vs 65.1%, n=49/410 — the K=1 signal
+flagged as a hypothesis in D-19 now has a clean prospective pass and is a
+legitimate Phase-3 candidate).
+
+**Consequence.** Phase 2C (controlled-failure study) does not proceed on this
+controller as frozen. The concrete next step this analysis points to — abstain
+or escalate on the weak "2-of-4" state instead of accepting it — is a
+**redesign**, to be evaluated in a **new, separately pre-registered prospective
+run**, never as a retroactive edit to this one.
+
+---
+
+## D-27 A halt condition tripped and was not caught — the gate script had an exact-match bug
+
+**Decided:** 2026-08-10, discovered during Phase-2B analysis
+(`reports/phase2_protocol.md` DEV-4).
+
+`scripts/phase2b_verify.py`'s residual-failure-rate gate checked
+`failure_class in ("model_context_overflow", "budget_terminated")` against a
+runner that records `"budget_terminated_consecutive_runaway"` — an exact
+match that could never succeed. The gate reported 0.0% in both the smoke test
+(true rate 37.5%) and the full run (true rate 15.5%), both above the
+pre-registered 15% halt threshold from `reports/phase2_protocol.md` §11.
+
+**Decision.** Fix the match to a prefix check
+(`str(failure_class).startswith(("model_context_overflow",
+"budget_terminated"))`), add a regression test keyed to the exact string this
+bug missed (`tests/test_phase2b_analyze.py::test_halt_condition_matches_the_budget_terminated_prefix_not_exact_string`),
+and report the incident with the same prominence as the substantive result
+it sits beside (D-26) rather than as a footnote.
+
+**Why this is not "fixed, move on."** Per DEV-2, the (operator-approved)
+compressed launch procedure trusted this exact gate to decide whether 8.5
+GPU-hours got spent automatically. Under the corrected gate, the smoke test's
+true 37.5% residual-failure rate would have **blocked** that launch. The
+process gap that matters is not just the string comparison — it is that
+**no test exercised the failure path before the gate was trusted with an
+unattended launch decision.** The smoke test that validated the pipeline had
+zero failures in its own right (0/24 by chance), so the bug's blind spot was
+never exercised until real data hit it.
+
+**Why it does not retroactively change the D-26 verdict.** A sensitivity
+analysis excluding the task responsible for most of the excess rate
+(`rare_disease_diagnosis`, 33.0% vs 12.0% for the rest) reproduces H1/H2
+almost unchanged. The bug hid a real data-quality issue; it happened not to
+be the issue that determined the outcome.
+
+**Reversal condition.** None retroactively — the run is not re-launched under
+the corrected gate. Any *future* prospective run must pass
+`scripts/phase2b_verify.py` post-fix before an automated launch decision is
+trusted again.
+
+---
+
+## D-28 The Controller-v2 redesign is rejected on offline evidence; Track C stands
+
+**Decided:** 2026-08-10, after Phase 2B was complete and reported. Marked as
+decided after seeing data, per the exploratory/confirmatory rule — but the
+adjudication bar was written down in `reports/post_phase2b_assessment.md` §5
+**before** the offline analysis in `reports/controller_v2_offline_assessment.md`
+was run, so the criteria could not be adjusted to fit the outcome.
+
+`reports/phase2_report.md` §11 named a redesign candidate: abstain or escalate
+on the weak "2-of-4 plurality" state instead of treating it as a plain ACCEPT.
+The question was whether that deserved one new prospective run before the
+project moves to Track C, which `reports/phase2_plan.md` §1 already selected.
+
+**Decision.** **No.** Recommendation **B — move directly to Track C.** No
+Controller-v2 is built, no new manifest is created, no GPU job is launched.
+
+**Why — three independent reasons, in increasing order of importance.**
+
+1. *The candidate is worse than the incumbent it was meant to fix.* Replayed
+   over 18 parameter-free policies on both available pools, the strict-majority
+   rule (accept 2-of-2, 2-of-3, 3-of-4; refuse 2-of-4) scores **−4.7 pp**
+   against Controller v1 on `phase2b`, **−5.7 pp** ordering-averaged, and
+   **−5.0 pp** on `phase1_pooled`. The 2-of-4 state is 35–42% accurate, not 0%;
+   refusing it converts an expected 0.40 into a certain 0 under the
+   protocol-mandated `reward_abstain_zero` accounting.
+2. *No rule of this shape clears the pre-stated bar.* The best candidate beats
+   same-cost blind allocation by **+1.2 pp** at the realized order (95% CI
+   spanning 0), against a required ≥3 pp, and its margin over fixed K=2
+   collapses from +1.3 pp on `phase2b` to **+0.17 pp** on `phase1_pooled`. The
+   whole `phase2b` effect is **two instances of 150**, in two tasks; the other
+   eight tasks are exactly tied with fixed K=2.
+3. **The distinction is structurally unactionable.** `v1_no_abstain`,
+   `v2_majority_no_abstain` and `v2_usable_majority_no_abstain` are the
+   *identical policy* — same decision on every instance under every ordering,
+   asserted in `tests/test_controller_v2_rules.py`. Inside the action set
+   {ACCEPT, CONTINUE, ABSTAIN} where CONTINUE means only *resample*, knowing
+   support is 2-of-4 rather than 2-of-2 can only (a) buy more trajectories —
+   impossible, 2-of-4 is only reachable at the K=4 budget ceiling — or
+   (b) trigger abstention, which reason 1 shows is net-negative. There is no
+   third channel. A prospective Controller-v2 run would not be testing a weak
+   hypothesis; it would be testing one that cannot express itself.
+
+**What is carried forward instead.**
+
+* *The only self-funding adaptive component is failure-driven continuation.*
+  Escalating **only** when an instance has produced no usable answer scores
+  0.593 at mean K **2.13** versus fixed K=2's 0.580 at 2.00 — reproducing Phase
+  2A §8's failure-recovery finding as the sole surviving piece of adaptivity.
+  Recorded as an observation, **not** as a result: the margin is two instances.
+* *`final_confidence == 1.00` does not enter a controller.* It passed its
+  prospective test as a **signal** (S4, D-19) and that stands. Tested here as a
+  decision rule on existing data, as required before any use: its incremental
+  value sits entirely inside the 2-of-2 state that is already 87.7% accurate
+  (0.952 vs 0.841) and vanishes in the weak states where a controller would need
+  it (2-of-3: 0.600 vs 0.613). It stays a secondary prospective analysis.
+* *Where the headroom actually is.* On `phase2b`, 30% of instances (45/150) have
+  **no correct trajectory at all**, and on the 51 instances with 2–3 distinct
+  answers the correct answer is **present but in the minority** — Oracle@4 0.625
+  and 0.636 against plurality's 0.375 and 0.273. Voting cannot reach 25–36 pp of
+  headroom by construction. That is the Track-C question, reached from the
+  controller side rather than assumed.
+
+**Reversal condition.** One, stated precisely: a `VERIFY` or `REPAIR` action
+that generates genuinely independent evidence rather than another correlated
+sample. With such an action the consensus-history distinction becomes actionable
+and the minority-held headroom becomes addressable, and the controller question
+reopens on its own terms. Absent that, further stop-rule work is measuring the
+same ~1 pp with more machinery.
+
+**Process preconditions attached to any future prospective run** (from
+`reports/post_phase2b_assessment.md` §0, both found during this review):
+every Phase-2B run records `project_git.dirty = true` and the controller that
+produced the result is **untracked in git**, so the exact code is not
+recoverable from history — commit before the next run; and the corrected halt
+gate's *failure* path has now been exercised end to end for the first time
+(exit code **1**, `VERDICT: BLOCKED`, on both `phase2b_smoke` at 37.5% and
+`phase2b` at 15.5%), which is the check D-27 specified but never ran.
+
+---
+
+## D-29 Phase-2B ran from an uncommitted tree; provenance is recovered where the artifacts allow and recorded as unrecoverable where they do not
+
+**Decided:** 2026-08-10, after the post-Phase-2B review found that all 600
+Phase-2B run records carry `project_git.dirty = true` and that
+`src/biomni_uncertainty/controller.py` — the file implementing the controller
+under test — was never committed. Full audit:
+`reports/phase2b_provenance.md`; script `scripts/phase2b_provenance_audit.py`;
+tests `tests/test_phase2b_provenance_audit.py`.
+
+**The failure.** A pre-registered prospective experiment executed from a working
+tree that version control did not capture. **No commit in this repository is the
+Phase-2B execution commit**, and none may be described as one.
+
+**Decision.** Recover what the preserved artifacts prove, classify every
+Phase-2B-relevant file into `ESTABLISHED` / `CHANGED_AFTER` / `UNPROVEN`, and
+commit the working tree as an explicitly-labelled **post-hoc provenance recovery
+snapshot** that is *not* claimed to be the execution commit. Do not rewrite
+history, do not backdate, do not touch a frozen artifact.
+
+**What the audit established** (14 files `ESTABLISHED`, 3 `CHANGED_AFTER`,
+4 `UNPROVEN`):
+
+* **`configs/phase2b.yaml` is cryptographically attested.** The stored
+  `config_hash` `ee5f8cd3…` recomputes bit-exactly from the current file and the
+  full config snapshot is identical — *once the three `${ENV}` expansions
+  recorded in the snapshot are restored*. Without that restoration the check
+  produces a false alarm; the audit does the restoration and the report says why.
+* **`manifests/phase2b.jsonl` is cryptographically attested**, recomputing to
+  `7cb5da3ac345…`, the value frozen in the protocol before inference.
+* **`controller.py` and `policy.py` are attested behaviourally.** All **434/434**
+  committed decision records reproduce exactly against the current files —
+  action, the **free-text `reason` string** generated by policy f-strings,
+  support, agreement flag, resolved cluster key, and the ordered observed
+  `run_id` list — with 150/150 hash chains verifying. This proves behavioural
+  identity on the domain the run visited; it does **not** prove byte identity,
+  and it is cited that way.
+* **The untracked driver's output is pinned even though its bytes are not.**
+  All **600/600** trajectory identities recompute from tracked code plus the
+  attested config and frozen manifest: `run_id` via `sampling.make_run_id`
+  (including the `shadow` condition, which `expand_runs` does not produce),
+  `requested_seed = 2000 + 100 + index`, `prompt_hash`, and `run_dir`.
+  Orchestration is attested only by output invariants, not by source.
+* **The pinned dependency is clean.** `biomni_src` is still at `400c1f36…` with
+  a clean tree, and all 600 runs recorded `dirty = false` for it.
+
+**What is known to have changed after the run.** `scripts/phase2b_verify.py`
+(the D-27 gate fix, 04:36:14 vs the run ending 03:03:59 — so the version that
+produced the false PASS is gone and cannot be exhibited),
+`scripts/phase2b_analyze.py` and `tests/test_phase2b_analyze.py` (04:41:49,
+before the stored tables were written at 04:42:31, and independently
+reproduced). None of the three participates in trajectory generation or scoring.
+
+**What remains unrecoverable.** `scripts/phase2b_run.py`, `run_phase2b.sh`,
+`phase2b_supervise.sh` and `tests/test_controller.py` have no cryptographic
+record. **mtime is treated as circumstantial and never as proof** — a timestamp
+is settable — and `tests/test_phase2b_provenance_audit.py` asserts that mtime
+alone can never promote a file to `ESTABLISHED`.
+
+**Why this does not weaken the Phase-2B result.** The result reproduces exactly
+from stored artifacts: H1, H2, coverage, the selective table, matched compute,
+S4 and the sensitivity analysis were all recomputed independently, and the
+frozen controller re-simulated offline matches the online decision log on
+**0/150** instances. The gap is in *source auditability*, not in the numbers.
+That distinction is stated in every artifact that carries this finding.
+
+**An observation logged, not a correction.** `logs/phase2b_supervisor.log` ends
+2026-08-02 12:10:41 at `WAITING_FOR_SMOKE`, the smoke finished 12:32, and the
+full run started **2026-08-09 18:33** with `phase2b_supervise.sh` modified
+18:29:03 that day. The supervisor that logged on 2026-08-02 did not launch the
+full run. D-27's substantive point is unaffected — the gate reported a false
+PASS, nothing blocked, and no test had exercised its failure path — but the word
+"auto-launch" should not be read as implying a recoverable supervisor decision.
+
+**Consequences, to be written into the next protocol.** Commit before launch and
+record the commit; make the launcher refuse a dirty tree and exit non-zero;
+hash every imported source file into `metadata.json` at run start so this audit
+becomes one equality check; never overwrite a tool that produced a gating
+decision — fix forward in a commit.
+
+**Not addressed here, deliberately.** The second prospective blocker stands
+exactly as measured: residual trajectory failure **15.5%** (93/600), above the
+pre-registered 15% threshold. No repair was attempted.

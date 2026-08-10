@@ -9,23 +9,45 @@ verbalized confidence, and observable trajectory effort.
 
 ## Current phase
 
-**Phase 2A complete; Phase 2B gated on approval.** Read `PROJECT_STATUS.md`
-first — it is the source of truth for what is done, what is running and what is
-next.
+**Phase 2B complete. Track A does not survive prospective test as frozen.
+The Controller-v2 redesign was adjudicated offline and REJECTED (D-28);
+Track C stands as selected, awaiting operator approval.**
+Read `PROJECT_STATUS.md` first — it is the source of truth for what is done,
+what is running and what is next.
 
-Phases 0, 1 and 1.5 are complete and **frozen**. Phase 2 is Track A: a
-prospective, cost-aware reliability controller (`reports/research_north_star.md`).
-Phase 2A (offline sequential policy replay, no GPU) is done —
-`reports/phase2_offline_replay.md`.
+Phases 0, 1, 1.5 and 2A are complete and **frozen**. Phase 2B (the prospective
+online controller, 150 held-out instances, 600 trajectories) ran 2026-08-09→10
+and **failed both co-primary hypotheses** — `reports/phase2_report.md`. Per
+`reports/phase2_plan.md` §1's pre-registered rule, this selects **Track C**
+(diversity and difficulty). The report also identifies a specific redesign
+candidate (§11) that would require its own new, separately pre-registered
+prospective run — never a retroactive edit to `phase2b`.
 
-**Do not launch any GPU job or begin Phase 2B until the Phase-2A recommendation
-is explicitly approved.** Phase 2B then runs gated: manifest freeze → protocol
-written before any outcome is seen → smoke test → *pause for approval again* →
-full run.
+`phase2b`'s manifest, config, run directories, decision logs and report are
+now **frozen**, exactly like `phase1`/`phase1_5`/`phase2a` before it. A gate
+script bug was found and fixed during analysis (D-27) — see
+`reports/phase2_protocol.md` DEV-4 before trusting any future automated
+launch gate. Its failure path has since been exercised end to end (exit 1,
+`VERDICT: BLOCKED`), which D-27 specified but never ran.
 
-Explicitly **out of scope** until Phase 2C or later: controlled benchmark
-corruptions, human workflow annotation, a second agent, the full BiomniEval1,
-quantized-model comparisons, closed-model API comparisons.
+The redesign candidate in §11 of that report was tested offline
+(`reports/controller_v2_offline_assessment.md`, experiment
+`controller_v2_offline`) against a bar written down first
+(`reports/post_phase2b_assessment.md` §5) and **rejected** — it is worse than
+the incumbent, and the 2-of-2 / 2-of-4 distinction is unactionable inside an
+action set whose only non-terminal move is *resample*. **Do not rebuild it.**
+The controller question reopens only if a `VERIFY` or `REPAIR` action exists.
+
+**Two preconditions block any future prospective run** (`PROJECT_STATUS.md`,
+Current blockers): the Phase-2B code is untracked in git (`project_git.dirty =
+true` in every run record), and the residual trajectory failure rate is 15.5%,
+above the 15% halt threshold.
+
+Explicitly **out of scope** until a Track-C or redesigned-controller decision is
+made: Phase 2C's controlled-failure study (does not proceed on the frozen
+controller), controlled benchmark corruptions, human workflow annotation, a
+second agent, the full BiomniEval1, quantized-model comparisons, closed-model
+API comparisons.
 
 ## Architecture
 
@@ -59,7 +81,7 @@ closures inside `A1.configure()` and cannot be subclassed.
 ## Commands
 
 ```bash
-pytest -q                                    # 329 tests, CPU only, no data lake
+pytest -q                                    # 369 tests, CPU only, no data lake
 ruff check src tests && ruff format src tests
 
 python -m biomni_uncertainty.cli inspect-env

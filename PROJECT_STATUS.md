@@ -1,12 +1,178 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-02 (Phase-2A committed; Phase-2B protocol FROZEN — awaiting approval to run)
-**Phase:** **PHASE 2A COMPLETE AND COMMITTED (`fd91d26`). PHASE 2B DESIGNED AND
-FROZEN, NOT STARTED.** The held-out manifest, config, controller, outcomes,
-statistical plan and stopping rules are pre-registered in
-`reports/phase2_protocol.md`. **No GPU job has been launched. Neither the smoke
-test nor the full run may start without explicit approval.**
-Phases 1 and 1.5 are complete, frozen and independently re-verified.
+**Last updated:** 2026-08-10 (post-Phase-2B review complete — Controller-v2 redesign REJECTED offline; **Track C confirmed**)
+**Phase:** **PHASE 2B COMPLETE.** Track A does not survive prospective test as
+frozen. Full report: `reports/phase2_report.md`. `reports/phase2_plan.md` §1's
+decision rule for "both co-primary hypotheses fail" selects **Track C**
+(diversity and difficulty) as the pre-registered next step.
+Phases 1, 1.5 and 2A are complete, frozen and independently re-verified.
+
+**The open decision recorded below is now closed (D-28):** the Controller-v2
+redesign named in `reports/phase2_report.md` §11 was adjudicated offline against
+a bar written down before the analysis ran, and **rejected**. Track C stands as
+selected. Awaiting operator approval before any Track-C work begins.
+
+## Post-Phase-2B review (2026-08-10) — independent, CPU only, no GPU
+
+Two new reports, written by a session that read the repository rather than the
+project history. **No frozen Phase-0/1/1.5/2A/2B artifact was modified.**
+
+| document | contents |
+| --- | --- |
+| `reports/post_phase2b_assessment.md` | independent re-derivation of every Phase-2B headline number; what was and was not falsified; which Phase-1/1.5/2A claims survive; confirmatory vs post-hoc separation; the pre-stated bar (§5) a redesign had to clear |
+| `reports/controller_v2_offline_assessment.md` | 18 parameter-free policies replayed over both available pools; adjudication against that bar; **Recommendation B — move directly to Track C** |
+| `scripts/controller_v2_offline.py` + `tests/test_controller_v2_rules.py` | the driver (CPU only, ~40 s) and 13 tests, including that `v1_frozen` reproduces the frozen controller exactly |
+
+**Verification performed.** Full suite **382 passed**, ruff clean. H1/H2,
+coverage, the selective table, matched compute, S4 and the sensitivity analysis
+all reproduce **exactly** from stored artifacts via an independent script; the
+frozen controller re-simulated offline matches the online decision log on
+**0/150 mismatches**, all 150 hash chains verify, manifest hash re-verifies.
+
+**The corrected halt gate's failure path is now exercised end to end** — the
+check D-27 specified but never ran. `scripts/phase2b_verify.py` post-fix returns
+**exit code 1** and `VERDICT: BLOCKED` on `phase2b_smoke` (9/24 = 37.5%) and on
+`phase2b` (93/600 = 15.5%); every other gate passes in both. Run read-only
+against the frozen run trees via a redirected output root, so no frozen artifact
+was touched.
+
+**Why the redesign was rejected** (full reasoning: D-28):
+
+1. The candidate rule (refuse a bare 2-of-4 plurality) is **4.7–5.7 pp worse
+   than Controller v1** on both pools — 2-of-4 is 35–42% accurate, not 0%, so
+   refusing it trades an expected 0.40 for a certain 0.
+2. No rule clears the pre-stated bar: best margin over same-cost blind
+   allocation is **+1.2 pp** at the realized order (CI spans 0) against a
+   required ≥3 pp, and the whole `phase2b` effect is **two instances of 150**
+   (eight of ten tasks tie fixed K=2 exactly).
+3. **Structural:** `v1_no_abstain`, `v2_majority_no_abstain` and
+   `v2_usable_majority_no_abstain` are the *identical policy* (asserted by
+   test). Inside {ACCEPT, CONTINUE, ABSTAIN} with CONTINUE = resample, the
+   2-of-2/2-of-4 distinction can only act by spending more (impossible at the
+   K=4 ceiling) or by abstaining (net-negative). The hypothesis cannot express
+   itself without a `VERIFY`/`REPAIR` action.
+
+**What survives and what it points at.** The only self-funding adaptive
+component is **failure-driven continuation** (escalate only when no usable
+answer exists: 0.593 at mean K **2.13** vs fixed K=2's 0.580 at 2.00 — an
+observation, not a result; the margin is two instances). `final_confidence ==
+1.00` remains a validated *signal* (S4) but adds no decision value on top of
+consensus history and does **not** enter a controller. The headroom that
+remains is not reachable by voting: **30% of instances (45/150) have no correct
+trajectory at all**, and on the 51 instances with 2–3 distinct answers the
+correct answer is present but **in the minority** (Oracle@4 0.625/0.636 vs
+plurality 0.375/0.273). That is the Track-C question, reached from the
+controller side.
+
+**Two process gaps found.** Gap 1 is now **audited and documented** (see the next
+section); gap 2 is **deliberately not repaired**. Neither affects the Phase-2B
+result, which reproduces exactly from artifacts.
+
+* **The code that ran Phase 2B is not in git.** Every run records
+  `project_git.commit = 2c0bfc1, dirty = true`. → Audited, D-29,
+  `reports/phase2b_provenance.md`.
+* **The residual-failure halt condition is still tripped** at 15.5% (12.0%
+  excluding `rare_disease_diagnosis`). Roughly one trajectory in seven is dead,
+  and the post-hoc decomposition shows **15 of Controller v1's 29 abstentions
+  had ≤1 usable trajectory** — i.e. the abstention rule fired mostly on failure,
+  not on disagreement. **Not repaired; stands exactly as measured.** Any next
+  prospective run needs this under threshold first.
+
+## Phase-2B provenance recovery (2026-08-10) — D-29
+
+A pre-registered prospective experiment ran from an uncommitted working tree.
+**No commit in this repository is the Phase-2B execution commit**, and none is
+claimed to be. Full audit: `reports/phase2b_provenance.md`. Script:
+`scripts/phase2b_provenance_audit.py` (CPU only, read-only). Tests:
+`tests/test_phase2b_provenance_audit.py` (8). Machine-readable:
+`<output_root>/phase2b_provenance/`.
+
+| class | n | what it means |
+| --- | ---: | --- |
+| **ESTABLISHED** | 14 | run-time version pinned by a cryptographic or behavioural attestation |
+| **CHANGED_AFTER** | 3 | known to differ from what ran, change identified |
+| **UNPROVEN** | 4 | exact run-time bytes unrecoverable; circumstantial evidence only |
+
+**Attested:** `configs/phase2b.yaml` — stored `config_hash` `ee5f8cd3…`
+recomputes bit-exactly (after restoring the three `${ENV}` expansions the
+snapshot records; without that step the check false-alarms).
+`manifests/phase2b.jsonl` — recomputes to the protocol's frozen `7cb5da3a…`.
+`controller.py`/`policy.py` — **434/434 committed decision records reproduce
+exactly**, including the free-text `reason` strings, with 150/150 chains
+verifying. The untracked driver's output — **600/600 trajectory identities**
+(`run_id`, `requested_seed`, `prompt_hash`, `run_dir`) recompute from tracked
+code. `biomni_src` clean at `400c1f36…`.
+
+**Changed after the run:** `phase2b_verify.py` (the D-27 gate fix — the buggy
+version that produced the false PASS is gone and cannot be exhibited),
+`phase2b_analyze.py`, `tests/test_phase2b_analyze.py`. None participates in
+trajectory generation or scoring.
+
+**Unrecoverable:** `scripts/phase2b_run.py`, `run_phase2b.sh`,
+`phase2b_supervise.sh`, `tests/test_controller.py`. **mtime is circumstantial,
+never proof** — asserted by test.
+
+**Logged observation (not a correction to D-27):** the supervisor log ends
+2026-08-02 at `WAITING_FOR_SMOKE`; the full run started 2026-08-09 with
+`phase2b_supervise.sh` modified 4 minutes earlier. The supervisor that logged on
+2026-08-02 did not launch the full run.
+
+The working tree was committed as an explicitly-labelled **post-hoc provenance
+recovery snapshot**, not as the execution commit. No frozen artifact was
+modified and no history was rewritten.
+
+## Phase 2B result (2026-08-10) — prospective test: BOTH CO-PRIMARY HYPOTHESES FAIL
+
+150 held-out instances, 600 trajectories, run 2026-08-09→10 (8.5 h, 0 errors, 0
+chain-verification failures). Full write-up, all numbers, all mechanisms:
+`reports/phase2_report.md`.
+
+| hypothesis | result | verdict |
+| --- | --- | --- |
+| **H1** reward retention (δ=0.05 margin vs fixed K=4) | −0.033, 95% CI [−0.067, −0.007] | **FAIL** |
+| **H2** cost reduction (mean K < 3.0) | 2.893, 95% CI [2.760, **3.033**] | **FAIL** (narrowly) |
+
+**Per protocol §7.5, this is the pre-registered falsification outcome.**
+Stated plainly, not reframed: the frozen mandatory-K2-plus-abstention
+controller does not reproduce fixed-K=4 reliability prospectively.
+
+**Mechanism, not just verdict** (§4 of the report, from pre-registered
+deliverables): the controller is accurate when it answers (0.711 among the
+80.7% it accepts) but abstains on 19.3% of instances, each scored 0 by the
+mandated accounting. The sharper finding: `mandatory_k2` accepts the instant
+two trajectories agree, so **every** acceptance has identical support (=2) —
+this erases the difference between a confident 2-of-2 stop (87.7% accurate)
+and a reluctant 2-of-4 plurality (**35.0% accurate — below fixed K=1's blind
+51.3%**), and the rule as frozen does not abstain on that weak state. A
+same-cost matched-compute baseline (spend the identical trajectories with no
+adaptivity at all) beats the controller outright (0.592–0.593 vs 0.573).
+
+**A separate, serious process finding.** `scripts/phase2b_verify.py`'s
+residual-failure-rate gate had an exact-string-match bug
+(`"budget_terminated"` vs the runner's actual
+`"budget_terminated_consecutive_runaway"`) that silently reported 0.0% in
+*every* run. The true rate was **37.5%** in the smoke test and **15.5%** in
+the full run — both above the pre-registered 15% halt threshold. Under the
+corrected gate, the smoke test's true rate should have **blocked** the
+(operator-approved) compressed auto-launch (DEV-2) before the full run's 8.5
+GPU-hours were spent. **This does not explain the H1/H2 failure** — recomputed
+excluding `rare_disease_diagnosis` (33.0% of the excess failure rate, also the
+task deliberately oversampled per D-22), H1/H2 fail almost identically
+(−0.032, mean K 2.856). Bug fixed and regression-tested; incident logged in
+`reports/phase2_protocol.md` DEV-4, `DECISIONS.md` D-26/D-27.
+
+**What survives.** Two secondary results are genuine, independent of the
+headline failure: **S1** — 0% confidently-wrong for the controller vs 5.3% for
+fixed K=4 (a real safety property); **S4** — `final_confidence == 1.00`
+correct 89.8% (44/49) vs 65.1% (267/410) for the rest, a clean prospective pass
+for the hypothesis D-19 explicitly deferred to this phase. Both are candidates
+for a redesigned controller, to be tested in a **new, separately
+pre-registered** prospective run — never as a retroactive fix to this one.
+
+**Deliverables:** `reports/phase2_report.md`; 14 tables + 3 figures +
+`phase2b_results.json` at `<output_root>/phase2b/results/`;
+`tests/test_phase2b_analyze.py` (13 tests, including a regression test for the
+gate bug); `scripts/phase2b_analyze.py`. Full suite: **369 passed.**
 
 ## Phase 2B — frozen protocol (2026-08-02, no inference run)
 
@@ -333,6 +499,47 @@ not 36%.
 
 ---
 
+## Forest Check — 2026-08-10, after the post-Phase-2B review
+
+**1. What scientific uncertainty was resolved?**
+Two. First, whether the Phase-2B failure pointed at a fixable rule or at a
+fixable *framing*. It is the framing: the 2-of-2 / 2-of-4 distinction cannot act
+inside an action set whose only non-terminal move is "resample", and refusing
+the weak state is arithmetically worse than accepting it under the mandated
+accounting. Second, whether `final_confidence == 1.00` — which passed its
+prospective test — should enter a controller. It should not; its value sits
+entirely in the state that is already 87.7% accurate.
+
+**2. Did the main research claim change?**
+Narrowed again, and honestly. "Cheap intrinsic signals can guide verification
+effort" now holds only in the weak form *"continuing after a trajectory dies
+pays for itself; continuing after a disagreement does not."* The stronger claim
+— that consensus structure can allocate compute profitably — has now failed
+prospectively once and offline once, on independent pools.
+
+**3. Is the next task necessary for the central contribution?**
+Yes, and it is deliberately the cheap one. The north star asks whether an agent
+can recognise unreliable conclusions; the measurement in §7 of the offline
+assessment says the recoverable errors are **minority-held**, which no
+recognition-and-voting scheme reaches. Testing whether disagreement is
+substantive (different plans/tools) or cosmetic (noisy final answers) is the
+precondition for Track C being a real research direction rather than a slogan.
+
+**4. Are we overfitting to implementation details or the original pilot?**
+This was the live risk and the discipline held: the adjudication bar was written
+before the analysis ran, the leading candidate was rejected despite a positive
+point estimate, and the cross-pool check (`phase1_pooled` vs `phase2b`) is what
+exposed the effect as two instances. The recurring trap — reading a narrow
+offline CI as a strong result — was named explicitly and is now on record twice.
+
+**5. What is the simplest decisive next experiment?**
+CPU-only trace analysis of the 51 split `phase2b` instances plus the Phase-1/1.5
+traces: do disagreeing trajectories differ in plan and tool path, or only in the
+final answer? Zero GPU hours, and it determines whether Track C has a mechanism
+to build on.
+
+---
+
 ## Forest Check — 2026-08-02, after the Phase-2A offline replay
 
 **1. What scientific uncertainty was resolved?**
@@ -492,11 +699,20 @@ preserved below.
 
 ## Current blockers
 
-**One, and it is deliberate: the frozen Phase-2B protocol is awaiting approval.**
-Phase 2A is approved and committed. The protocol, manifest, config and controller
-are frozen; the standing instruction is to stop here and present them. **Neither
-the GPU smoke test nor the full prospective run may start without explicit
-approval.** Nothing technical blocks either; the gate is a decision.
+**No analysis blockers.** Phase 2B is complete and its follow-up decision is
+closed (D-28: Track C, no Controller v2). The project is waiting on **operator
+approval** to begin Track C, which is a gate, not a blocker.
+
+**Two blockers on any future prospective run**, both found in the 2026-08-10
+review and neither yet closed:
+
+1. **Uncommitted code.** The Phase-2B controller and drivers are untracked; runs
+   record `project_git.dirty = true`. Commit before the next prospective run so
+   the code that produces a pre-registered result is recoverable from history.
+2. **Residual trajectory failure rate 15.5%**, above the 15% halt threshold
+   (12.0% excluding `rare_disease_diagnosis`). This is the halt condition the
+   D-27 gate bug hid, and it is entangled with controller behaviour: 15 of
+   Controller v1's 29 abstentions had ≤1 usable trajectory.
 
 ---
 
@@ -504,7 +720,7 @@ approval.** Nothing technical blocks either; the gate is a decision.
 
 | check | result |
 | --- | --- |
-| `pytest -q` | **331 passed** (274 + 42 policy + 15 calibration) |
+| `pytest -q` | **382 passed** (274 + 42 policy + 15 calibration + 25 controller + 13 phase2b_analyze + 13 controller_v2_rules) |
 | `ruff check src tests scripts` | clean |
 | `ruff format --check src tests scripts` | clean except one pre-existing drift in the untouched `tests/test_resumption.py` (a ruff-version line-wrap difference; left alone rather than reformatting a frozen test file) |
 | Import check inside the Biomni environment | OK |
@@ -519,6 +735,8 @@ approval.** Nothing technical blocks either; the gate is a decision.
 | **Repair re-run, all 62 Phase-1 failures (arm 2)** | **complete** — 42/62 rescued (67.7%); 20/62 hit the `max_consecutive_runaway` circuit breaker, concentrated in `rare_disease_diagnosis` (10/13 still fail). |
 | **Pooled reanalysis (230/250, entry-condition check)** | **complete** — oracle headroom 16.0pp, plurality-first +0.14 [0.04,0.26], agreement AUROC 0.815. All go-criteria hold; calibration measurably worse (0.37→0.43 overconfidence gap). |
 | **Phase-2A offline replay (32 policies x 50 instances x 24 orderings)** | **complete, CPU only** — mandatory K=2 matches fixed K=4 (0.577) at mean K 2.70; K=1 trigger weak (3/5 folds refuse); abstention rule found. One policy recommended for 2B. |
+| **Phase-2B smoke (6 instances, `phase2b_smoke`)** | **completed** 2026-08-02; 6/6 terminated, 0 errors, chain intact. Gate script bug (D-27) means its reported "0 fatal failures" was wrong — true residual failure rate was 37.5%, above threshold. |
+| **Phase-2B full prospective run (150 instances, 600 trajectories)** | **completed** 2026-08-10, 8.5 h, 0 errors, all 150 decision chains verify, 0/150 online-vs-recomputed integrity mismatches. **H1 FAIL, H2 FAIL** — see `reports/phase2_report.md`. |
 
 All bugs found and fixed (pre-pilot + post-pilot + post-ablation) are listed
 with detail in `reports/phase0_environment.md` §8, `reports/phase1_report.md`
@@ -539,8 +757,9 @@ reward-join bug).
 | `phase1_5` | `configs/phase1_5.yaml` | repair re-run of all 62 Phase-1 failures under Arm 2. **62/62 attempted, 42 ok / 20 failed.** Map to originals: `manifests/phase1_5_runs.original_map.json`. |
 | `phase1_pooled` | — (analysis-only, no config of its own) | pooled Phase-1 + phase1_5 spec list, **230/250 complete (92.0%)**. Not a run experiment — `manifests/phase1_pooled_runs.jsonl` + `scripts/pool_and_analyze_phase1_5.py`. Entry-condition check: **PASS**, all go-criteria hold. |
 | `phase2a` | — (analysis-only, no config of its own) | offline sequential policy replay on `phase1_pooled`. **No model calls, no GPU.** 32 policies x 50 instances x 24 orderings. `scripts/phase2a_offline_replay.py`; results at `<output_root>/phase2a/results/`. Report: `reports/phase2_offline_replay.md`. |
-| `phase2b` | `configs/phase2b.yaml` | **DESIGNED AND FROZEN, NOT STARTED.** Prospective controller evaluation on 150 held-out instances (`manifests/phase2b.jsonl`, hash `7cb5da3a…`), 600 trajectories. Protocol: `reports/phase2_protocol.md`. Requires explicit approval to launch. |
-| `phase2b_smoke` | `configs/phase2b_smoke.yaml` *(not yet written)* | multi-task GPU smoke test on **reserved** instances, never on the 150. Requires approval. |
+| `phase2b` | `configs/phase2b.yaml` | **COMPLETE.** Prospective controller evaluation, 150 held-out instances (`manifests/phase2b.jsonl`, hash `7cb5da3a…`), 600 trajectories, run 2026-08-09→10. **Both co-primary hypotheses FAIL** — `reports/phase2_report.md`. Analysis: `scripts/phase2b_analyze.py`, results at `<output_root>/phase2b/results/`. |
+| `phase2b_smoke` | `configs/phase2b_smoke.yaml` | **Complete**, 2026-08-02, 6 instances on reserved pool (+1 reused Phase-1 instance for `rare_disease_diagnosis`, DEV-1 — never pooled into analysis). |
+| `controller_v2_offline` | — (analysis-only, no config of its own) | **Complete**, 2026-08-10. 18 parameter-free policies replayed over `phase2b` (realized order + all 24 orderings) and `phase1_pooled` (all 24). **CPU only, ~40 s, no model calls, no GPU, no held-out instance consumed.** `scripts/controller_v2_offline.py`; results at `<output_root>/controller_v2_offline/results/` (12 tables). Report: `reports/controller_v2_offline_assessment.md`. **Verdict: Recommendation B, no Controller v2.** |
 
 ---
 
@@ -598,31 +817,52 @@ written. What remains is decisions, not artifacts:
    `reports/phase2_protocol.md` before any prospective outcome exists.~~
    **Done**, 2026-08-02 — 150 instances, hash `7cb5da3a…`, protocol frozen.
 
-### Next action — **needs approval before anything else happens**
+9. ~~Write the Phase-2B implementation~~ **Done** — `scripts/phase2b_run.py`
+   (online controller driver, hash-chained decision log),
+   `configs/phase2b_smoke.yaml`, `scripts/phase2b_verify.py` (gate checks;
+   had a bug, see below), `scripts/run_phase2b.sh`,
+   `scripts/phase2b_supervise.sh`. 25 controller tests.
+10. ~~Run the smoke test~~ **Done**, 2026-08-02. Gate script reported clean;
+    was actually wrong (D-27) — true residual failure rate 37.5%, should have
+    blocked the next step.
+11. ~~Launch the full prospective run~~ **Done**, 2026-08-09→10, 150 instances,
+    600 trajectories, 8.5 h, 0 errors.
+12. ~~Analysis and `reports/phase2_report.md`~~ **Done**, 2026-08-10.
+    **Both co-primary hypotheses FAIL.** No policy tuning occurred after
+    outcomes were seen — the frozen controller is reported exactly as it ran.
 
-**Present the frozen Phase-2B protocol, manifest, sample-size justification and
-compute estimate, then stop.** Remaining steps, each separately gated:
+### Next action — **CLOSED 2026-08-10 (D-28): Track C, no Controller v2**
 
-1. On approval of the protocol: write the implementation —
-   `scripts/run_phase2b.sh`, `configs/phase2b_smoke.yaml`, the online controller
-   driver with its hash-chained decision log, and `scripts/phase2b_analyze.py`,
-   with tests.
-2. **Approval required:** run the multi-task GPU smoke test on reserved
-   instances (never on the 150), against the pass conditions in
-   `reports/phase2_protocol.md` §10.
-3. Present smoke results.
-4. **Separate approval required:** launch the full 600-trajectory prospective
-   run.
-5. Analysis and `reports/phase2_report.md`. No policy tuning after outcomes are
-   seen.
+~~Whether to pursue the §11 redesign as a new prospective run, or take Track C
+as literally selected, is the open decision.~~ **Resolved.** The redesign was
+adjudicated offline against a bar written down first
+(`reports/post_phase2b_assessment.md` §5) and **rejected**
+(`reports/controller_v2_offline_assessment.md`, Recommendation B; D-28). Track C
+stands as pre-registered. No Controller-v2 was built, no manifest created, no
+GPU job launched.
+
+**Awaiting operator approval before any Track-C work begins.** When it does, the
+first step is deliberately **CPU-only, not GPU**: on the 51 `phase2b` instances
+with 2–3 distinct answers (plus Phase-1/1.5 traces, all preserved), measure
+whether disagreement reflects genuinely different plans and tool paths or merely
+noisy final answers. If it is noise, independent verification has nothing to
+work on and Track C itself needs reframing — and that costs zero GPU hours to
+find out. Only after that should any diversity mechanism be built.
+
+Before any *prospective* run of any kind: commit the Phase-2B code (runs record
+`project_git.dirty = true`), and bring the residual trajectory failure rate
+under the 15% halt threshold (currently 15.5%).
 
 Deferred, not started: expanding the pilot for tighter CIs; transfer to a second
-agent; expert workflow annotation; Phase 2C controlled-failure study; adding test
-coverage for `scripts/analyze_ablation.py` and
+agent; expert workflow annotation; Phase 2C controlled-failure study (does not
+proceed on this controller as frozen — see `reports/phase2_report.md` §11);
+adding test coverage for `scripts/analyze_ablation.py` and
 `scripts/pool_and_analyze_phase1_5.py` (one-off analysis scripts outside `src/`,
-flagged as a gap, not closed here). `scripts/phase2a_offline_replay.py` is also
-outside `src/`, but the logic it drives lives in `src/biomni_uncertainty/policy.py`
-and `calibration.py` and **is** covered (55 tests).
+flagged as a gap, not closed here). `scripts/phase2a_offline_replay.py` and
+`scripts/phase2b_analyze.py` are also outside `src/`, but the logic they drive
+lives in `src/biomni_uncertainty/{policy,calibration,controller}.py` and **is**
+covered (67 tests across policy/calibration/controller + 13 for
+phase2b_analyze's own arithmetic).
 
 ---
 
