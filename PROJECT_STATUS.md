@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-10 (Steps 0-1 of the live-GPU-window plan closed (D-36/D-37); mode-A headroom is 7.1%, below the 15% floor — Step 2's pilot reframed around evidence-based adjudication; Step 2 next)
+**Last updated:** 2026-08-10 (Steps 0-1 closed (D-36/D-37); Step 2's Arm 1 complete, Arm 2 running in background against a frozen acceptance rule; Step 3 write-up skeleton drafted in parallel)
 
 ## Live-GPU-window plan underway (2026-08-10)
 
@@ -71,9 +71,44 @@ mixed computational verification.
 
 11 new tests (444 total). No frozen artifact touched.
 
-**Next: Step 2** — freeze the acceptance rule (floor/ceiling from 1a's
-canonical table, GO/NO-GO/INCONCLUSIVE bars), then the GPU candidate-
-adjudication pilot, 2 arms, on stratum B instances from both pools.
+### Step 2, in progress (2026-08-10) — candidate-adjudication pilot
+
+Acceptance rule frozen before any trajectory (`step2_acceptance_rule.md`,
+throwaway scratch, not committed by design — floor 0.4103 / ceiling 0.6026 /
+gap 0.1923 over the 78 pooled stratum-B instances; GO if Δ's 95% CI lower
+bound > 0, NO-GO if Δ's CI upper bound < gap/3 = 0.0641, else INCONCLUSIVE).
+`scripts/track_c_adjudication_pilot.py` (`prep`/`arm1`/`arm2`, committed
+`cddf96c`) builds the 78-instance candidate set from frozen `phase2b` +
+`phase1_pooled` trajectories only — zero held-out instances touched; exclusion
+list written for future VERIFY manifests before any pilot result.
+
+**Arm 1** (one-shot, no tools, 234 chat completions) — **complete**. Caught and
+fixed a token-truncation bug pre-launch (512→2048 max tokens; Biomni-R0 always
+emits `<think>` before answering) via a 3-instance smoke test before spending
+the full budget.
+
+**Arm 2** (tool-enabled agent, the kill-shot arm — only its failure licenses
+NO-GO for VERIFY) — **launched from a clean tree, in progress**
+(`/scratch/11034/atzanakak/biomni_unc_runs/track_c_adjudication_pilot`, throwaway
+experiment tree, not registered as an Active Experiment ID). Real per-trajectory
+cost (~150–320s incl. tool calls) puts completion closer to ~3h than the
+original 1.5–2h estimate.
+
+`scripts/track_c_adjudication_analyze.py` (committed `95cf660`) implements the
+frozen rule end-to-end — majority-resolution (2-of-3), paired instance-clustered
+bootstrap, GO/NO-GO/INCONCLUSIVE, task-family and per-pool secondary cuts,
+on/off-menu rate, Arm-2 budget/degeneration secondary metrics — and is verified
+against live Arm-1 (complete) and partial Arm-2 data. It refuses to compute a
+verdict until all 234 Arm-2 trajectories are complete; a partial run is reported
+descriptively only, tagged INCOMPLETE. 11 new tests (455 total).
+
+**Next:** once Arm 2 reaches 234/234, run the analysis, read the verdict, write
+`reports/track_c_step2.md`, add the next `D-` entry, update this file, commit —
+then decide Step 4 (K=2 characterization, conditional on GO or
+INCONCLUSIVE-leaning-GO) accordingly. Step 3 (write-up skeleton,
+`reports/writeup_draft.md`) is drafted in parallel per the plan, with every
+already-final section written; only §7 (Track C's Step-2 outcome) waits on
+this.
 
 ## VERIFY prerequisites — all five adjudicated (2026-08-10)
 
