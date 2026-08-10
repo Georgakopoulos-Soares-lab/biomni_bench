@@ -1,6 +1,41 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-10 (**All 5 VERIFY prerequisites adjudicated** — D-32/D-33/D-34/D-35. Items 5,1,2,4 PASS/DONE; **item 3 (residual failure) FAILED at 28.1%** — a prospective VERIFY experiment stays BLOCKED on that alone)
+**Last updated:** 2026-08-10 (D-29 process debt closed (D-36); starting the "Next steps — live GPU node" plan: Step 0 done, Step 1 (offline preflight) next)
+
+## Live-GPU-window plan underway (2026-08-10)
+
+Working the 6-step plan in order: Step 0 (process debt) → Step 1 (CPU
+preflight: stratum reconciliation, verifiability×headroom, degeneration×
+stratum) → Step 2 (GPU: candidate-adjudication pilot, 2 arms) → Step 3
+(write-up, parallel) → Step 4 (conditional on Step 2: K=2 characterization) →
+Step 5 (gated, not started without explicit approval). Job `3388121` still
+live.
+
+### Step 0, closed (2026-08-10, D-36) — dirty-tree guard + source hashing
+
+`scripts/phase2b_run.py` and `cli.py dispatch` both refuse to launch (exit
+non-zero) from an uncommitted tree, including untracked-file-only dirtiness —
+exactly D-29's failure mode. `--allow-dirty` is the logged exploratory-only
+escape hatch. Every trajectory's `metadata.json` now carries `source_hashes`
+(SHA-256 of every `src/biomni_uncertainty/*.py` and `scripts/*.py` file), so
+a future D-29-style audit is one equality check instead of a reconstruction.
+"Never overwrite a gating script" recorded as a standing rule in `CLAUDE.md`.
+10 new tests (433 total), guard verified live against the real dirty tree
+(nonexistent-path invocation, exits before touching config/manifest/endpoint).
+
+**Process note, recorded honestly:** an earlier guard-verification attempt
+pointed at the *real* `phase2b.yaml`/`phase2b.jsonl`/production endpoints
+with the actual Step-0 changes accidentally stashed away first, and was
+killed by a command timeout mid-run. No frozen artifact was affected (all 150
+`phase2b` instances were already complete, so the run would only have
+short-circuited to "reused" for each; verified: zero new mtimes, decision-log
+count unchanged at 150) — but the methodology was wrong and is not to be
+repeated. Corrected to a nonexistent-path check, which proves the guard's
+ordering without risk.
+
+**Next: Step 1** — CPU-only offline preflight (stratum reconciliation,
+verifiability×headroom crossing, degeneration×stratum contingency), decision
+rules frozen in the script before any number is computed.
 
 ## VERIFY prerequisites — all five adjudicated (2026-08-10)
 

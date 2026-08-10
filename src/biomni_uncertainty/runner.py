@@ -30,7 +30,7 @@ from biomni_uncertainty.confidence import confidence_instruction
 from biomni_uncertainty.config import Config
 from biomni_uncertainty.events import EventLogger, Redactor
 from biomni_uncertainty.instrumentation import AgentInstrumentation, TrajectoryStats, analyze_messages
-from biomni_uncertainty.provenance import git_info, gpu_info, slurm_info, write_json_atomic
+from biomni_uncertainty.provenance import git_info, gpu_info, slurm_info, source_hashes, write_json_atomic
 from biomni_uncertainty.sampling import (
     COMPLETE_MARKER,
     CONDITION_INSTRUMENTED,
@@ -435,6 +435,10 @@ def run_trajectory(
         "gpu": gpu_info(),
         "biomni_git": git_info(biomni_repo),
         "project_git": git_info(project_repo),
+        # D-29: closes the provenance gap found in the Phase-2B audit - a
+        # future check is one equality comparison against the current tree
+        # instead of a forensic reconstruction.
+        "source_hashes": source_hashes(project_repo) if project_repo else {},
         "config_hash": cfg.hash(),
         "config_snapshot": cfg.snapshot(),
         "started_at": time.time(),

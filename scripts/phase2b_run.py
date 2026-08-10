@@ -243,7 +243,21 @@ def main() -> int:
         help="stop starting trajectories this long before SLURM_JOB_END_TIME",
     )
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument(
+        "--allow-dirty",
+        action="store_true",
+        help="override the D-29 clean-tree guard; logs a prominent warning into metadata.json "
+        "instead of refusing to start. Never use for a confirmatory prospective run.",
+    )
     args = ap.parse_args()
+
+    from biomni_uncertainty.provenance import DirtyTreeError, assert_clean_tree
+
+    project_repo = Path(__file__).resolve().parents[1]
+    try:
+        assert_clean_tree(project_repo, allow_dirty=args.allow_dirty)
+    except DirtyTreeError as exc:
+        raise SystemExit(f"REFUSING TO LAUNCH: {exc}") from exc
 
     cfg = load_config(args.config)
     if not cfg.controller.enabled:

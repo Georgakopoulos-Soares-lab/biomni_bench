@@ -243,7 +243,16 @@ def cmd_run_one(args: argparse.Namespace) -> int:
 
 def cmd_dispatch(args: argparse.Namespace) -> int:
     from biomni_uncertainty.dispatcher import check_endpoints, dispatch, load_endpoints
+    from biomni_uncertainty.provenance import DirtyTreeError, assert_clean_tree
     from biomni_uncertainty.sampling import read_run_manifest
+
+    project, _ = _repos()
+    if project:
+        try:
+            assert_clean_tree(project, allow_dirty=getattr(args, "allow_dirty", False))
+        except DirtyTreeError as exc:
+            _eprint(f"REFUSING TO LAUNCH: {exc}")
+            return 2
 
     cfg = _load(args)
     specs = read_run_manifest(args.run_manifest)
@@ -483,6 +492,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--max-concurrent-per-endpoint", type=int)
     s.add_argument("--python", help="python interpreter for run-one subprocesses")
     s.add_argument("--dry-run", action="store_true")
+    s.add_argument(
+        "--allow-dirty",
+        action="store_true",
+        help="override the D-29 clean-tree guard; logs a warning instead of refusing to start. "
+        "Never use for a confirmatory prospective run.",
+    )
     s.set_defaults(func=cmd_dispatch)
 
     for name, fn, helptext in (

@@ -182,10 +182,27 @@ dates in absolute form. If something failed, say so with the evidence.
 Every run record must keep: identity, requested seed **and** whether the seed was
 actually supported, model + revision + endpoint, Biomni commit, project commit,
 working-tree dirty flag, config snapshot and hash, hostname, Slurm IDs, GPU
-assignment, timings, completion status, failure class, and output paths.
+assignment, timings, completion status, failure class, and output paths — plus,
+since D-36, a `source_hashes` map (`provenance.source_hashes`) of every
+`src/biomni_uncertainty/*.py` and `scripts/*.py` file, so a future provenance
+audit is one equality check instead of the reconstruction D-29 required.
 
 Never claim deterministic reproducibility unless the whole stack is deterministic.
 `requested_seed` and `seed_supported` are separate fields for exactly this reason.
+
+**No prospective launch entrypoint may start from a dirty tree.**
+`scripts/phase2b_run.py` and `cli.py`'s `dispatch` both call
+`provenance.assert_clean_tree` before generating a trajectory and exit non-zero
+on an uncommitted tree (D-36). `--allow-dirty` exists for exploratory/throwaway
+runs only — logs a prominent warning, never use it for a confirmatory
+prospective run.
+
+**Never overwrite a script that has produced a gating decision.** Fix forward in
+a new commit. D-27's buggy `scripts/phase2b_verify.py` was fixed in place before
+this rule existed, which is why the exact code that produced the false PASS
+could not later be exhibited (D-29). Going forward, a bug found in a script that
+already gated a real decision gets a new commit, not an edit that erases the
+version that ran.
 
 ## Why ground truth is tracked in git
 

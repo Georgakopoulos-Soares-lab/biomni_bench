@@ -1339,3 +1339,74 @@ pairing under confirmed seed non-determinism, one literature-oriented
 instance, five of ten tasks touched, `rare_disease_diagnosis` deliberately
 excluded as the pool-exhausted high-risk stratum rather than a healthy
 control.
+
+---
+
+## D-36 The D-29 process debt is closed: launch entrypoints refuse a dirty tree; every trajectory carries source hashes
+
+**Decided:** 2026-08-10. **CPU-only, no GPU, no manifest, no config change.**
+No frozen artifact touched. Closes the two forward-looking consequences D-29
+listed but did not implement.
+
+**Decision.**
+
+1. **`provenance.assert_clean_tree`** — `scripts/phase2b_run.py`'s `main()` and
+   `cli.py`'s `dispatch` command both call it before generating a single
+   trajectory. Raises `DirtyTreeError` (→ non-zero exit) on any uncommitted
+   change, **including untracked files** — an untracked new controller module,
+   exactly D-29's failure mode, trips it. `--allow-dirty` exists for
+   exploratory/throwaway runs only, prints a prominent warning to stderr and
+   the run log, and must never be used for a confirmatory prospective run.
+2. **`provenance.source_hashes`** — SHA-256 (16 hex chars) of every
+   `src/biomni_uncertainty/*.py` and `scripts/*.py` file, recorded into every
+   trajectory's `metadata.json` under `source_hashes` (`runner.py`,
+   alongside the existing `project_git`/`biomni_git` fields). A future D-29-style
+   audit is now one equality check against the current tree instead of the
+   file-by-file behavioural reconstruction that D-29 required. Deliberately
+   hashes every driver in `scripts/`, not just the one that happened to launch
+   a given trajectory — a subprocess cannot reliably identify its own
+   top-level entrypoint, so the audit surface is the whole `scripts/`
+   directory.
+3. **Never overwrite a script that has produced a gating decision** — recorded
+   as a standing rule in `CLAUDE.md`'s provenance section, not as code. D-27's
+   `scripts/phase2b_verify.py` was fixed in place before this rule existed,
+   which is why the exact version that produced the false PASS could not
+   later be exhibited (D-29). Going forward, a bug found in a script that
+   already gated a real decision gets a new commit, never an edit that erases
+   the version that ran.
+
+**Verification, not just implementation.** The guard was exercised live
+against the real dirty tree mid-development (a bogus config/manifest path,
+`timeout 10`, no real endpoint or frozen artifact touched): it printed
+`REFUSING TO LAUNCH: DIRTY TREE ...` and exited 1 **before** attempting to
+load any config, read any manifest, or contact any endpoint — the guard sits
+ahead of every side-effecting step, not just ahead of trajectory generation.
+
+**A near-miss during this work, recorded for the record.** An earlier attempt
+to exercise the guard end-to-end via a live `phase2b_run.py` invocation was
+run against the **real** `configs/phase2b.yaml` / `manifests/phase2b.jsonl` /
+production endpoints file, with the actual Step-0 code changes accidentally
+`git stash`-ed away first (so the *old*, unguarded script ran). The process
+was killed by a 30-second command timeout mid-run. **No frozen artifact was
+affected** — every one of the 150 `phase2b` instances was already complete,
+so `is_valid_complete` would short-circuit to `"reused"` with no trajectory
+regenerated; verified directly afterward (zero new mtimes under
+`phase2b/runs`, decision-log count unchanged at 150) — but the methodology
+was wrong: a guard test must never point at real frozen configs or a live
+endpoint. Corrected to a nonexistent-path invocation, which is sufficient to
+prove the guard's ordering and cannot touch anything real.
+
+**Tests.** `tests/test_provenance.py` (10 new): clean tree passes silently;
+dirty tree raises by default; `--allow-dirty`'s warning appears on stderr and
+in a given log path; an **untracked-only** dirty state still trips the guard;
+a nonexistent repo path is not misread as dirty; `source_hashes` populates,
+changes when a file changes, is stable when nothing changes, and is empty for
+a directory with no matching files. Real temporary git repositories are used
+throughout rather than mocked subprocess calls, since `git status --porcelain`
+is exactly the ground truth this project has to trust. **Full suite: 433
+passed.**
+
+**Reversal condition.** None — this is infrastructure hardening, not a
+scientific claim. `--allow-dirty` is the intentional escape hatch for
+exploratory work (e.g. a future item-3-style diagnostic) and is not itself a
+reversal of the rule; using it for anything confirmatory would be.

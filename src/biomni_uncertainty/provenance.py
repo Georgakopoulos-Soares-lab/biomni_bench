@@ -2,10 +2,21 @@
 
 Distinguishes a *requested* seed from *confirmed* deterministic behaviour: we
 never claim reproducibility the stack does not provide.
+
+## The D-29 process gap this module closes
+
+Phase 2B ran from an uncommitted tree (`project_git.dirty = True` on all 600
+runs) and its controller was never committed, so no commit could later be
+cited as the execution commit (`reports/phase2b_provenance.md`). Two things
+close that gap going forward: :func:`assert_clean_tree`, which every launch
+entrypoint calls *before* any trajectory starts, and :func:`source_hashes`,
+recorded into every trajectory's `metadata.json` so a future audit is one
+equality check instead of the forensic reconstruction D-29 had to do.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import platform
@@ -16,6 +27,10 @@ from pathlib import Path
 from typing import Any
 
 SECRET_ENV_HINT = ("KEY", "TOKEN", "SECRET", "PASSWORD", "PASSWD", "CREDENTIAL")
+
+
+class DirtyTreeError(RuntimeError):
+    """Raised when a launch entrypoint refuses to start from an uncommitted tree."""
 
 
 def _run(cmd: list[str], timeout: int = 30) -> str | None:
@@ -40,6 +55,58 @@ def git_info(repo: str | Path | None) -> dict:
     status = _run(["git", "-C", repo, "status", "--porcelain"])
     info["dirty"] = bool(status)
     return info
+
+
+def assert_clean_tree(repo: str | Path, *, allow_dirty: bool = False, log_path: str | Path | None = None) -> dict:
+    """Refuse to proceed if ``repo`` has uncommitted changes.
+
+    Every launch entrypoint calls this before generating a single trajectory.
+    Raises :class:`DirtyTreeError` (callers turn that into a non-zero exit) unless
+    ``allow_dirty`` is explicitly set, in which case the caller gets the info
+    dict back but a prominent warning is written to stderr and, if given, to
+    ``log_path`` and returned in the dict under ``"warning"`` so it lands in
+    `metadata.json` rather than only scrolling past in a terminal.
+    """
+    info = git_info(repo)
+    if not info["dirty"]:
+        return info
+    warning = (
+        f"DIRTY TREE at launch: {repo} has uncommitted changes (commit {info['commit']}). "
+        "Per D-29, a prospective run's execution commit must be reconstructable from git "
+        "history. Commit before launching, or pass --allow-dirty to override with a logged "
+        "warning (never for a confirmatory prospective run)."
+    )
+    if allow_dirty:
+        print(f"WARNING: {warning}", file=sys.stderr)
+        if log_path:
+            with open(log_path, "a", encoding="utf-8") as fh:
+                fh.write(f"WARNING: {warning}\n")
+        info["warning"] = warning
+        return info
+    raise DirtyTreeError(warning)
+
+
+def source_hashes(
+    root: str | Path, *, globs: tuple[str, ...] = ("src/biomni_uncertainty/*.py", "scripts/*.py")
+) -> dict:
+    """SHA-256 of every file matched by ``globs`` under ``root``, keyed by relative path.
+
+    Recorded into every trajectory's `metadata.json` under `source_hashes` so a
+    future D-29-style audit is one equality check against the current tree
+    instead of the file-by-file forensic reconstruction that D-29 required.
+    Deliberately covers `scripts/*.py` (every driver, not just the one that
+    happened to launch this trajectory) rather than trying to identify which
+    entrypoint was used from inside a subprocess that does not reliably know.
+    """
+    root = Path(root)
+    out: dict[str, str] = {}
+    for pattern in globs:
+        for p in sorted(root.glob(pattern)):
+            if not p.is_file():
+                continue
+            h = hashlib.sha256(p.read_bytes()).hexdigest()[:16]
+            out[str(p.relative_to(root))] = h
+    return out
 
 
 def gpu_info() -> dict:
