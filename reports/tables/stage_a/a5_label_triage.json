@@ -1,0 +1,154 @@
+{
+  "n_no_correct_instances": 45,
+  "n_assessable": 45,
+  "n_not_assessable": 0,
+  "not_assessable_note": "lettered-option tasks whose correct option text is too short to search for reliably (e.g. a single amino-acid letter); reported rather than guessed at",
+  "A5a_scoring_artifacts": {
+    "n": 0,
+    "gene_synonym_check": "NOT DONE - no offline alias table available; not approximated"
+  },
+  "A5b": {
+    "never_mentioned": 7,
+    "mentioned": 38,
+    "singled_out": 18,
+    "singled_out_denominator": 35,
+    "gt_appears_in_some_solution_block": 21,
+    "extraction_failure_answer_dominates_block": 3,
+    "extraction_failure_answer_merely_appears": 14,
+    "extraction_failure_note": "a trajectory that produced NO parseable answer while its own solution block contained the correct one - the answer was generated and lost. Distinguished from the far commoner case of the answer being discussed inside a long prose solution that commits a different candidate, which is not a lost answer.",
+    "instances_with_gt_in_prompt": 35,
+    "reading": "`mentioned` is an upper bound contaminated by candidate-list enumeration; `singled_out` (mentioned more than the average wrong candidate) is the enumeration-robust measure and is the one the claim rests on"
+  },
+  "A5c_determinacy": {
+    "crispr_delivery": {
+      "verdict": "requires_external_knowledge",
+      "why": "Closed option list, but choosing among delivery methods needs published knowledge of what works for the named cell type; the prompt supplies only a one-line case description."
+    },
+    "gwas_causal_gene_gwas_catalog": {
+      "verdict": "requires_external_knowledge",
+      "why": "Closed gene list, but causality must come from external GWAS/functional evidence; the prompt supplies only the phenotype name and the locus gene list."
+    },
+    "gwas_causal_gene_opentargets": {
+      "verdict": "requires_external_knowledge",
+      "why": "Same template as gwas_catalog, differing only in the evidence source the label was drawn from; the prompt still supplies phenotype plus locus gene list and no causal evidence."
+    },
+    "gwas_causal_gene_pharmaprojects": {
+      "verdict": "requires_external_knowledge",
+      "why": "Same template as gwas_catalog, labelled from drug-pipeline evidence; the prompt again supplies only the phenotype and the locus gene list, never the evidence needed to choose."
+    },
+    "gwas_variant_prioritization": {
+      "verdict": "requires_external_knowledge",
+      "why": "Closed variant list; prioritisation requires external association statistics not in the prompt."
+    },
+    "lab_bench_dbqa": {
+      "verdict": "requires_external_knowledge",
+      "why": "Closed options; answering requires a specific database fact (e.g. miRDB v6.0 content) that the prompt does not contain."
+    },
+    "lab_bench_seqqa": {
+      "verdict": "determinate",
+      "why": "The sequence is supplied in full and the answer is computable from it by ORF translation - the one task whose prompt determines its own answer. Matches D-37's mode-A finding."
+    },
+    "patient_gene_detection": {
+      "verdict": "requires_external_knowledge",
+      "why": "Closed gene list, but mapping HPO phenotype codes to a causal gene requires external gene-phenotype databases."
+    },
+    "rare_disease_diagnosis": {
+      "verdict": "requires_external_knowledge",
+      "why": "Open-ended disease name + OMIM id; requires external disease knowledge. The only task whose answer is NOT contained in its prompt."
+    },
+    "screen_gene_retrieval": {
+      "verdict": "requires_external_knowledge",
+      "why": "Closed gene list; identifying the strongest perturbation effect requires screen data the prompt does not supply (confirmed by reading the full template in D-37 1b)."
+    }
+  },
+  "A5c_counts_over_the_45": {
+    "requires_external_knowledge": 44,
+    "determinate": 1
+  },
+  "NOT_DONE": [
+    "stale-label checks",
+    "incorrect-label adjudication",
+    "multiple-defensible-answer judgments"
+  ],
+  "NOT_DONE_why": "each needs domain reviewers; an LLM is deliberately NOT substituted (circularity)",
+  "by_task": [
+    {
+      "task_name": "crispr_delivery",
+      "n": 3,
+      "never_mentioned": 0,
+      "singled_out": 2
+    },
+    {
+      "task_name": "gwas_causal_gene_gwas_catalog",
+      "n": 6,
+      "never_mentioned": 0,
+      "singled_out": 3
+    },
+    {
+      "task_name": "gwas_causal_gene_opentargets",
+      "n": 1,
+      "never_mentioned": 0,
+      "singled_out": 1
+    },
+    {
+      "task_name": "gwas_causal_gene_pharmaprojects",
+      "n": 2,
+      "never_mentioned": 0,
+      "singled_out": 2
+    },
+    {
+      "task_name": "gwas_variant_prioritization",
+      "n": 6,
+      "never_mentioned": 0,
+      "singled_out": 3
+    },
+    {
+      "task_name": "lab_bench_dbqa",
+      "n": 2,
+      "never_mentioned": 2,
+      "singled_out": 0
+    },
+    {
+      "task_name": "lab_bench_seqqa",
+      "n": 1,
+      "never_mentioned": 1,
+      "singled_out": 0
+    },
+    {
+      "task_name": "patient_gene_detection",
+      "n": 3,
+      "never_mentioned": 0,
+      "singled_out": 0
+    },
+    {
+      "task_name": "rare_disease_diagnosis",
+      "n": 10,
+      "never_mentioned": 4,
+      "singled_out": 0
+    },
+    {
+      "task_name": "screen_gene_retrieval",
+      "n": 11,
+      "never_mentioned": 0,
+      "singled_out": 7
+    }
+  ],
+  "corrected_scoring": {
+    "n_instances": 150,
+    "no_correct_official": 45,
+    "no_correct_corrected": 42,
+    "no_correct_rate_official": 0.3,
+    "no_correct_rate_corrected": 0.28,
+    "oracle_at_4_official": 0.7,
+    "oracle_at_4_corrected": 0.72,
+    "plurality": 0.6066666666666667,
+    "selection_headroom_official": 0.09333333333333327,
+    "selection_headroom_corrected": 0.11333333333333329,
+    "what_changed": "only the extraction failures are re-scored; A.5a found 0 pure-normalisation artifacts, and `singled_out` is deliberately NOT used to re-score anything",
+    "by_task": {
+      "gwas_causal_gene_gwas_catalog": 1,
+      "gwas_variant_prioritization": 1,
+      "screen_gene_retrieval": 1
+    }
+  }
+}

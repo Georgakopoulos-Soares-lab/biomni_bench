@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-11 (**Stage 0 closed**: D-38's upper-bound inference retracted in **D-39**; Stage C stop rule frozen and committed *before* any Stage A number exists; write-up reframed around generation / selection / execution reliability / selective deferral. Stage A in progress. The live-GPU-window plan below is superseded and closed.)
+**Last updated:** 2026-08-11 (**Stage 0 and Stage A both closed** — D-39 retraction, Stage C stop rule frozen first, write-up reframed, and the A.1–A.5 decomposition complete (**D-40**). The paper is submittable on this material. Stage C runs in a separate session under its frozen stop rule. The live-GPU-window plan below is superseded and closed.)
 
 ## Current plan: Stage 0 → Stage A → (separate session) Stage C
 
@@ -54,6 +54,50 @@ not a safety finding. The defined comparison: fixed K=4 made 76 confident calls
 and was wrong on 8 — 10.5%, 95% Wilson CI [5.4%, 19.4%].
 
 **Full suite: 459 passed.**
+
+### Stage A, closed (2026-08-11, D-40) — existing-data decomposition
+
+Full report: `reports/stage_a_decomposition.md`. CPU only, no GPU, no model
+calls, no new instances, **no LLM used to adjudicate any label**. Every
+interpretation rule was written into its script's docstring before the
+corresponding numbers existed.
+
+**A.1** — the adjudication null is **not** an aggregation artifact. Dropping the
+2-of-3 requirement buys +0.013 [−0.090, +0.115]; Oracle@3 over Arm 2's own
+answers reaches only 0.513 against the pool's 0.6026 ceiling, so Arm 2's answer
+set is worse than the set it was adjudicating and no aggregation could rescue
+it. D-38's verdict is not recomputed against any alternative aggregation.
+
+**A.2** — `Δ = (capture − harm)/n` reconciles exactly for every selector.
+**69.2% of Arm 2's harm is interface harm** (vs only 4 `wrong_in_menu`), above
+the 50% bar fixed in advance: D-39's retraction has real quantitative content.
+Independently: **the controller's capture against fixed K=4 is 0** — it never
+converted a fixed-K=4 error into a correct answer on any of 150 instances.
+
+**A.3** — **the selectivity belongs to the agreement signal, not the
+controller.** Agreement-thresholded fixed K=4 matches or beats it at every
+comparable coverage, and at a 5%/10% error budget the controller reaches zero
+coverage while agreement counting reaches 30.7% at 2.2% error.
+
+**A.4** — no usable separating signal in cheap traces. The one nominal hit
+clears the bar by 0.0002 and dies under Bonferroni (post-hoc check, labelled).
+
+**A.5** — **"30% unreachable" is a loose upper bound on a generation
+limitation.** Enumeration-robust `singled_out` is **18 of 35** assessable
+instances (51%): the model discussed the correct answer preferentially and
+committed something else. Plus **3 genuine extraction failures**. Corrected
+scoring: no-correct 45 → 42 (30.0% → 28.0%), Oracle@4 0.700 → 0.720, selection
+headroom **0.093 → 0.113**. A.5a found 0 scoring artifacts; gene-symbol synonymy
+NOT DONE (no offline alias table, not approximated). Stale-label and
+defensible-answer judgments need domain reviewers, are not done, and are **not**
+delegated to an LLM.
+
+Two bugs found and fixed, both of which would have manufactured favourable
+results: a candidate-extraction regex that matched prose instead of the gene
+list (inflating `singled_out` from 18 to 24), and a normaliser too weak to see
+`'BRCA1'.` as `BRCA1` (which would have hidden real scoring artifacts).
+
+**15 new tests. Full suite: 474 passed.**
 
 ---
 

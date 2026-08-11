@@ -1685,3 +1685,128 @@ evidence before the claim was made.
 inference does not become valid on further evidence. The *empirical* question
 it over-claimed on is reopened, and is what Stage C tests, under that file's
 frozen stop rule.
+
+---
+
+## D-40 Stage A decomposition: the adjudication null survives, its scope narrows, and "30% unreachable" is a loose upper bound
+
+**Decided:** 2026-08-11. Full report: `reports/stage_a_decomposition.md`.
+Drivers `scripts/stage_a_decomposition.py` (A.1-A.4) and
+`scripts/stage_a_label_triage.py` (A.5). **CPU only, no GPU, no model calls, no
+new instances, no LLM used to adjudicate any label.** Interpretation rules for
+every analysis were written into each script's docstring before the
+corresponding numbers existed, and `reports/stage_c_stop_rule.md` was committed
+(`63c179b`) before this work began — so none of the below could be, or was,
+used to soften a Stage C stop that was already fixed.
+
+**A.1 — the adjudication null is not an aggregation artifact.** No alternative
+aggregation of Arm 2's own samples is materially above the plurality floor:
+dropping the 2-of-3 requirement entirely buys **+0.013 [−0.090, +0.115]**, and
+**Oracle@3 over Arm 2's own three answers reaches only 0.513** against the
+candidate pool's own oracle ceiling of 0.6026. Arm 2's answer set is *worse*
+than the set it was asked to adjudicate, so no aggregation rule could have
+rescued it. D-38's verdict is not re-litigated and no verdict is recomputed
+against any alternative aggregation — these are mechanism analyses only.
+
+**A.2 — D-39's retraction now has quantitative content.** `Δ = (capture −
+harm)/n` reconciles exactly for every selector (asserted by test over 200
+randomised cases). Arm 2: capture 7, harm 13, and **69.2% of that harm is
+interface harm** (`no_majority` 7, `off_menu` 1, `trajectory_failure` 1) against
+only **4** `wrong_in_menu` — above the 50% bar fixed in advance, so the
+pre-registered reading is that the null is substantially an elicitation failure
+rather than a demonstrated inability to judge. The tempting counterfactual
+(7 captured vs 4 judgment-harmed ⇒ an interface-perfect adjudicator is net
+positive) is stated as Stage C's motivation and explicitly **not** claimed: it
+assumes interface-harmed instances would revert to their plurality outcome,
+which is untested.
+
+**A.2, independently — the controller captured nothing.** Against fixed K=4 the
+Phase-2B controller has **capture = 0** across all 150 prospective instances: it
+never once converted a fixed-K=4 error into a correct answer, and its entire
+difference is harm. This is a strictly stronger statement of the Phase-2B
+failure than the headline −0.033.
+
+**A.3 — the selectivity belongs to the agreement signal.** At matched coverage,
+agreement-thresholded fixed K=4 matches or beats the controller everywhere
+comparable (0.895 at coverage 0.507 vs 0.877 at 0.433; 0.719 vs 0.711 at an
+identical 0.807), and on the overlapping coverage domain its AURC is better
+(0.058 vs 0.075). Per the rule fixed in advance, **selectivity is attributed to
+the agreement signal, not to the controller**, and any selective-prediction
+claim in the manuscript must be stated that way. Sharpest form: at a 5% or 10%
+error budget the controller reaches **zero** coverage while agreement counting
+reaches 30.7% at 2.2% error. *(Raw full-domain AURC inverts this and is not
+reported: the controller's reachable coverage is a strict subset of fixed
+K=4's, so the integrals are over different domains.)*
+
+**A.4 — no usable separating signal in cheap traces.** Seven instrumented trace
+features, instance-clustered AUROC on the 53 disagreement instances. The
+pre-registered rule is technically triggered by `total_output_tokens`
+(CI [0.300, 0.4998]) — by **0.0002**, in the negative direction (longer is
+worse, a degeneration proxy), and it does not survive Bonferroni adjustment for
+the seven tests. That adjustment was added **after** seeing the nominal result
+and is labelled post hoc; the mechanical verdict string is reported unchanged
+rather than restated to fit it. Substantive reading: no usable separating
+signal. Per the stop rule §8 this *interprets* a future Stage C null and never
+reverses it.
+
+**A.5 — "30% unreachable" is an upper bound on a generation limitation, and a
+loose one.** The enumeration problem governs this analysis: on 9 of 10 tasks the
+prompt supplies a candidate list containing the correct answer (35 of the 45
+instances), so a bare "mentioned" test is near-vacuous. Three measures:
+`never_mentioned` **7/45**; `mentioned` 38/45 (an upper bound, contaminated);
+and the enumeration-robust **`singled_out` — mentioned more often than the
+average wrong candidate — at 18 of 35 assessable instances (51%)**. On half the
+assessable no-correct instances the model discussed the correct answer
+preferentially and committed something else. Separately, **3 instances are
+genuine extraction failures** (a trajectory with no parseable answer whose own
+solution block commits the correct one; verified by reading the text, clearest
+at `gwas_causal_gene_gwas_catalog/492`, *"Most likely causal gene: LONP1"*
+parsing to `NaN`). A looser count of 14 is reported but **not** claimed, because
+solution blocks are long prose reports that discuss several candidates while
+committing one.
+
+**A.5a returned 0 scoring artifacts**, and only after a test caught that the
+normaliser was weaker than intended — a single strip pass leaves `'BRCA1'.` as
+`BRCA1'` and would have let a real artifact through. Gene-symbol synonymy is
+**NOT DONE** (no offline alias table; a guessed list would manufacture the
+corrections it is meant to detect) and is the one place the artifact count could
+still be an undercount. **A.5c** finds 44 of the 45 on tasks requiring external
+knowledge and 1 on the only structurally determinate task (`lab_bench_seqqa`),
+independently reproducing D-37's mode-A finding; the two are pinned to each
+other by test.
+
+**Corrected scoring.** Official and audit-corrected differ only by the 3
+extraction failures — `singled_out` is deliberately not used to re-score
+anything, since considering an answer is not producing it. No-correct 45 → 42
+(30.0% → 28.0%); Oracle@4 0.700 → 0.720; selection headroom **0.093 → 0.113**.
+
+**Two bugs found and fixed during this work, recorded because both would have
+manufactured favourable results.** (a) The `screen_gene_retrieval` candidate
+regex matched the prose instruction ("From the following list of candidate
+genes, select ...") instead of the `Candidate genes:` line, yielding two garbage
+candidates and making `singled_out` vacuously true for all 11 of that task's
+instances; the pooled figure fell from 24 to 18 once fixed. (b) `analysis.
+grouped_bootstrap` rebuilds a DataFrame per replicate and made the script
+unrunnable; replaced with a vectorised instance-clustered bootstrap using the
+identical resampling scheme.
+
+**Not done, and not delegated.** Stale-label checks, incorrect-label
+adjudication and multiple-defensible-answer judgments need domain reviewers,
+who are unavailable. They are not approximated and **not handed to an LLM**.
+Some unknown share of the remaining 42 may be label problems; this audit cannot
+distinguish them, and the manuscript says so.
+
+**Tests.** `tests/test_stage_a.py` (15): the capture/harm identity over 200
+randomised cases and the four-cell partition; the screen_gene_retrieval regex
+bug pinned directly; equal enumeration must NOT read as `singled_out` while
+preferential discussion must; token-boundary matching (`IL5` must not match
+inside `IL5RA`); `<observation>` stripping; normalisation equivalence including
+the quote-then-period case that the weak normaliser missed; and every task
+carrying a real written determinacy justification rather than a label.
+**Full suite: 474 passed.**
+
+**Reversal condition.** A.1, A.2 and A.3 are accounting over frozen artifacts
+and are not reversible by argument. A.5b's `singled_out` measure is a proxy for
+"the answer was distinguished in reasoning" and would be superseded by a
+domain-reviewer audit of the same instances, which is the stated missing piece —
+not by a differently-tuned string heuristic.

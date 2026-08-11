@@ -1,0 +1,337 @@
+{
+  "A1_arm2_decomposition": {
+    "n_trajectories": 234,
+    "n_instances": 78,
+    "n_usable_trajectories": 169,
+    "plurality_floor": 0.4103,
+    "per_sample_all": {
+      "point": 0.32905982905982906,
+      "ci_lo": 0.24786324786324787,
+      "ci_hi": 0.41025641025641024,
+      "n": 78
+    },
+    "per_sample_usable_only": {
+      "point": 0.4556213017751479,
+      "ci_lo": 0.3532934131736527,
+      "ci_hi": 0.5569747562927395,
+      "n": 74
+    },
+    "per_sample_in_menu_only": {
+      "point": 0.496551724137931,
+      "ci_lo": 0.3877551020408163,
+      "ci_hi": 0.6013082935877053,
+      "n": 69
+    },
+    "random_single_sample": {
+      "point": 0.32905982905982906,
+      "ci_lo": 0.23076923076923078,
+      "ci_hi": 0.4358974358974359,
+      "n": 78
+    },
+    "aggregations": {
+      "agg_plurality_available": {
+        "mean": 0.4230769230769231,
+        "vs_floor": {
+          "difference": 0.01282051282051283,
+          "ci_lo": -0.08974358974358976,
+          "ci_hi": 0.11538461538461542,
+          "n": 78,
+          "p_two_sided_bootstrap": 0.9104
+        }
+      },
+      "agg_oracle_at_3": {
+        "mean": 0.5128205128205128,
+        "vs_floor": {
+          "difference": 0.10256410256410253,
+          "ci_lo": 0.0,
+          "ci_hi": 0.2179487179487179,
+          "n": 78,
+          "p_two_sided_bootstrap": 0.0828
+        }
+      },
+      "floor_recomputed": 0.41025641025641024
+    },
+    "off_menu": {
+      "n_off_menu_trajectories": 24,
+      "n_off_menu_and_correct": 5,
+      "note": "an off-menu answer scoring 1.0 means the true answer was ABSENT from the candidate set - the agent corrected the menu rather than merely violating it"
+    },
+    "tool_engagement": {
+      "used_tools_accuracy": 0.2857142857142857,
+      "not_used_tools_accuracy": 0.39361702127659576,
+      "n_used_tools": 140,
+      "n_not_used_tools": 94
+    },
+    "runaway": {
+      "runaway_accuracy": 0.2578616352201258,
+      "not_runaway_accuracy": 0.48,
+      "n_runaway": 159,
+      "n_not_runaway": 75
+    },
+    "terminal_categories": {
+      "unresolved_aggregation": 28,
+      "usable_correct": 26,
+      "usable_wrong": 15,
+      "off_menu": 5,
+      "all_failed": 4
+    }
+  },
+  "A2_capture_harm": {
+    "arm2_vs_plurality": {
+      "n": 78,
+      "capture": 7,
+      "harm": 13,
+      "neutral_correct": 19,
+      "neutral_wrong": 39,
+      "delta": -0.07692307692307693,
+      "delta_from_counts": -0.07692307692307693,
+      "reconciles": true,
+      "harm_classes": {
+        "wrong_in_menu": 4,
+        "no_majority": 7,
+        "trajectory_failure": 1,
+        "off_menu": 1
+      },
+      "interface_harm": 9,
+      "judgment_harm": 4,
+      "interface_share_of_harm": 0.6923076923076923
+    },
+    "arm1_vs_plurality": {
+      "n": 78,
+      "capture": 4,
+      "harm": 21,
+      "neutral_correct": 11,
+      "neutral_wrong": 42,
+      "delta": -0.21794871794871792,
+      "delta_from_counts": -0.21794871794871795,
+      "reconciles": true,
+      "harm_classes": {
+        "wrong_in_menu": 8,
+        "no_majority": 13
+      },
+      "interface_harm": 13,
+      "judgment_harm": 8,
+      "interface_share_of_harm": 0.6190476190476191
+    },
+    "plurality_vs_plurality_identity_control": {
+      "n": 78,
+      "capture": 0,
+      "harm": 0,
+      "neutral_correct": 32,
+      "neutral_wrong": 46,
+      "delta": 0.0,
+      "delta_from_counts": 0.0,
+      "reconciles": true
+    },
+    "controller_v1_vs_fixed_k4": {
+      "n": 150,
+      "capture": 0,
+      "harm": 5,
+      "neutral_correct": 86,
+      "neutral_wrong": 59,
+      "delta": -0.033333333333333326,
+      "delta_from_counts": -0.03333333333333333,
+      "reconciles": true,
+      "harm_classes": {
+        "no_majority": 4,
+        "wrong_in_menu": 1
+      },
+      "interface_harm": 4,
+      "judgment_harm": 1,
+      "interface_share_of_harm": 0.8
+    },
+    "controller_v1_vs_fixed_k2": {
+      "n": 150,
+      "capture": 5,
+      "harm": 6,
+      "neutral_correct": 81,
+      "neutral_wrong": 58,
+      "delta": -0.006666666666666599,
+      "delta_from_counts": -0.006666666666666667,
+      "reconciles": true,
+      "harm_classes": {
+        "no_majority": 3,
+        "wrong_in_menu": 3
+      },
+      "interface_harm": 3,
+      "judgment_harm": 3,
+      "interface_share_of_harm": 0.5
+    }
+  },
+  "A3_risk_coverage": {
+    "controller": [
+      {
+        "threshold": "k_used<=2",
+        "coverage": 0.43333333333333335,
+        "accuracy": 0.8769230769230769,
+        "n": 65
+      },
+      {
+        "threshold": "k_used<=3",
+        "coverage": 0.6733333333333333,
+        "accuracy": 0.7821782178217822,
+        "n": 101
+      },
+      {
+        "threshold": "k_used<=4",
+        "coverage": 0.8066666666666666,
+        "accuracy": 0.7107438016528925,
+        "n": 121
+      }
+    ],
+    "fixed_k4_agreement_threshold": [
+      {
+        "threshold": "support>=4",
+        "coverage": 0.30666666666666664,
+        "accuracy": 0.9782608695652174,
+        "n": 46
+      },
+      {
+        "threshold": "support>=3",
+        "coverage": 0.5066666666666667,
+        "accuracy": 0.8947368421052632,
+        "n": 76
+      },
+      {
+        "threshold": "support>=2",
+        "coverage": 0.8066666666666666,
+        "accuracy": 0.71900826446281,
+        "n": 121
+      },
+      {
+        "threshold": "support>=1",
+        "coverage": 1.0,
+        "accuracy": 0.6066666666666667,
+        "n": 150
+      }
+    ],
+    "matched_coverage": [
+      {
+        "controller_threshold": "k_used<=2",
+        "coverage": 0.43333333333333335,
+        "controller_accuracy": 0.8769230769230769,
+        "k4_threshold": "support>=3",
+        "k4_coverage": 0.5066666666666667,
+        "k4_accuracy": 0.8947368421052632,
+        "controller_minus_k4": -0.017813765182186247
+      },
+      {
+        "controller_threshold": "k_used<=3",
+        "coverage": 0.6733333333333333,
+        "controller_accuracy": 0.7821782178217822,
+        "k4_threshold": "support>=2",
+        "k4_coverage": 0.8066666666666666,
+        "k4_accuracy": 0.71900826446281,
+        "controller_minus_k4": 0.06316995335897224
+      },
+      {
+        "controller_threshold": "k_used<=4",
+        "coverage": 0.8066666666666666,
+        "controller_accuracy": 0.7107438016528925,
+        "k4_threshold": "support>=2",
+        "k4_coverage": 0.8066666666666666,
+        "k4_accuracy": 0.71900826446281,
+        "controller_minus_k4": -0.008264462809917439
+      }
+    ],
+    "dominates_at_all_matched_points": false,
+    "dominates_at_any_matched_point": true,
+    "verdict_per_prefixed_rule": "selectivity attributable to the AGREEMENT SIGNAL, not the controller",
+    "aurc_overlap_domain": {
+      "coverage_lo": 0.43333333333333335,
+      "coverage_hi": 0.8066666666666666
+    },
+    "aurc_controller_overlap": 0.07471304333230525,
+    "aurc_fixed_k4_agreement_overlap": 0.057938234014789015,
+    "aurc_note": "restricted to the overlapping coverage domain; full-domain AURCs are not comparable because the controller's reachable coverage range is a strict subset of fixed K=4's",
+    "coverage_at_error_limit": {
+      "5%": {
+        "controller": 0.0,
+        "fixed_k4_agreement": 0.30666666666666664
+      },
+      "10%": {
+        "controller": 0.0,
+        "fixed_k4_agreement": 0.30666666666666664
+      },
+      "20%": {
+        "controller": 0.43333333333333335,
+        "fixed_k4_agreement": 0.5066666666666667
+      }
+    }
+  },
+  "A4_trace_probe": {
+    "n_trajectories": 176,
+    "n_instances": 53,
+    "n_features_tested": 7,
+    "features": {
+      "tool_call_count": {
+        "point": 0.4621900826446281,
+        "ci_lo": 0.37587564105040466,
+        "ci_hi": 0.5536822536789696,
+        "bonf_ci_lo": 0.34866743124386407,
+        "bonf_ci_hi": 0.5838026431946824,
+        "n": 53
+      },
+      "unique_tool_count": {
+        "point": 0.4762396694214876,
+        "ci_lo": 0.38540048951707256,
+        "ci_hi": 0.570048039898786,
+        "bonf_ci_lo": 0.35952033341796097,
+        "bonf_ci_hi": 0.6003121384447595,
+        "n": 53
+      },
+      "code_execution_count": {
+        "point": 0.4521349862258953,
+        "ci_lo": 0.3731279221822857,
+        "ci_hi": 0.529360549545933,
+        "bonf_ci_lo": 0.343729822888114,
+        "bonf_ci_hi": 0.5612548215447533,
+        "n": 53
+      },
+      "failed_tool_call_fraction": {
+        "point": 0.45227272727272727,
+        "ci_lo": 0.36394738509861707,
+        "ci_hi": 0.5390686202927433,
+        "bonf_ci_lo": 0.3310915773350604,
+        "bonf_ci_hi": 0.5712012607510751,
+        "n": 53
+      },
+      "total_output_tokens": {
+        "point": 0.39758953168044076,
+        "ci_lo": 0.29973392549479505,
+        "ci_hi": 0.49980084844141154,
+        "bonf_ci_lo": 0.2656536914415622,
+        "bonf_ci_hi": 0.5351368649640694,
+        "n": 53
+      },
+      "llm_call_count": {
+        "point": 0.44573002754820934,
+        "ci_lo": 0.3696217977823448,
+        "ci_hi": 0.5224052550328383,
+        "bonf_ci_lo": 0.3375325936964142,
+        "bonf_ci_hi": 0.5513987269665147,
+        "n": 53
+      },
+      "final_confidence": {
+        "point": 0.5884009009009009,
+        "ci_lo": 0.4979452018262502,
+        "ci_hi": 0.680380834598346,
+        "bonf_ci_lo": 0.47159544977411255,
+        "bonf_ci_hi": 0.7218280878089149,
+        "n": 53
+      }
+    },
+    "features_separating_at_95pct": [
+      "total_output_tokens"
+    ],
+    "features_separating_bonferroni": [],
+    "margins_of_separating_features": {
+      "total_output_tokens": {
+        "point": 0.39758953168044076,
+        "distance_of_ci_from_0.5": 0.00019915155858846179
+      }
+    },
+    "verdict_per_prefixed_rule": "a separating signal exists in the traces; a verifier null would be a verifier failure",
+    "multiplicity_caveat": "POST HOC (added after seeing that exactly one of 7 features cleared the nominal bar, and therefore labelled post hoc rather than presented as pre-registered; the *exploratory* framing of this feature sweep was however fixed in advance in this module's docstring). Nominal-95% hits: ['total_output_tokens']. Bonferroni-adjusted hits: []. The pre-registered verdict string above is reported mechanically and is NOT restated to fit this check; read the two together."
+  }
+}

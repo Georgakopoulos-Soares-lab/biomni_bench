@@ -1,0 +1,11 @@
+task_name,n,never_mentioned,singled_out
+crispr_delivery,3,0,2
+gwas_causal_gene_gwas_catalog,6,0,3
+gwas_causal_gene_opentargets,1,0,1
+gwas_causal_gene_pharmaprojects,2,0,2
+gwas_variant_prioritization,6,0,3
+lab_bench_dbqa,2,2,0
+lab_bench_seqqa,1,1,0
+patient_gene_detection,3,0,0
+rare_disease_diagnosis,10,4,0
+screen_gene_retrieval,11,0,7

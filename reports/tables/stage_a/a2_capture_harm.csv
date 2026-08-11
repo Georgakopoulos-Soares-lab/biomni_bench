@@ -1,0 +1,6 @@
+selector,n,capture,harm,neutral_correct,neutral_wrong,delta,delta_from_counts,reconciles,interface_harm,judgment_harm,interface_share_of_harm
+arm2_vs_plurality,78,7,13,19,39,-0.07692307692307693,-0.07692307692307693,True,9.0,4.0,0.6923076923076923
+arm1_vs_plurality,78,4,21,11,42,-0.21794871794871792,-0.21794871794871795,True,13.0,8.0,0.6190476190476191
+plurality_vs_plurality_identity_control,78,0,0,32,46,0.0,0.0,True,,,
+controller_v1_vs_fixed_k4,150,0,5,86,59,-0.033333333333333326,-0.03333333333333333,True,4.0,1.0,0.8
+controller_v1_vs_fixed_k2,150,5,6,81,58,-0.006666666666666599,-0.006666666666666667,True,3.0,3.0,0.5
