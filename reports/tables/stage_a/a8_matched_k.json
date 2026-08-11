@@ -1,0 +1,32 @@
+{
+  "n_instances_total": 78,
+  "n_instances_with_at_least_3_usable": 67,
+  "n_instances_excluded_no_oracle3": 11,
+  "pool_oracle_at_3_matched": {
+    "point": 0.6455223880597015,
+    "ci_lo": 0.5335820895522388,
+    "ci_hi": 0.7574626865671642,
+    "n": 67
+  },
+  "pool_oracle_at_4_where_defined": {
+    "point": 0.725,
+    "ci_lo": 0.575,
+    "ci_hi": 0.85,
+    "n": 40
+  },
+  "pool_oracle_over_all_usable": {
+    "point": 0.6025641025641025,
+    "ci_lo": 0.5,
+    "ci_hi": 0.7051282051282052,
+    "n": 78
+  },
+  "arm2_oracle_same_67_instances": {
+    "point": 0.5522388059701493,
+    "ci_lo": 0.43283582089552236,
+    "ci_hi": 0.6716417910447762,
+    "n": 67
+  },
+  "arm2_oracle_at_3_all_78_for_reference": 0.5128205128205128,
+  "arm2_minus_pool_matched_k": -0.0933,
+  "interpretation": "Arm 2's best obtainable answer is WORSE than the best already present in the candidate set it was handed, at matched K. Selection from a set cannot fall below the set's best element, so the arm was re-solving the task rather than adjudicating between candidates."
+}

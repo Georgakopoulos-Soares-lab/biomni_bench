@@ -35,15 +35,18 @@ null is reported with its confound named rather than generalised: 69% of its
 losses are failures to deliver a usable answer at all rather than wrong choices
 among the candidates, which is an unstable elicitation regime and not a
 demonstrated inability to verify — though no aggregation of its samples rescues
-it either, since an oracle over its own answers reaches only 0.513. The
-contribution is a decomposition — separating *candidate generation* from
-*candidate selection* from *execution reliability* from *selective deferral* —
-and the finding that on this benchmark the binding constraint is selection, not
-generation: on half the instances with no correct answer scored, the model
-discussed the correct answer preferentially and committed something else, and
-the adaptive controller never once turned a fixed-policy error into a correct
-answer while the plain agreement signal it wrapped outperforms it at every
-comparable coverage.
+it either, since an oracle over its own answers reaches only 0.513. **The paper's one usable positive result is an attribution, not a method:**
+plain agreement counting over four samples answers **30.7% of instances at 2.2%
+error**, while the adaptive controller built on top of it cannot reach a 5%
+error budget at any coverage at all. The selectivity belongs to the signal, not
+to the policy wrapped around it. The broader contribution is a decomposition —
+separating *candidate generation* from *candidate selection* from *execution
+reliability* from *selective deferral* — and the finding that on this benchmark
+the binding constraint is selection: on a substantial minority of the instances
+scored as having no correct answer, the model discussed the correct answer
+preferentially and committed something else, and the adaptive controller never
+once converted a fixed-policy error into a correct answer across 150 held-out
+instances.
 
 ---
 
@@ -106,26 +109,38 @@ avoid — finds:
   containing the correct answer, so "the trajectory mentions it" is nearly
   vacuous — a model enumerating the list mentions everything. The
   enumeration-robust measure is whether the answer is *singled out*: discussed
-  more often than the average wrong candidate. **18 of the 35 assessable
-  instances (51%) single out the correct answer and commit something else.**
-  A further **3** are outright extraction failures, where a trajectory produced
-  no parseable answer while its own solution block committed the right one — the
+  more often than the average wrong candidate. **Between 20% and 51% of the 35
+  assessable instances** do so and commit something else — 18 at the bare
+  threshold, but only 7 at a 2× margin, and five sit within 10% of parity where
+  the measure cannot separate preferential discussion from option-by-option
+  enumeration. The qualitative conclusion holds across that whole band; the
+  precise fraction does not, and is not claimed.
+* **Separately — and this is a different claim with different provenance — 3
+  instances are outright extraction failures**, where a trajectory produced no
+  parseable answer while its own solution block committed the right one; the
   clearest reads *"Most likely causal gene: LONP1"* and scored zero.
 * **Prompt underdetermination is near-universal but does not discriminate:** 44
   of the 45 sit on tasks requiring external knowledge the prompt never supplies,
   1 on the only structurally self-determining task.
 
-Re-scoring only what the audit strictly licenses — the 3 extraction failures,
-not the 18, because considering an answer is not producing it — moves the
-no-correct rate from **30.0% to 28.0%**, Oracle@4 from 0.700 to 0.720, and
-selection headroom from 0.093 to **0.113**.
+**The two findings above are separate claims and should not be merged.** The
+singled-out band is a *generation-and-commitment* claim: the model reached the
+right answer and failed to commit to it. Those instances remain **unreachable by
+any selector**, since no trajectory ever committed the correct answer — a
+verifier choosing among committed candidates cannot recover them. Only the 3
+extraction failures are a *selection-headroom* claim, and only they are
+re-scored: doing so moves the no-correct rate from **30.0% to 28.0%**, Oracle@4
+from 0.700 to 0.720, and selection headroom from 0.093 to **0.113**. Considering
+an answer is not producing it, so the 18 change no score.
 
 **So "30% unreachable" is an upper bound on the generation problem, and a loose
-one.** At least half the assessable instances behind it had the correct answer
-in play and lost it at commitment rather than at generation. What the audit
-cannot rule out, and says so, is that some share of the remaining 42 are label
-problems rather than model failures — that needs domain reviewers, who were not
-available, and it was not approximated.
+one** — a substantial minority of the instances behind it had the correct answer
+in play and lost it at commitment rather than at generation. Two caveats are
+carried rather than resolved: the singled-out measure is an automated heuristic
+that has already been wrong once, and is queued for a human reading-comprehension
+check; and some share of the remaining 42 may be label problems rather than model
+failures, which needs domain reviewers who were not available and was not
+approximated.
 
 **A separate population, and the one this paper finds most interesting.** On
 **53 of 150** instances the samples disagree substantively and *the correct
@@ -175,11 +190,28 @@ the highest-variance task reproduces both (−0.032, mean K 2.856), and an
 exhaustive ordering-averaged replay of the same 600 trajectories shows the
 same direction.
 
-**The sharpest single comparison:** a same-cost, uniformly-random,
-non-adaptive allocation of the identical trajectory budget scored **higher**
-than the adaptive controller (0.592–0.593 vs. 0.573). An adaptive method that
-loses to blind allocation at equal spend has not demonstrated that its
-adaptivity does anything.
+**The sharpest single statement of the result is not the interval — it is a
+count. Across all 150 held-out instances, the controller never once converted a
+fixed-K=4 error into a correct answer.** Decomposed instance by instance
+against fixed K=4, its capture is exactly **0** and its harm is 5: every
+instance where the two differ, the controller is the one that is wrong. It is
+not marginally worse on net; it is **strictly dominated**, with no positive
+contribution at any coverage. Consistently, a same-cost, uniformly-random,
+non-adaptive allocation of the identical trajectory budget also scored higher
+(0.592–0.593 vs. 0.573).
+
+**A methodological point that generalises beyond this controller.** A
+difference in means is ambiguous in a way that matters here: Δ ≈ 0 is
+consistent both with a selector that changes nothing and with one that captures
+as much as it harms, and those are entirely different objects — the second is a
+selector worth fixing, the first is not. H1's non-inferiority framing could not
+distinguish them; decomposing the same numbers into capture and harm does it
+immediately, and the identity Δ = (capture − harm)/n makes the decomposition
+exact rather than illustrative for binary rewards. **Any selector comparison
+should report capture and harm alongside Δ**, and this project's own headline
+result is the argument: −0.033 reads as "slightly worse", while capture = 0
+reads as "never once helped", and only the second is the truth about the
+policy.
 
 **Mechanism, from pre-registered deliverables rather than a post-hoc story.**
 The controller is accurate when it answers (71.1% on the 80.7% it accepts) but
@@ -368,22 +400,20 @@ whether it works.
   previously-lost instances — a genuine finding, since the rescued instances
   were disproportionately hard-and-wrong.
 
-**A claim from an earlier draft, corrected.** That draft reported "zero
-high-confidence wrong claims" for the controller against 5.3% for fixed K=4,
-as a safety property. The correct statement is that **the controller made zero
-online claims meeting the high-confidence definition at all** — 0 of 150. The
-rate is not 0%; it is undefined. All **121** of its acceptances carried
-support exactly 2, and the maximum support observed at any acceptance was 2.
-The ≥3-agreement band is **unreachable by construction** for this policy:
-reaching three agreeing trajectories requires two of the first three to have
-agreed, which would have terminated the trajectory earlier. "Zero
-confidently-wrong claims" is therefore a theorem about the stopping rule, not
-an empirical safety finding, and it is not evidence that the controller's
-confident claims are trustworthy.
+**A claim from an earlier draft, withdrawn rather than qualified.** That draft
+reported "zero high-confidence wrong claims" for the controller against 5.3% for
+fixed K=4, as a safety property. It is not one. The controller made **zero
+online claims meeting the high-confidence definition at all** — 0 of 150 — so
+the rate is undefined, not 0%. All **121** of its acceptances carried support
+exactly 2, and the band is **unreachable by construction**: reaching three
+agreeing trajectories requires two of the first three to have agreed, which
+terminates the trajectory earlier. It is a theorem about the stopping rule.
 
-The comparison that *is* defined: fixed K=4 made 76 high-confidence calls of
-150 and was wrong on 8 — **10.5% of its confident calls, 95% Wilson CI
-[5.4%, 19.4%]**.
+Combined with capture = 0 (§4.2), the controller has **no positive contribution
+to claim at any coverage**, so the safety result is dropped from this paper
+entirely rather than restated in a weaker form. The comparison that *is* defined
+is reported for the fixed policy alone: fixed K=4 made 76 high-confidence calls
+of 150 and was wrong on 8 — **10.5%, 95% Wilson CI [5.4%, 19.4%]**.
 
 **The selectivity that does exist belongs to the agreement signal, not to the
 controller.** The deferral question needs risk–coverage at matched coverage, and

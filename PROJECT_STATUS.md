@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-11 (**Stage 0 and Stage A both closed** — D-39 retraction, Stage C stop rule frozen first, write-up reframed, and the A.1–A.5 decomposition complete (**D-40**). The paper is submittable on this material. Stage C runs in a separate session under its frozen stop rule. The live-GPU-window plan below is superseded and closed.)
+**Last updated:** 2026-08-11 (**Stage 0, Stage A, and all pre-Stage-C items closed** — A.6 NULL, A.7 reachability pre-registered in the stop rule, A.8 shows Arm 2 was re-solving not adjudicating, shrink guard installed (D-41), A.5b's 51% restated as a 20–51% band pending operator review. **Stage C is unblocked**; it runs in a separate session under its frozen rule + Amendment 1. Previously: **Stage 0 and Stage A closed** — D-39 retraction, Stage C stop rule frozen first, write-up reframed, and the A.1–A.5 decomposition complete (**D-40**). The paper is submittable on this material. Stage C runs in a separate session under its frozen stop rule. The live-GPU-window plan below is superseded and closed.)
 
 ## Current plan: Stage 0 → Stage A → (separate session) Stage C
 
@@ -54,6 +54,50 @@ not a safety finding. The defined comparison: fixed K=4 made 76 confident calls
 and was wrong on 8 — 10.5%, 95% Wilson CI [5.4%, 19.4%].
 
 **Full suite: 459 passed.**
+
+### Pre-Stage-C items, closed (2026-08-11, D-41/D-42)
+
+**Both blocking items done, so Stage C is unblocked.**
+
+**A.6 (blocking) — semantic discriminability probe: NULL.** Rule frozen at
+`2051a7f` before any AUROC existed, fixing family/primary/correction in advance.
+Leakage barrier enforced structurally and asserted by a label-permutation
+invariance test. Primary feature `own_answer_share` scores AUROC **0.504**
+(corrected CI [0.313, 0.670]). **`singled_out` carried A.5b only because it was
+given the correct answer** — its label-free analogue carries nothing, so a Stage
+C capsule cannot expose it. A.4's null now spans structural *and* semantic
+features.
+
+**A.7 (blocking) — 31 of 78 (39.7%) unreachable by construction.** Both
+denominators pre-registered in `stage_c_stop_rule.md` **Amendment 1**: primary
+unchanged (78, bar 0.0641, decides the verdict); secondary (reachable n=47, bar
+0.1064) decides nothing. Framing correction: the flagged set is **18, not 21**
+— the 3 extraction failures are a subset of the 18 singled-out.
+
+**A.8 — matched-K oracle.** Pool Oracle@3 **0.6455** vs Arm 2 **0.5522** on the
+same 67 instances, difference **−0.093**. Selection cannot fall below a set's
+best element, so **Arm 2 was re-solving, not adjudicating** — a cleaner basis
+for D-39 than information monotonicity.
+
+**A.5b's 51% is now a band (post hoc).** 18 instances at ratio > 1.0 but only 7
+at ≥ 2.0, and five within 10% of parity where enumeration is indistinguishable
+from preference. Restated **20–51%**; qualitative conclusion holds throughout,
+precise fraction claimed nowhere. `reports/a5b_review_sheet.md` is generated for
+**operator** adjudication — deliberately not adjudicated here.
+
+**D-41 — pre-commit shrink guard**, refusing commits where a tracked file drops
+below 10% of its committed size, with a logged override. Third instance of the
+same pattern (D-27's silent gate, D-29's untracked controller, DECISIONS.md
+reduced to one character). Failure path exercised in 7 tests and verified live.
+
+**Manuscript:** `capture = 0` replaces −0.033 as the controller headline (+ a
+methods paragraph on why capture/harm belongs beside Δ); the S1 safety claim is
+**dropped** rather than weakened; A.3's attribution becomes the abstract's
+positive claim; A.5b's two claims split by provenance.
+
+**Full suite: 495 passed.**
+
+---
 
 ### Stage A, closed (2026-08-11, D-40) — existing-data decomposition
 

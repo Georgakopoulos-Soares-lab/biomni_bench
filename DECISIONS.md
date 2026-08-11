@@ -1872,3 +1872,105 @@ with nothing committed.
 scientific claim. If the 10% floor proves to cry wolf in practice it should be
 tuned via `BIOMNI_SHRINK_FLOOR_PCT` rather than removed, since a guard people
 disable is strictly worse than a slightly noisy one.
+
+---
+
+## D-42 Pre-Stage-C items: A.6 NULL, A.7 reachability pre-registered, A.8 shows the arm was re-solving, and A.5b's 51% becomes a band
+
+**Decided:** 2026-08-11. Reports: `reports/stage_a_decomposition.md` (addenda),
+`reports/a6_decision_rule.md`, `reports/stage_c_stop_rule.md` Amendment 1,
+`reports/a5b_review_sheet.md`. **CPU only, no GPU, no model calls.** The two
+blocking items (A.6, A.7) are complete, so Stage C is unblocked.
+
+**A.6 — semantic discriminability probe: NULL.** Decision rule frozen and
+committed (`2051a7f`) before any AUROC or feature value existed, fixing the
+feature family, the primary feature and the Bonferroni correction in advance —
+the failure mode A.4 exhibited. The **leakage barrier** is the load-bearing
+part: A.5b's `singled_out` takes ground truth as an *input*, which is valid for
+an audit and invalid for a feature a capsule computes at inference time. It is
+reformulated label-free as how preferentially a trajectory discusses **its own
+committed answer**, enforced structurally (a three-argument extraction
+signature, forbidden columns dropped before extraction, label re-attached only
+as the AUROC target) and asserted by a test that feature values are
+**invariant under permuting the labels**.
+
+Result on 263 usable trajectories across the 78: the primary feature
+`own_answer_share` scores **AUROC 0.504**, corrected CI [0.313, 0.670] — chance.
+`hedging_near_answer` clears the *nominal* bar (inverse direction) and dies
+under the pre-declared correction, so it is multiplicity noise by a rule fixed
+in advance rather than by argument afterwards.
+
+**The finding that matters: `singled_out` carried A.5b only because it was
+handed the correct answer.** Its label-free analogue carries nothing. A Stage C
+capsule cannot expose this signal because at inference time the signal does not
+exist. A.4's null now extends across both the structural and the semantic
+feature classes, so a Stage C NO-GO is attributable to the traces on positive
+evidence rather than by elimination.
+
+**A.7 — 31 of the 78 (39.7%) are unreachable by construction**, defined without
+heuristics as *oracle over committed candidates == 0*: no verifier scoring
+committed candidates can reach them, yet they occupy denominator slots. Both
+denominators are now pre-registered in the stop rule as **Amendment 1**, before
+Stage C runs: **primary unchanged** (all 78, bar 0.0641, still decides the
+verdict) and **secondary** (reachable subset n=47, floor 0.6809, ceiling 1.0,
+bar 0.1064) which decides nothing and exists only so a null on the full 78 can
+be read correctly. Declared in advance this is a limitation; discovered
+afterwards it would read as a denominator chosen to fit.
+
+**Correction to the framing the item was requested under:** the flagged set is
+**18, not 21** — the 3 extraction failures are a strict *subset* of the 18
+singled-out, not disjoint from them. 6 of the 18 lie inside the frozen 78 and
+all 6 are unreachable.
+
+**A.8 — matched-K oracle, and a stronger basis for D-39.** A.1 compared Arm 2's
+Oracle@3 against the pool's Oracle@**4**. Recomputed at matched K *and* matched
+population (the 67 instances with ≥3 usable trajectories, since Oracle@3 is
+undefined below that — correcting the same denominator error A.7 exists to
+avoid): pool **0.6455** vs Arm 2 **0.5522**, difference **−0.093**. The gap
+survives matching at its original magnitude, and licenses a cleaner claim than
+information monotonicity: **selection from a set cannot produce something worse
+than the set's best element**, so Arm 2 was **re-solving the task, not
+adjudicating between the candidates**. That is a structural fact about the
+outputs rather than an argument about decision-makers, and it is now the primary
+support for D-39's retraction.
+
+**A.5b's 51% becomes a band — post hoc, and it matters.** *Computed after seeing
+the A.5b result and labelled post hoc.* The `singled_out` threshold is a ratio
+strictly above 1.0, and that boundary carries real weight: 18 instances at
+ratio > 1.0, but 13 at ≥ 1.1, 11 at ≥ 1.25, 8 at ≥ 1.5 and **7 at ≥ 2.0**.
+**Five of the 18 sit within 10% of parity** — `screen_gene_retrieval/160` at
+62 vs 60.5, `crispr_delivery/7` at 15 vs 14.6 — where the measure cannot
+distinguish preferential discussion from option-by-option enumeration, the very
+artifact it was built to exclude. The claim is therefore restated as a band,
+**20%–51%**, with the qualitative conclusion holding across all of it and the
+precise fraction claimed nowhere.
+
+**Operator review sheet generated, not adjudicated.**
+`reports/a5b_review_sheet.md` puts all 18 in front of the operator with ground
+truth, committed answers, automated counts and excerpts, and blank verdict
+fields. This is a **reading-comprehension** check, not a domain judgment, so it
+does not fall under A.5's deferred reviewer categories. **This project did not
+adjudicate it**; the agreement rate is computed and reported only when the
+completed sheet comes back, and the 51%/band figure is corrected or withdrawn
+accordingly.
+
+**Manuscript changes made on the back of the above.** `capture = 0` replaces
+−0.033 as the controller's headline, with a methods paragraph arguing that
+Δ ≈ 0 is ambiguous between "changes nothing" and "captures as much as it
+harms" and that capture/harm therefore belongs alongside Δ in any selector
+comparison. The S1 safety claim is **dropped entirely** rather than weakened,
+since with capture = 0 the controller has no positive contribution at any
+coverage. A.3's attribution result becomes the abstract's positive claim.
+A.5b's two claims are split by provenance in §3: the singled-out band is a
+generation-and-commitment claim whose instances remain **unreachable by any
+selector**, while only the 3 extraction failures move any score
+(30.0%→28.0%, headroom 0.093→0.113).
+
+**Tests.** `tests/test_stage_a6.py` (14), including the label-permutation
+invariance check and pins on the frozen family/primary/correction constants.
+**Full suite: 495 passed.**
+
+**Reversal condition.** A.6's null and A.8's matched-K gap are accounting over
+frozen artifacts and are not reversible by argument. A.5b's band is explicitly
+provisional pending the operator review sheet, which is the one outstanding
+input.

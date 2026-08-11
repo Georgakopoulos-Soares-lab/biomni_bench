@@ -296,3 +296,131 @@ python scripts/stage_a_label_triage.py   --out reports/tables/stage_a
 ```
 
 CPU only, a few minutes. Full suite: **474 passed.**
+
+---
+
+# Addenda — A.6, A.7, A.8, and a sensitivity on A.5b (2026-08-11)
+
+Added after the sections above, before Stage C opens. A.6 and A.7 were the two
+items that had to complete before Stage C could start, because both feed
+decisions Stage C freezes at its start and cannot revisit.
+
+## A.6 — semantic discriminability probe: **NULL**
+
+Decision rule frozen and committed (`2051a7f`) **before any AUROC or feature
+value existed** — `reports/a6_decision_rule.md` fixes the feature family, the
+primary feature, and the Bonferroni correction in advance, precisely because
+A.4's nominal hit died under a correction applied afterwards.
+
+**The leakage barrier is the load-bearing part.** A.5b's `singled_out` takes
+ground truth as an *input* — it measures discussion of *the correct answer*.
+That is legitimate for an audit and invalid for a feature a Stage C capsule
+would compute at inference time. Reformulated label-free: how preferentially
+does a trajectory discuss **its own committed answer** relative to the other
+candidates? Enforced structurally — `extract_features()` takes exactly
+`(model_text, own_answer, candidates)`, forbidden columns are dropped before
+extraction, and the decisive test asserts feature values are **invariant under
+permuting the labels**.
+
+Population: 263 usable trajectories (176 `phase2b` + 87 `phase1_pooled`) across
+the 78, of which 96 correct / 167 incorrect.
+
+| feature | AUROC | 95% CI | corrected (98.75%) CI |
+| --- | ---: | --- | --- |
+| **`own_answer_share`** (primary) | **0.504** | [0.352, 0.641] | [0.313, 0.670] |
+| `closing_concentration` | 0.528 | [0.416, 0.644] | [0.388, 0.676] |
+| `n_competing_candidates_discussed` | 0.439 | [0.366, 0.515] | [0.341, 0.533] |
+| `hedging_near_answer` | 0.414 | [0.333, **0.491**] | [0.314, 0.514] |
+
+**Verdict: NULL.** The primary feature sits on chance. `hedging_near_answer`
+clears the *nominal* bar in the inverse direction (more hedging → less likely
+correct) and **does not survive the pre-declared correction**, so per the frozen
+rule it is reported as multiplicity noise — the identical pattern to A.4, except
+that this time the correction was fixed in advance and there is nothing to
+argue about.
+
+**The sharp reading, and the reason this probe was worth running.**
+`singled_out` carried A.5b *only because it was handed the correct answer*. Its
+label-free analogue — the same measure computed against the trajectory's own
+committed answer — carries **nothing** (AUROC 0.504). A model that discusses its
+own answer preferentially is no more likely to be right than one that does not.
+**A Stage C capsule cannot expose this signal, because at inference time the
+signal does not exist.** A.4's null therefore strengthens materially: a Stage C
+NO-GO becomes attributable to the traces on positive evidence, across both the
+structural and the semantic feature classes, rather than by elimination.
+
+## A.7 — 31 of the 78 are unreachable by construction
+
+A verifier scoring the **committed candidates** cannot reach an instance where
+none of them is correct. Defined without heuristics as *oracle over committed
+candidates == 0*:
+
+| | n | floor | ceiling | gap | gap/3 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| all 78 (primary, unchanged) | 78 | 0.4103 | 0.6026 | 0.1923 | **0.0641** |
+| reachable subset (secondary) | **47** | 0.6809 | 1.0000 | 0.3191 | **0.1064** |
+
+**31 of 78 (39.7%) are unreachable** — 20 `phase2b`, 11 `phase1_pooled`. Both
+bars are now written into `reports/stage_c_stop_rule.md` as **Amendment 1**,
+before Stage C runs. The primary is unchanged and still decides the verdict; the
+secondary decides nothing and exists only so that a null on the full 78 can be
+read correctly.
+
+**A correction to the framing this was requested under:** the A.5b-flagged
+instances number **18, not 21** — the 3 extraction failures are a strict
+*subset* of the 18 singled-out, not disjoint from them. 6 of the 18 fall inside
+the frozen 78, and all 6 are unreachable.
+
+## A.8 — matched-K oracle: the arm was re-solving, not adjudicating
+
+A.1 compared Arm 2's Oracle@3 against the pool's Oracle@**4**, which is not
+like-for-like. Recomputed at matched K *and* on a matched population (the 67
+instances with ≥3 usable trajectories, since Oracle@3 is undefined below that):
+
+| | n | oracle |
+| --- | ---: | ---: |
+| pool, Oracle@3, exact over all 3-subsets | 67 | **0.6455** [0.534, 0.757] |
+| Arm 2, oracle over its own samples, same 67 | 67 | **0.5522** [0.433, 0.672] |
+| **difference** | | **−0.0933** |
+
+The gap survives matching at essentially its original magnitude, and it licenses
+a stronger claim than the monotonicity argument in D-39:
+
+> **Selection from a set cannot produce something worse than the set's best
+> element.** Arm 2's best obtainable answer is 9.3 points *below* the best answer
+> already sitting in the candidate set it was handed. It was therefore
+> **re-solving the task, not adjudicating between the candidates** — whatever
+> the prompt asked it to do.
+
+This is a cleaner basis for D-39's retraction than information monotonicity: it
+is a structural fact about the outputs, not an argument about decision-makers.
+
+## Sensitivity on A.5b's 51% — **post hoc**, and it matters
+
+*Computed after seeing the A.5b result and therefore labelled post hoc.* The
+`singled_out` threshold is "mentioned more than the average wrong candidate",
+i.e. a ratio strictly above 1.0. That boundary turns out to carry real weight:
+
+| ratio of GT mentions to mean wrong-candidate mentions | instances |
+| --- | ---: |
+| > 1.0 (the reported threshold) | 18 |
+| ≥ 1.1 | 13 |
+| ≥ 1.25 | 11 |
+| ≥ 1.5 | 8 |
+| ≥ 2.0 | 7 |
+
+**Five of the 18 sit within 10% of parity** — for example
+`screen_gene_retrieval/160` at 62 vs 60.5, and `crispr_delivery/7` at 15 vs
+14.6, whose excerpts are visibly option-by-option enumeration ("Let me consider
+each option: a… b… c…"). At that margin the measure cannot distinguish
+preferential discussion from enumeration, which is the very artifact it was
+designed to exclude.
+
+**Consequence for the claim.** The headline should be stated as a band, not a
+point: **between 20% (7/35, ratio ≥ 2) and 51% (18/35, ratio > 1)** of the
+assessable no-correct instances show the correct answer discussed preferentially
+and not committed. The qualitative conclusion — that a substantial part of the
+"30% unreachable" figure is a commitment failure rather than a generation
+ceiling — survives at every threshold in that band. The precise fraction does
+not, and is not claimed. `reports/a5b_review_sheet.md` puts the 18 in front of
+the operator for a reading-comprehension check that would settle it.
