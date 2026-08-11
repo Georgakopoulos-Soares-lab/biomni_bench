@@ -7,9 +7,12 @@ where none of the committed candidates is correct - the correct answer is not in
 the set it is choosing from. On those instances every verifier scores zero by
 construction, while they still sit in the denominator of any mean.
 
-A.5b identified 21 such instances by two routes (18 `singled_out`, 3 extraction
-failures), but the property is more general and is used in that general form
-here: **an instance is unreachable iff its oracle over committed candidates is
+A.5b flagged such instances by two routes, `singled_out` and extraction
+failure. Those routes are NOT disjoint - the 3 extraction failures are a strict
+subset of the 18 singled-out, so the flagged set is 18, not 21 (verified
+directly; unsurprising, since a trajectory that generated the correct answer and
+lost it to parsing would also have discussed it preferentially). The property is
+in any case more general, and is used in that general form here: **an instance is unreachable iff its oracle over committed candidates is
 0**, i.e. no usable trajectory committed the correct answer. That is exactly
 `oracle_reward == 0` in D-37's canonical table, and it needs no heuristic.
 
@@ -60,8 +63,8 @@ def main() -> int:
     m["unreachable"] = m.oracle_reward == 0
     reachable = m[~m.unreachable]
 
-    # A.5b's 21, intersected with the frozen 78 (phase2b only - A.5b audited the
-    # phase2b no-correct set).
+    # A.5b's flagged set (18, see the docstring), intersected with the frozen 78
+    # (phase2b only - A.5b audited the phase2b no-correct set).
     tri = pd.read_csv(STAGE_A / "a5_label_triage.csv")
     tri["task_instance_id"] = tri.task_instance_id.astype(int)
     flagged = tri[tri.singled_out.fillna(False).astype(bool) | tri.extraction_failure.fillna(False).astype(bool)]
@@ -98,7 +101,8 @@ def main() -> int:
             "n_of_those_inside_the_frozen_78": int(len(overlap)),
             "all_flagged_are_unreachable": bool(overlap.unreachable.all()) if len(overlap) else None,
             "note": (
-                "A.5b's 18 singled-out + 3 extraction failures are drawn from phase2b's 45 "
+                "A.5b's flagged set (18 distinct instances; the 3 extraction failures are a "
+                "subset of the 18 singled-out, not additional to them) is drawn from phase2b's 45 "
                 "no-correct instances; the no-correct axis cuts across stratum B (D-37), so the "
                 "overlap with the frozen 78 is real rather than hypothetical"
             ),

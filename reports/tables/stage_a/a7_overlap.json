@@ -20,7 +20,7 @@
     "n_flagged_in_a5b": 18,
     "n_of_those_inside_the_frozen_78": 6,
     "all_flagged_are_unreachable": true,
-    "note": "A.5b's 18 singled-out + 3 extraction failures are drawn from phase2b's 45 no-correct instances; the no-correct axis cuts across stratum B (D-37), so the overlap with the frozen 78 is real rather than hypothetical"
+    "note": "A.5b's flagged set (18 distinct instances; the 3 extraction failures are a subset of the 18 singled-out, not additional to them) is drawn from phase2b's 45 no-correct instances; the no-correct axis cuts across stratum B (D-37), so the overlap with the frozen 78 is real rather than hypothetical"
   },
   "reachable_subset": {
     "n": 47,
