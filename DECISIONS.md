@@ -1583,3 +1583,105 @@ rate) could in principle be tested — but that is a new, separately-designed
 pilot with its own frozen acceptance rule, not a reinterpretation of this
 one. This result does not license lowering the NO-GO bar or re-reading the
 pooled CI as "close enough."
+
+---
+
+## D-39 Amendment to D-38: the "upper bound" argument is retracted; the family-level NO-GO does not follow
+
+**Decided:** 2026-08-11. **This is a labelled amendment, not an edit.** D-38
+stands in place, unmodified, per the standing reversal rule fixed in D-32:
+a revision to a frozen conclusion is always a new numbered entry, never a
+silent rewrite of the old one. Readers of D-38 must read this entry with it.
+
+### What is retracted
+
+D-38 argued that Arm 2 — the real Biomni A1 agent, shown every disagreeing
+candidate, adjudication-framed, full tool access — has *strictly more
+information* than a `VerifyView`-constrained VERIFY trajectory (D-32), and
+therefore **upper-bounds** what VERIFY could achieve; and that a NO-GO on Arm 2
+consequently licenses a NO-GO against the evidence-based-adjudication **family**
+rather than only against the pilot's specific design.
+
+**The inference is invalid and is withdrawn.** Monotonicity of
+value-of-information — more input can only help — holds for an optimal
+decision-maker that can costlessly ignore inputs it does not need. **A fixed LLM
+under a fixed prompt is not such a decision-maker.** Additional context changes
+the prompt distribution the model is actually conditioned on, and can and here
+does degrade behaviour. "Strictly more information" therefore does not order the
+two designs by achievable performance, and no upper bound follows.
+
+**This is not an abstract objection; it is instantiated in D-38's own data.**
+The off-menu failure mode — 46.2% of instances had at least one sample answering
+outside the candidate list — is *created by* the extra information. A
+`VerifyView` trajectory, which never sees a candidate list, cannot produce an
+off-menu answer at all: the failure category does not exist for it. The
+supposedly-dominating arm has failure modes the constrained arm structurally
+lacks, which is a direct counterexample to the claimed ordering.
+
+The remaining interface evidence points the same way, and was already reported
+in `reports/track_c_step2.md` §4 before this retraction: **96.2%** of instances
+showed at least one runaway generation event, **47.4%** produced no 2-of-3
+majority at all, and the report's own summary of the mechanism was *"not
+confidently wrong but frequently no answer."* Taken together that describes an
+**operationally unstable elicitation regime**, not a demonstrated inability to
+verify. D-38 read the same numbers as mechanism detail supporting a general
+conclusion; they are better read as evidence that the measurement instrument was
+unstable, which is precisely the condition under which a null is uninformative
+about the underlying capability.
+
+### What is *not* retracted
+
+* **D-38's empirical result stands, unchanged and unreinterpreted.** Arm 2
+  scored Δ = **−0.0769**, 95% CI **[−0.1923, 0.0385]** against the frozen
+  plurality floor, a NO-GO under the acceptance rule frozen before the first
+  trajectory. Arm 1 stands at Δ = −0.2179, CI [−0.3333, −0.1026]. The
+  `phase1_pooled` replication stands. No number moves, and no bar moves.
+* **The scope of the claim is what changes.** The surviving claim, which
+  becomes the manuscript's claim, is exactly this and no more:
+  **free-form, same-model, tool-enabled candidate adjudication failed under a
+  maximally-informed but operationally unstable regime.** Every qualifier in
+  that sentence is load-bearing — free-form (not structured-output),
+  same-model (verifier and generator are one checkpoint, so their errors are
+  correlated by construction), and operationally unstable (the interface
+  metrics above).
+* **Step 5 (`VerifyView` mode-A implementation) remains cancelled**, and this
+  retraction does not revive it. It is cancelled on **independent** evidence:
+  D-37 measured mode-A-eligible headroom at **7.1%** of stratum B's total,
+  below the pre-registered 15% floor, because only `lab_bench_seqqa` qualifies
+  as mode-A and only 1 of 53 stratum-B instances is that task. That finding is
+  a property of the benchmark's task structure and is untouched by anything
+  argued here.
+
+### What this changes downstream
+
+The manuscript may no longer claim that verification-by-adjudication is closed
+off as a family. `reports/track_c_step2.md` §5 and the write-up draft's Track-C
+section both carried the retracted framing and are corrected in the same batch
+of work as this entry (Stage 0.3).
+
+The **K=2 characterization run** is still not performed — but its justification
+is now scope, not this argument. It is excluded by the current plan, not
+licensed away by a family-level NO-GO that no longer stands.
+
+**Stage C** exists precisely because of this retraction: it removes the two
+confounds named above — same-model and unstable-interface — and re-asks the
+question under conditions where a null would be interpretable. Its stop rule
+(`reports/stage_c_stop_rule.md`) was committed **before** this entry and before
+any Stage A number existed, so the retraction cannot be read as clearing ground
+for an open-ended search.
+
+### How the error arose, recorded because the class matters
+
+The argument had the shape of a proof — "strictly more information, therefore an
+upper bound" — and proof-shaped reasoning received less scrutiny than a
+measurement would have. The premise needed for the conclusion (an
+information-monotone decision-maker) was never stated, and would have been
+visibly false if it had been. The general lesson matches D-27's: a step that
+*looks* like it cannot be wrong is exactly the step that gets checked least,
+and this project's own instrumentation had already recorded the disconfirming
+evidence before the claim was made.
+
+**Reversal condition.** None applies to the retraction itself — an invalid
+inference does not become valid on further evidence. The *empirical* question
+it over-claimed on is reopened, and is what Stage C tests, under that file's
+frozen stop rule.

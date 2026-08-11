@@ -1,8 +1,63 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-10 (Steps 0-2 closed (D-36/D-37/D-38); Step 2 is **NO-GO** — Step 4 not indicated, node idle; Step 5 remains gated pending explicit approval; Step 3 write-up updated with the real result)
+**Last updated:** 2026-08-11 (**Stage 0 closed**: D-38's upper-bound inference retracted in **D-39**; Stage C stop rule frozen and committed *before* any Stage A number exists; write-up reframed around generation / selection / execution reliability / selective deferral. Stage A in progress. The live-GPU-window plan below is superseded and closed.)
 
-## Live-GPU-window plan underway (2026-08-10)
+## Current plan: Stage 0 → Stage A → (separate session) Stage C
+
+The paper is submittable after Stage 0 + Stage A. **No GPU work, no inference,
+in either stage.** Stage B (expert label audit) is not being run — no domain
+reviewers available; its expertise-free subset is folded into A.5 and the
+domain-judgment portion is an explicit limitation.
+
+### Stage 0, closed (2026-08-11)
+
+**0.1 — Stage C's stop rule is frozen and committed first**
+(`reports/stage_c_stop_rule.md`, commit `63c179b`), deliberately ahead of any
+Stage A number. Once alternative aggregations of Arm 2 exist, a Stage C NO-GO
+becomes negotiable; precommitting while the numbers are unknown is what keeps
+this from reading as another rescue attempt. Fixes two verifier cells
+(substitution permitted, expansion forbidden), an interface-validity
+precondition with exactly one bounded repair, D-38's decision rule reused
+verbatim so no bar-shopping is possible, NO-GO **and** INCONCLUSIVE both ending
+the program, and an explicit list of closed rescue moves.
+
+**0.2 — D-39** amends D-38 without editing it, per D-32's standing rule.
+Retracted: that Arm 2 upper-bounds verification and therefore licenses a
+family-level NO-GO. Information monotonicity requires a decision-maker that can
+ignore irrelevant input; a fixed LLM under a fixed prompt is not one — and the
+data contains a direct counterexample, since the 46.2% off-menu failure mode is
+*created by* the extra information and cannot exist for a verifier never shown a
+candidate list. **Unchanged:** every D-38 number. **Surviving claim:** free-form,
+same-model, tool-enabled adjudication failed under a maximally-informed but
+operationally unstable regime. Step 5 stays cancelled on independent evidence
+(D-37's 7.1% mode-A headroom), untouched by the retraction.
+
+**0.3 — write-up corrected** (`reports/writeup_draft.md`), reframed around
+generation / selection / execution reliability / selective deferral instead of
+phase chronology. Substantive corrections: the 45 no-correct instances are no
+longer conflated with stratum B's 53 (generation limitation is *not* established
+for the 45 — A.5 tests it); 0.093 restated as a fixed-pool K=4 candidate-
+*selection* ceiling, not a ceiling on any family of methods; the structural
+result stated with its four conditions and its scope asserted by test
+(`tests/test_structural_scope.py`, 4 tests, each dropping one condition and
+showing the collapse stops holding); process findings moved to a
+reproducibility-and-deviations section; ends on a scientific conclusion.
+
+**"Zero high-confidence wrong claims" is removed from the abstract and
+corrected in the body.** Verified against the frozen decision log: the
+controller made **0 of 150** online claims meeting the ≥3-agreement definition,
+so the rate is *undefined*, not 0%. All **121** of its ACCEPTs carried support
+exactly 2 (max support observed = 2), and the band is unreachable *by
+construction* — three agreeing trajectories requires two of the first three to
+have agreed, which terminates earlier. It is a theorem about the stopping rule,
+not a safety finding. The defined comparison: fixed K=4 made 76 confident calls
+and was wrong on 8 — 10.5%, 95% Wilson CI [5.4%, 19.4%].
+
+**Full suite: 459 passed.**
+
+---
+
+## Superseded: live-GPU-window plan (2026-08-10, closed)
 
 Working the 6-step plan in order: Step 0 (process debt) → Step 1 (CPU
 preflight: stratum reconciliation, verifiability×headroom, degeneration×
