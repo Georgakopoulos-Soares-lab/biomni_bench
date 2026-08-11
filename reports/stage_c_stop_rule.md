@@ -260,3 +260,137 @@ precondition and its single bounded repair, §6's stop semantics (NO-GO **and**
 INCONCLUSIVE both end the programme), and every forbidden move in §7 — in
 particular, the secondary analysis introduced here is **not** licence for
 re-aggregation shopping, and no third denominator may be added later.
+
+---
+
+# AMENDMENT 2 — 2026-08-11 — cell identities pinned; C2's role substituted
+
+**Labelled amendment, appended per §10, not a silent edit.** Written before any
+Stage C number exists and before any BiomniEval1 capsule has been scored. It
+pins the two cells' identities (the amendment §3 explicitly anticipates),
+substitutes C2's *role* (which goes beyond identity, and is therefore recorded
+below as an operator decision rather than as a routine substitution), and fixes
+the method departures and the interface-health mapping. It changes **no** bar,
+**no** denominator, and **no** stop semantic.
+
+## A three-cell design was proposed and declined
+
+The Stage C brief pre-registered **three** verifier cells: a same-model control,
+a cross-family primary, and a larger "capability ceiling" cell. §3 of this file
+permits an amendment to *substitute* a model "of the same role" but states that
+it "may **not** raise the cell count above two", and §7.1 forbids "no verifier
+model beyond the two pre-registered cells".
+
+**The cell count remains two.** The brief's third cell — the larger capability
+ceiling — is **not run**. This is recorded here rather than left implicit,
+because a ceiling cell is exactly the kind of addition §7.1 exists to block:
+it is descriptive, it cannot change the verdict, and its availability after a
+disappointing primary is what makes "we also tried" tempting.
+
+## The two cells, pinned
+
+| cell | role | model | revision |
+| --- | --- | --- | --- |
+| **C1** | *different lineage* — the **cross-family primary** | `google/gemma-4-31B-it` | `842da3794eaa0b77d5f08bae87a17459d91ff475` |
+| **C2** | *same model* — **interface control** (role substituted, see below) | `biomni/Biomni-R0-32B-Preview` | `71432eb3d5e583bee757e0f9437a17e711e8e3d1` |
+
+**C1 selection reasoning**, recorded as §3 and the brief both require. Chosen
+for general verifier strength rather than biomedical specialization: a dense
+~31B instruct model (`num_experts: null`, 60 layers, 62.5 GB bf16), so its
+capability is not discounted by a small active-parameter fraction as it would be
+for a same-nominal-size MoE; Gemma lineage, independent of the Qwen3 lineage
+Biomni-R0-32B was tuned from; scale-matched to the 32B generator, so a C1-vs-C2
+difference is not trivially a size difference; **ungated** on the Hub, so no
+credential is needed and the choice is reproducible by a third party; and
+natively supported by the SGLang version this project already serves with
+(`Gemma4ForConditionalGeneration`, `sglang/srt/models/gemma4_mm.py`, 0.5.16),
+so no serving-stack change is introduced alongside the model change.
+
+## C2's role is substituted — an operator decision, labelled
+
+§3 originally assigned C2 the role *same lineage, no agent RL*, proposing
+`Qwen/Qwen3-32B` to isolate whether Biomni-R0's agent-task RL fine-tuning cost
+it verification ability. C2 is instead `Biomni-R0-32B-Preview` itself, in the
+role *same-model / interface control*.
+
+This is a change of **role**, not merely of identity, so it is not the
+substitution §3 pre-authorised. It was put to the operator as such, with the
+alternative of honouring §3 exactly, and the substitution was chosen.
+
+* **What it buys.** It tests D-39's actual hypothesis directly. D-39 retracted
+  D-38 on the grounds that the failure was confounded by *same-model* and
+  *unstable interface* together. With C2 holding the model fixed at the very
+  checkpoint that failed D-38 and changing **only** the interface, a C2 result
+  separates those two confounds by construction; C1 then varies the model at
+  matched scale. The two cells become a clean 2-point contrast on the axis the
+  retraction named.
+* **What it costs, stated as a limitation and not deferred.** No cell now
+  addresses whether agent-task RL degraded verification ability. That question
+  is **not** answered by Stage C and does **not** become a candidate third cell
+  later — §7.1 continues to bind.
+
+## Method departures from the published configuration, frozen now
+
+Both are deliberate, both are reported in the write-up, and neither is tuned
+against any Stage C outcome:
+
+1. **Full round-robin, not the Probabilistic Pivot Tournament.** PPT exists to
+   avoid O(N²) comparisons at large N; the reference paper demonstrates up to
+   N=20. Here N ≤ 4 unique candidate answers and usually 2 — measured on the
+   frozen population: **59 instances with 2, 17 with 3, 2 with 4**. Full
+   pairwise comparison in both directions is therefore **244 directed pairs
+   across all 78 instances**, which is cheap, removes pivot-selection
+   randomness, and makes the result independent of the ring seed. PPT is
+   reported as a faithful secondary on the same cached scores.
+2. **Biomedical criteria decomposition** replacing the published per-benchmark
+   criteria, frozen in `reports/stage_c_preregistration.md` before any
+   BiomniEval1 capsule is scored, at the published cardinality of three.
+
+**Intransitivity, and an honest bound on it.** Round-robin buys a validity
+diagnostic — a verifier with cyclic preferences over three candidates is
+guessing — and it is reported. But a cycle requires N ≥ 3, so the diagnostic is
+**defined on only 19 of the 78 instances (24.4%)**. It is reported with that
+denominator visible and is not generalised to the other 59.
+
+## §4's interface-health bars, mapped onto a scoring interface
+
+§4's bars were written for a free-form arm that emitted a chosen answer and was
+resolved by 2-of-3 majority. The scoring interface has no such step, so the
+three bars are mapped now, before the smoke run, rather than being quietly
+dropped:
+
+| §4 bar | mapping under the scoring interface | bar |
+| --- | --- | --- |
+| off-menu ≤ 10% | **structurally impossible**: the score position is constrained by decoding to the 20 scale tokens, so a response outside the answer space cannot be emitted | 0% by construction |
+| no-majority ≤ 20% | **unresolved round-robin** — no strict argmax of w_i/c_i, i.e. an exact tie at the top | ≤ 20% |
+| hard degeneration-failure ≤ 10% | **comparison failure rate** — the fraction of directed comparisons that raise and are scored 0.5/0.5 by the runner's own error policy | ≤ 10% |
+
+The brief's additional **structured-output validity ≥ 95%** condition is
+adopted as a GO requirement and is measured as the complement of the comparison
+failure rate. Note it is *stricter* than this file's original GO condition; a
+stricter GO bar is recorded here because tightening the condition for a positive
+result cannot rescue a null, which is the direction §7.5 protects against.
+
+**A cost of the constrained interface, pre-registered.** Constraining the
+verifier to score the committed candidates forfeits the case A.1 found where an
+off-menu answer was *correct* because the true answer was absent from the
+candidate set (5 of 24 off-menu Arm-2 trajectories). This is the same fact A.7
+measures as **31 of 78 instances unreachable**, and it is why Amendment 1's
+reachable-47 secondary exists. The constrained scorer cannot exceed the
+reachable subset's ceiling, and the primary's denominator is unchanged anyway.
+
+## The cross-family direction is declared OPEN
+
+Neither direction is predicted. The literature is contested on exactly this
+axis: cross-family verification is reported to strengthen as solver–verifier
+similarity falls, while the General AgentBench study (arXiv 2602.18998)
+hypothesises that models judge their **own** execution traces better, because
+external verifiers struggle with unfamiliar traces — and a trace capsule is an
+execution trace. C1 > C2 and C2 > C1 are both live outcomes under this
+amendment, and neither is a surprise to be explained away after the fact.
+
+**Unchanged by this amendment:** the primary Δ on all 78 against **0.0641**;
+Amendment 1's reachable-47 secondary against **0.1064**; §5's per-cell
+evaluation with no pooling and no best-cell reporting; §6's stop semantics
+(NO-GO **and** INCONCLUSIVE both end the programme); and every forbidden move
+in §7.
