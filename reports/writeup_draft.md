@@ -1,11 +1,12 @@
 # Reliability control for biomedical AI agents: where the failures actually are
 
 **Status: DRAFT.** Structure and claims revised 2026-08-11 (Stage 0) after
-D-39 retracted the "upper bound" inference in D-38. Organised around *what can
-go wrong* rather than the order the experiments happened to run in. Slots
-marked **[Stage A]** await the existing-data decomposition in
-`reports/stage_a_decomposition.md`; every number already present is frozen and
-cited.
+D-39 retracted the "upper bound" inference in D-38, and completed the same day
+with the Stage A decomposition (D-40, `reports/stage_a_decomposition.md`).
+Organised around *what can go wrong* rather than the order the experiments
+happened to run in. Every number is frozen and cited. One experiment remains —
+a published-verifier pilot whose stop rule was committed before any of the
+decomposition below was computed (`reports/stage_c_stop_rule.md`).
 
 ---
 
@@ -30,15 +31,19 @@ that disagree have statistically indistinguishable *plans* from trajectories
 that agree, Jaccard 0.546 vs 0.538 against a 0.301 control), and handing a
 tool-enabled agent the disagreeing candidates to adjudicate between (Δ =
 −0.077 against the voting floor, 95% CI [−0.192, 0.038]). The adjudication
-null is reported with its confound named rather than generalised: the same
-run shows 46.2% of instances emitting an answer outside the candidate list it
-was told to choose from and 96.2% showing runaway generation, which is an
-unstable elicitation regime, not a demonstrated inability to verify. The
+null is reported with its confound named rather than generalised: 69% of its
+losses are failures to deliver a usable answer at all rather than wrong choices
+among the candidates, which is an unstable elicitation regime and not a
+demonstrated inability to verify — though no aggregation of its samples rescues
+it either, since an oracle over its own answers reaches only 0.513. The
 contribution is a decomposition — separating *candidate generation* from
 *candidate selection* from *execution reliability* from *selective deferral* —
-and the finding that on this benchmark the binding constraint is selection,
-not generation: the correct answer is frequently present among four samples
-and not chosen.
+and the finding that on this benchmark the binding constraint is selection, not
+generation: on half the instances with no correct answer scored, the model
+discussed the correct answer preferentially and committed something else, and
+the adaptive controller never once turned a fixed-policy error into a correct
+answer while the plain agreement signal it wrapped outperforms it at every
+comparable coverage.
 
 ---
 
@@ -87,18 +92,40 @@ most obviously suited to fixing selection did not fix it.
   Of 150 held-out instances, **45 (30%) have no correct trajectory among four
   independent samples.**
 
-**That 30% is not yet established as a generation limitation, and this draft
-does not claim it is.** Three non-generation explanations are live and
-individually checkable, and conflating them with model capability would erase
-the distinction this paper is built on: the answer may have been scored wrong
-by an evaluator/canonicalisation mismatch (this project has been burned there
-before — a symbol-first parser bug moved every Phase-1 headline number); the
-answer may appear in the trajectory's reasoning without being committed in the
-final block; or the prompt may not determine the answer uniquely without
-external knowledge it never supplies. **[Stage A.5]** triages exactly these
-three, and reports the no-correct fraction under official scoring and under
-audit-corrected scoring side by side. Until then, "30% unreachable" is an
-upper bound on the generation problem, not a measurement of it.
+**That 30% is not a generation limitation, and conflating it with one would
+erase the distinction this paper is built on.** A mechanical audit of all 45 —
+no domain reviewers, and deliberately **no LLM**, since using a model to
+adjudicate labels the model failed on is the circularity such an audit exists to
+avoid — finds:
+
+* **Evaluator/canonicalisation mismatch: none.** Zero of 45 differ from ground
+  truth purely by normalisation. (Gene-symbol synonymy could not be checked
+  offline; that is the one place this count could be an undercount.)
+* **The answer is frequently present in the reasoning and not committed.** The
+  difficulty is that on 9 of 10 tasks the prompt supplies a candidate list
+  containing the correct answer, so "the trajectory mentions it" is nearly
+  vacuous — a model enumerating the list mentions everything. The
+  enumeration-robust measure is whether the answer is *singled out*: discussed
+  more often than the average wrong candidate. **18 of the 35 assessable
+  instances (51%) single out the correct answer and commit something else.**
+  A further **3** are outright extraction failures, where a trajectory produced
+  no parseable answer while its own solution block committed the right one — the
+  clearest reads *"Most likely causal gene: LONP1"* and scored zero.
+* **Prompt underdetermination is near-universal but does not discriminate:** 44
+  of the 45 sit on tasks requiring external knowledge the prompt never supplies,
+  1 on the only structurally self-determining task.
+
+Re-scoring only what the audit strictly licenses — the 3 extraction failures,
+not the 18, because considering an answer is not producing it — moves the
+no-correct rate from **30.0% to 28.0%**, Oracle@4 from 0.700 to 0.720, and
+selection headroom from 0.093 to **0.113**.
+
+**So "30% unreachable" is an upper bound on the generation problem, and a loose
+one.** At least half the assessable instances behind it had the correct answer
+in play and lost it at commitment rather than at generation. What the audit
+cannot rule out, and says so, is that some share of the remaining 42 are label
+problems rather than model failures — that needs domain reviewers, who were not
+available, and it was not approximated.
 
 **A separate population, and the one this paper finds most interesting.** On
 **53 of 150** instances the samples disagree substantively and *the correct
@@ -257,10 +284,40 @@ select better is open, and is the one remaining experiment
 (`reports/stage_c_stop_rule.md`, stop rule committed before any of the
 decomposition below existed).
 
-**[Stage A.1–A.2]** decompose this null into capture (voting wrong,
-adjudicator right) versus harm (voting right, adjudicator wrong or
-unresolved), and separate *interface* harm from *judgment* harm — the
-quantitative content of the retraction above.
+**The null is real, and its scope is narrow — both established by decomposing
+it.** Two questions, answered separately.
+
+*Did the 2-of-3 aggregation destroy a recoverable signal?* **No.** Dropping the
+majority requirement entirely and taking the plurality among whatever samples
+survived buys **+0.013 [−0.090, +0.115]** — nothing. The sharper bound: an
+oracle over the adjudicator's own three answers reaches only **0.513**, against
+the candidate pool's own oracle ceiling of 0.6026. **The adjudicator's answer
+set is worse than the set it was asked to choose from**, so no aggregation rule
+could have rescued this arm. The null is not an artifact of how the samples
+were combined.
+
+*Was the failure one of judgment, or of elicitation?* **Predominantly
+elicitation.** Decomposing the −0.077 into capture (voting wrong, adjudicator
+right) and harm (voting right, adjudicator wrong or unresolved) gives 7 captured
+against 13 harmed — and the identity Δ = (capture − harm)/n reconciles exactly.
+Of those 13, only **4** are `wrong_in_menu`: the adjudicator looked at the
+candidates and picked a worse one. The other **9 (69%)** never delivered a
+usable choice at all — 7 produced no majority, 1 answered off-menu, 1 failed
+outright. **This is the quantitative content of the retraction above**: the arm
+failed mostly by not answering, not by answering badly.
+
+It is tempting to go one step further — 7 captured against only 4 judgment
+losses suggests an interface-perfect adjudicator would be net positive. **That
+counterfactual is not claimed here.** It assumes each interface-harmed instance
+would revert to its plurality outcome, which is untested and not entailed. It is
+the motivation for the remaining experiment, and that experiment's stop rule was
+frozen before any of this decomposition existed precisely so the counterfactual
+could not be used to soften whatever it returns.
+
+One incidental finding constrains any fix: of 24 off-menu answers, **5 were
+correct** — the true answer was missing from the candidate list, and the agent
+overrode the menu rather than disobeying it. Hard-constraining output to the
+candidate set, the obvious interface repair, would forfeit those.
 
 ## 5. Execution reliability — a first-class axis, not a footnote
 
@@ -328,10 +385,34 @@ The comparison that *is* defined: fixed K=4 made 76 high-confidence calls of
 150 and was wrong on 8 — **10.5% of its confident calls, 95% Wilson CI
 [5.4%, 19.4%]**.
 
-**[Stage A.3]** replaces this with the analysis the deferral question actually
-needs: risk–coverage curves at matched coverage, and an explicit attribution
-of any selectivity to the agreement signal versus the controller wrapped
-around it.
+**The selectivity that does exist belongs to the agreement signal, not to the
+controller.** The deferral question needs risk–coverage at matched coverage, and
+that comparison is unambiguous:
+
+| | coverage | accuracy on accepted |
+| --- | ---: | ---: |
+| controller, stop at k≤2 | 0.433 | 0.877 |
+| controller, stop at k≤3 | 0.673 | 0.782 |
+| controller, full | 0.807 | 0.711 |
+| fixed K=4, support ≥ 4 | 0.307 | 0.978 |
+| fixed K=4, support ≥ 3 | 0.507 | 0.895 |
+| fixed K=4, support ≥ 2 | 0.807 | 0.719 |
+
+Simply counting agreement among four trajectories and thresholding on it matches
+or beats the adaptive controller **everywhere the two are comparable** — 0.895
+at coverage 0.507 against the controller's 0.877 at 0.433, and 0.719 against
+0.711 at an identical coverage of 0.807. Restricted to the overlapping coverage
+domain, its AURC is also better (0.058 vs 0.075).
+
+The sharpest, most deployment-relevant form: **at a 5% or 10% error budget the
+controller reaches zero coverage** — its best operating point is 12.3% error —
+while agreement thresholding answers **30.7%** of instances at 2.2% error. A
+practitioner who needs a low-error operating point cannot obtain one from the
+controller at all, and can from the simpler method it wraps.
+
+Any selective-prediction claim from this work must therefore be attributed to
+agreement counting. There is a real and useful selective-prediction result here;
+it is just not a result about the controller.
 
 ## 7. What this adds up to
 
@@ -349,10 +430,25 @@ generalise on its own).
 The negative results are not symmetric, and the paper's value is in
 distinguishing them. Three are structural or well-identified: the controller's
 domination by blind allocation, the collapse of consensus rules at the budget
-ceiling, and the absence of plan divergence are all measured against
-controls or proved from stated conditions. The fourth — adjudication — is a
-null whose instrument was demonstrably unstable, and it is reported as such
-rather than promoted to a general claim about verification.
+ceiling, and the absence of plan divergence are all measured against controls
+or proved from stated conditions. The controller result is in fact sharper than
+its headline: decomposed instance by instance, it **never once** converted a
+fixed-K=4 error into a correct answer across 150 prospective instances — its
+capture is exactly zero and its entire difference from the fixed policy is harm.
+The fourth result — adjudication — is a null whose instrument was demonstrably
+unstable, 69% of its losses being failures to deliver a usable answer rather
+than wrong choices among the candidates, and it is reported as such rather than
+promoted to a general claim about verification.
+
+A methodological point falls out of having done the decomposition at all. Three
+of the four headline numbers in this project would have supported a materially
+different conclusion had they been read at face value: a degenerate offline
+confidence interval that was a replay artifact; a "zero confidently-wrong
+claims" safety property that is a theorem about a stopping rule which never
+enters the confidence band; and a "30% unreachable" ceiling that is at least
+half a commitment failure. In each case the correction came from decomposing an
+aggregate into the instances that produced it, and in each case the aggregate
+was the more flattering number.
 
 What follows is a methodological point rather than a benchmark result. A
 reliability layer for scientific agents is usually proposed as a *policy*
@@ -411,4 +507,7 @@ over-claimed on is unchanged; only its scope is.
 `controller_v2_offline_assessment.md`, `track_c_diversity_diagnostic.md`,
 `context_overflow_forensics.md`, `evidence_channel_repair.md`,
 `residual_failure_remeasurement.md`, `track_c_preflight.md`,
-`track_c_step2.md`, and `DECISIONS.md` D-01–D-39.*
+`track_c_step2.md`, `stage_a_decomposition.md`, and `DECISIONS.md` D-01–D-40.
+The one outstanding experiment and the conditions under which it ends the
+programme are fixed in `stage_c_stop_rule.md`, committed before the Stage A
+decomposition was computed.*
