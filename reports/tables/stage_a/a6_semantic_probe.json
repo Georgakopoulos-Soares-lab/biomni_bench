@@ -1,0 +1,61 @@
+{
+  "population": {
+    "n_trajectories": 263,
+    "n_instances": 78,
+    "n_correct": 96,
+    "n_incorrect": 167
+  },
+  "frozen_rule": {
+    "primary": "own_answer_share",
+    "family": [
+      "own_answer_share",
+      "n_competing_candidates_discussed",
+      "hedging_near_answer",
+      "closing_concentration"
+    ],
+    "family_size": 4,
+    "alpha_corrected": 0.0125,
+    "source": "reports/a6_decision_rule.md (committed 2051a7f, before any feature value existed)"
+  },
+  "features": {
+    "own_answer_share": {
+      "point": 0.503803757180562,
+      "ci95_lo": 0.3517903586668312,
+      "ci95_hi": 0.6405648415317227,
+      "corrected_lo": 0.3132862200411897,
+      "corrected_hi": 0.6697695658505395,
+      "n_instances": 78
+    },
+    "n_competing_candidates_discussed": {
+      "point": 0.4393712574850299,
+      "ci95_lo": 0.3655510465793896,
+      "ci95_hi": 0.515354687986944,
+      "corrected_lo": 0.34147451057679673,
+      "corrected_hi": 0.532632818906404,
+      "n_instances": 78
+    },
+    "hedging_near_answer": {
+      "point": 0.41379740518962077,
+      "ci95_lo": 0.33281674569545333,
+      "ci95_hi": 0.4906077623523558,
+      "corrected_lo": 0.3139433831995343,
+      "corrected_hi": 0.5144375651510121,
+      "n_instances": 78
+    },
+    "closing_concentration": {
+      "point": 0.527713088029809,
+      "ci95_lo": 0.41552929403801475,
+      "ci95_hi": 0.6439310969807012,
+      "corrected_lo": 0.38821830326752893,
+      "corrected_hi": 0.6757481431641814,
+      "n_instances": 78
+    }
+  },
+  "verdict": "NULL",
+  "primary_hit": false,
+  "secondary_hits": [],
+  "nominal_only_hits_reported_as_multiplicity_noise": [
+    "hedging_near_answer"
+  ],
+  "consequence": "A.4's null strengthens; a Stage C NO-GO is attributable to the traces with positive evidence"
+}

@@ -1,0 +1,37 @@
+{
+  "frozen_78": {
+    "n": 78,
+    "plurality_floor": 0.4103,
+    "oracle_ceiling": 0.6026,
+    "gap": 0.1923,
+    "gap_over_3_NOGO_bar": 0.0641
+  },
+  "unreachable": {
+    "definition": "oracle over committed candidates is 0 - no usable trajectory committed the correct answer",
+    "n": 31,
+    "share_of_78": 0.3974,
+    "by_pool": {
+      "phase2b": 20,
+      "phase1_pooled": 11
+    },
+    "note": "every verifier that scores committed candidates gets 0 on these by construction, while they remain in the denominator of any mean over the 78"
+  },
+  "a5b_flagged_overlap": {
+    "n_flagged_in_a5b": 18,
+    "n_of_those_inside_the_frozen_78": 6,
+    "all_flagged_are_unreachable": true,
+    "note": "A.5b's 18 singled-out + 3 extraction failures are drawn from phase2b's 45 no-correct instances; the no-correct axis cuts across stratum B (D-37), so the overlap with the frozen 78 is real rather than hypothetical"
+  },
+  "reachable_subset": {
+    "n": 47,
+    "plurality_floor": 0.6809,
+    "oracle_ceiling": 1.0,
+    "gap": 0.3191,
+    "gap_over_3_NOGO_bar": 0.1064
+  },
+  "preregistration": {
+    "primary": "Delta on all 78 against the existing 0.0641 bar, unchanged, for direct comparability with D-38",
+    "secondary": "Delta on the reachable subset against its own recomputed bar, since unreachable instances contribute zero to the numerator while sitting in the denominator",
+    "both_bars_fixed_before_stage_c_runs": true
+  }
+}

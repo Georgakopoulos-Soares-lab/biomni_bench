@@ -195,3 +195,68 @@ rule for every frozen protocol in this project (D-32).
 *No Stage C work has been performed. This file is a precommitment written
 while the outcome is unknown, and is the authority against which any later
 Stage C claim is checked.*
+
+---
+
+# AMENDMENT 1 — 2026-08-11 — reachability denominator pre-registered
+
+**Labelled amendment, appended per §10, not a silent edit.** Written before
+Stage C runs and before any Stage C number exists. It adds a secondary analysis
+and its bar; it does **not** alter the primary analysis, the primary bar, the
+stop semantics, or any forbidden move in §7.
+
+## A.7 finding: 31 of the 78 are unreachable by construction
+
+A verifier that scores the **committed candidates** cannot reach an instance
+where none of those candidates is correct — the right answer is not in the set
+it is choosing from. Every such instance scores zero for every verifier, while
+still occupying a slot in the denominator of any mean over the 78.
+
+Measured on the frozen population (`scripts/stage_a7_overlap.py`), where
+unreachable is defined without heuristics as **oracle over committed candidates
+== 0**:
+
+| | n | plurality floor | oracle ceiling | gap | gap/3 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| **all 78** (primary, unchanged) | 78 | 0.4103 | 0.6026 | 0.1923 | **0.0641** |
+| **reachable subset** (secondary) | **47** | 0.6809 | 1.0000 | 0.3191 | **0.1064** |
+
+**31 of 78 (39.7%) are unreachable** — 20 from `phase2b`, 11 from
+`phase1_pooled`. The reachable subset's oracle ceiling is exactly 1.0, which is
+a consequence of the definition and serves as a check on it.
+
+**Correction to the framing this amendment was requested under.** The A.5b
+instances flagged as "the answer was in play" number **18, not 21**: the 3
+extraction failures are a strict *subset* of the 18 singled-out instances, not
+disjoint from them (verified directly — all 3 are also `singled_out`, which is
+unsurprising, since a trajectory that generated the correct answer and lost it
+to parsing would also have discussed it preferentially). **6 of those 18 fall
+inside the frozen 78, and all 6 are unreachable**, consistent with the general
+definition above.
+
+## Pre-registered analyses, both bars fixed now
+
+* **PRIMARY — unchanged.** Δ on all **78** against the existing **0.0641** bar,
+  with §6's stop semantics applying to it exactly as written. This remains the
+  analysis that decides GO / NO-GO / INCONCLUSIVE, and it is unchanged
+  specifically so Stage C stays directly comparable to D-38.
+* **SECONDARY — new.** Δ on the **47** reachable instances against a bar of
+  **0.1064**, recomputed from that subset's own floor and ceiling.
+
+**The secondary does not decide anything.** It cannot produce a GO, cannot
+overturn a NO-GO, and cannot convert either into INCONCLUSIVE. It exists so
+that a null on the full 78 can be read correctly: a verifier scoring zero on 31
+instances it could not possibly get right is a different fact about the world
+than a verifier failing on instances it could have got right, and the primary
+alone cannot distinguish them.
+
+**Why this is declared now.** Chosen after seeing Stage C's numbers, a
+restricted denominator reads as a denominator picked to fit. Fixed before the
+run, it is a stated limitation of the primary and a sharper reading of the
+secondary. Both bars are frozen by this amendment and neither may move.
+
+**Unchanged by this amendment:** §3's two cells, §4's interface-validity
+precondition and its single bounded repair, §6's stop semantics (NO-GO **and**
+INCONCLUSIVE both end the programme), and every forbidden move in §7 — in
+particular, the secondary analysis introduced here is **not** licence for
+re-aggregation shopping, and no third denominator may be added later.
