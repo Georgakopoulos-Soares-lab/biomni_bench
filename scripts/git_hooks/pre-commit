@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Pre-commit size guard.
+#
+# Refuses any commit in which a TRACKED file shrinks to under SHRINK_FLOOR_PCT
+# of its committed size. Three separate incidents in this project were of the
+# same shape - tooling silently destroying or hiding something a routine action
+# would have committed:
+#
+#   D-27  a monitoring gate reported 0.0% forever because of an exact-string bug
+#   D-29  the controller under prospective test was untracked at run time
+#   (2026-08-11) DECISIONS.md was reduced to a single character in the working
+#         tree, with `git add -A` one keystroke away from committing the loss
+#
+# Only the third is caught by a size check, but the class - a routine action
+# quietly discarding work - is what this guard exists for.
+#
+# Install:  git config core.hooksPath scripts/git_hooks
+# Override: BIOMNI_ALLOW_SHRINK=1 git commit ...   (logged, never silent)
+
+set -uo pipefail
+
+SHRINK_FLOOR_PCT="${BIOMNI_SHRINK_FLOOR_PCT:-10}"
+MIN_BYTES="${BIOMNI_SHRINK_MIN_BYTES:-200}"   # ignore files too small to judge
+LOG="${BIOMNI_SHRINK_LOG:-.git/shrink_guard.log}"
+
+violations=""
+
+# Staged, already-tracked files only. Added (A) and deleted (D) files are not
+# shrinkage; a brand-new file has no committed size to compare against, and a
+# deliberate deletion is not what this guard is for.
+while IFS=$'\t' read -r status path; do
+    [ -z "${path:-}" ] && continue
+    [ "$status" = "M" ] || continue
+
+    old=$(git cat-file -s "HEAD:$path" 2>/dev/null) || continue
+    [ "$old" -lt "$MIN_BYTES" ] && continue
+
+    blob=$(git ls-files -s -- "$path" | awk '{print $2}')
+    [ -z "$blob" ] && continue
+    new=$(git cat-file -s "$blob" 2>/dev/null) || continue
+
+    # new < old * pct/100, in integer arithmetic
+    if [ $((new * 100)) -lt $((old * SHRINK_FLOOR_PCT)) ]; then
+        violations="${violations}  ${path}: ${old} -> ${new} bytes ($((new * 100 / old))% of committed size)\n"
+    fi
+done < <(git diff --cached --name-status --diff-filter=MD)
+
+[ -z "$violations" ] && exit 0
+
+ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+if [ "${BIOMNI_ALLOW_SHRINK:-0}" = "1" ]; then
+    mkdir -p "$(dirname "$LOG")"
+    {
+        echo "[$ts] OVERRIDE BIOMNI_ALLOW_SHRINK=1 - commit allowed despite shrinkage:"
+        printf "%b" "$violations"
+    } >> "$LOG"
+    echo "WARNING: shrink guard overridden (BIOMNI_ALLOW_SHRINK=1); logged to $LOG" >&2
+    printf "%b" "$violations" >&2
+    exit 0
+fi
+
+{
+    echo "REFUSING TO COMMIT: a tracked file shrank to under ${SHRINK_FLOOR_PCT}% of its committed size."
+    echo
+    printf "%b" "$violations"
+    echo "If this is intentional, re-run with an explicit, logged override:"
+    echo "    BIOMNI_ALLOW_SHRINK=1 git commit ..."
+    echo
+    echo "If it is NOT intentional, recover the file before doing anything else:"
+    echo "    git restore <path>          # discard the working-tree truncation"
+    echo "    git show HEAD:<path> | head # inspect what is currently committed"
+} >&2
+
+exit 1

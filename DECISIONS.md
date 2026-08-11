@@ -1810,3 +1810,65 @@ and are not reversible by argument. A.5b's `singled_out` measure is a proxy for
 "the answer was distinguished in reasoning" and would be superseded by a
 domain-reviewer audit of the same instances, which is the stated missing piece —
 not by a differently-tuned string heuristic.
+
+---
+
+## D-41 Pre-commit shrink guard: the third instance of tooling silently discarding work
+
+**Decided:** 2026-08-11. Hook: `scripts/git_hooks/pre-commit`. Tests:
+`tests/test_shrink_guard.py` (7). **No GPU, no analysis, no frozen artifact
+touched.**
+
+**The pattern, which is the point of this entry.** Three separate incidents in
+this project share a shape — a routine action silently destroying or hiding
+something, with no signal that anything was wrong:
+
+* **D-27** — a monitoring gate compared `failure_class` for exact equality
+  against a string the runner never emitted, and so reported 0.0% residual
+  degeneration in every run it ever checked, including two that were above the
+  pre-registered halt threshold.
+* **D-29** — the controller under prospective test was untracked in git at run
+  time, so no commit could honestly be cited as having produced the result.
+* **2026-08-11 (this entry)** — `DECISIONS.md`, 1585 lines and the project's
+  entire decision record, was reduced to the single character `w` in the working
+  tree by an editor mishap. `git add -A && git commit` was one keystroke from
+  committing the loss. It was caught only because `git status` was read before
+  staging, and recovered with `git restore` since HEAD was intact.
+
+Individually these are three anecdotes. Together they are a pattern worth
+stating in the manuscript's reproducibility section: **the failure mode that
+actually threatens this kind of work is not a wrong number, it is a silent
+one.**
+
+**Decision.** A pre-commit hook refuses any commit in which a **tracked** file
+shrinks to under **10%** of its committed size (floor configurable via
+`BIOMNI_SHRINK_FLOOR_PCT`; files under 200 bytes are ignored, since the
+percentage is meaningless there). Installed with
+`git config core.hooksPath scripts/git_hooks`.
+
+**The override is explicit and logged, never silent:**
+`BIOMNI_ALLOW_SHRINK=1 git commit ...` proceeds, writes a timestamped record of
+what shrank to `.git/shrink_guard.log`, and prints a warning to stderr. A guard
+that can be bypassed without leaving a trace is not meaningfully different from
+no guard.
+
+**Deliberately NOT flagged**, because a guard that cries wolf gets disabled and
+then protects nothing: newly-added files (no committed size to shrink from),
+deliberate deletions (`git rm` is not this failure mode, and conflating them
+would train people to keep the override on), and files below the byte floor.
+A 50% deletion is a large edit, not a wipe, and is allowed.
+
+**The failure path is exercised, per D-27's lesson.** The 7 tests drive the
+real hook through real `git commit` invocations in temporary repositories — no
+mocking of git, because the commit's exit status is the behaviour being relied
+on. They cover the motivating case (4000 bytes → 1 character, refused),
+ordinary edits, a 50% deletion, the override and its log record, new files,
+deliberate deletions, and the byte floor. **Verified live in this repository as
+well**: a real tracked file was truncated to one byte, `git commit` was refused
+with a non-zero exit and a correct diagnostic, and the file was restored intact
+with nothing committed.
+
+**Reversal condition.** None claimed — this is infrastructure hardening, not a
+scientific claim. If the 10% floor proves to cry wolf in practice it should be
+tuned via `BIOMNI_SHRINK_FLOOR_PCT` rather than removed, since a guard people
+disable is strictly worse than a slightly noisy one.
