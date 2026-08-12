@@ -181,8 +181,71 @@ agent-task RL cost verification ability**, and none is added later.
 | 2 — capsule-able evidence exists in the traces | **PASS**, verified against live `phase2b` and `phase1_pooled` event logs |
 | 3 — token logprobs through SGLang, per model | **PASS** for both cells, after a port fix |
 | 4 — cells/criteria/format/rule/budget frozen | **PASS** (the two documents above) |
-| 5 — clean tree, D-36 guard, GPU allocation | clean tree; h100 `c561-007`, two SGLang replicas |
-| 6 — explicit operator approval | **PENDING** |
+| 5 — clean tree, D-36 guard, GPU allocation | clean tree; **allocation expired**, verdict run queued |
+| 6 — explicit operator approval | **GRANTED** 2026-08-11 |
+
+**Where it stands (2026-08-11): everything is built, frozen and committed; the
+verdict run is waiting on a GPU allocation. Nothing on BiomniEval1 has been
+scored.**
+
+| commit | contents |
+| --- | --- |
+| `b90f519` | pre-verdict freeze — Amendment 2, pre-registration + ADDENDUM 1, the port, gate 1 |
+| `c75aa77` | capsule + criteria + runner + frozen analysis, and the capsules themselves |
+| `247a1d2` | batch launcher, D-36 guard on the score entrypoint, run provenance |
+| `1c3a8ea` | login-node submit helper |
+| `aa17f9b` | the §9 reporting analyses |
+
+**Capsules built and frozen:** 78 instances → **177 capsules → 244 directed
+pairs → 5,856 comparisons per cell**, matching the pre-registered figure
+exactly. **0 truncated.**
+
+**ADDENDUM 1** to the pre-registration records three interpretation
+pre-registrations that gate 1 made formulable, all written before any verdict
+number: (A1.1) gate 1 as a **family-neutral capability anchor** — MedAgentBench
+traces are Claude Opus 4.8's, so neither cell is same-model there, which is
+what makes the 69.5 pp C1−C2 headroom margin a clean capability measurement;
+the BiomniEval1 margin is read against it, with the stability assumption
+between mechanically-checkable and judgment tasks stated as attackable, and no
+numeric threshold attached, because attaching one would create a second
+decision rule; (A1.2) **a C2 null is ambiguous, a C2 success is not** — C2
+recovered only 23.6% on a corpus where the interface was demonstrably healthy,
+so a C2 failure cannot distinguish "the interface was not D-38's problem" from
+"this checkpoint is a weak verifier"; (A1.3) if `gemma-4-31B-it` cannot operate
+the Biomni scaffold the capability covariate is reported **UNAVAILABLE**, never
+as a floor-effect capability estimate.
+
+**Two corrections made before any scoring, disclosed rather than silently
+applied** (both to constants that appear in no frozen document, were
+introduced in uncommitted code, and were changed while no outcome existed):
+capsule section **order** was wrong — truncation cuts the tail and the failure
+summary rendered last, so a capsule at the ceiling lost exactly the evidence
+the `#alignment` criterion is defined over; and `MAX_CAPSULE_CHARS`
+30,000 → 50,000, because at 30,000 **40% of capsules (71/177) were truncated**
+while the largest capsule is 47,193 chars, so 50,000 truncates nothing and the
+ceiling is a context-safety net rather than a content budget.
+
+**Frozen-population fidelity, worth recording because it nearly went wrong.**
+The runner reproduces the stratum construction exactly: `phase2b` **unfiltered**,
+`phase1_pooled` **instrumented-only**. Phase 2B's evaluation-only shadow
+trajectories are part of the candidate sets D-37 froze and therefore of the
+frozen floor (0.4103) and ceiling (0.6026); filtering them out — which the
+Phase-2 shadow-exclusion rule superficially suggests — would have silently
+changed the candidate sets and made Δ incomparable with D-38. That rule binds a
+*controller* choosing what to do next; it does not retrospectively redefine a
+frozen population.
+
+**Capability covariate: DEFERRED, and the deferral is scheduling, not a
+finding.** 156 agent trajectories do not fit alongside the two verdict cells,
+and the verdict does not wait on it. §9's conditioning on solve capability is
+reported as **pending**, never as satisfied. Per the operator's instruction the
+programme **STOPs** after the verdict + reporting, before any covariate run.
+
+**To launch** (must be a login node — `sbatch` is refused on compute nodes):
+
+```
+slurm/submit_stage_c.sh -A <account>
+```
 
 **Gate 1 result (2026-08-11): PASS.** Full 300-task MedAgentBench, published
 configuration unmodified (g20, criteria `query`/`consistency`/`structure`, K=8,
