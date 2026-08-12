@@ -37,7 +37,32 @@ CONTEXT_LENGTH="${CONTEXT_LENGTH:-65536}"
 # D-04: Biomni-R0-32B's native 40960 is too small; served with the model card's
 # YaRN override at factor 1.0, an identity transform on the RoPE frequencies.
 # Mirrors configs/cluster.yaml's serving.json_model_override_args exactly.
-C2_OVERRIDE="${C2_OVERRIDE:-{\"rope_scaling\":{\"rope_type\":\"yarn\",\"factor\":1.0,\"original_max_position_embeddings\":32768}, \"max_position_embeddings\": 131072}}"
+#
+# NOT written as "${C2_OVERRIDE:-{...}}": the default contains JSON braces, and
+# bash ends the parameter expansion at the first brace that balances, which
+# silently swallowed the "}" closing "rope_scaling". That moved
+# max_position_embeddings *inside* rope_scaling, so the top-level override
+# never applied, the derived context stayed 40960, and the server refused the
+# requested 65536. Single quotes, plain assignment, no escaping.
+if [[ -z "${C2_OVERRIDE:-}" ]]; then
+  C2_OVERRIDE='{"rope_scaling":{"rope_type":"yarn","factor":1.0,"original_max_position_embeddings":32768}, "max_position_embeddings": 131072}'
+fi
+
+# Fail loudly rather than serve a silently-wrong context: the override must be
+# valid JSON and must carry max_position_embeddings at the TOP level.
+"${AGENT_PYTHON}" - "${C2_OVERRIDE}" <<'PY' || exit 1
+import json, sys
+try:
+    d = json.loads(sys.argv[1])
+except json.JSONDecodeError as e:
+    sys.exit(f"C2_OVERRIDE is not valid JSON: {e}")
+if "max_position_embeddings" not in d:
+    sys.exit("C2_OVERRIDE lacks a top-level max_position_embeddings; "
+             "the D-04 context override would silently not apply")
+if "rope_scaling" not in d:
+    sys.exit("C2_OVERRIDE lacks rope_scaling")
+print(f"[stage_c] C2 override validated: {json.dumps(d)}")
+PY
 
 LOGS="${STAGE_C_OUT}/logs"
 mkdir -p "${LOGS}"
