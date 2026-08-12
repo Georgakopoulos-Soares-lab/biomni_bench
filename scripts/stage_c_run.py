@@ -48,16 +48,13 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(REPO / "src"))
 
 import stage_c_capsule as capsule_mod  # noqa: E402
+import stage_c_population  # noqa: E402
 import stage_c_verifier_port as port  # noqa: E402
 
 CRITERIA_FILE = REPO / "reports" / "stage_c_criteria.md"
 
 #: Frozen scoring configuration (preregistration §5).
 N_EVALUATIONS = 8
-POOL_TABLES = {
-    "phase2b": "/scratch/11034/atzanakak/biomni_unc_runs/phase2b/results/tables/p2b_pooled_trajectories.csv",
-    "phase1_pooled": "/scratch/11034/atzanakak/biomni_unc_runs/phase1_pooled/results/tables/trajectories.csv",
-}
 CANDIDATES = REPO / "reports" / "tables" / "track_c_step2" / "candidates_slim.jsonl"
 
 
@@ -73,29 +70,19 @@ def _load_prompts() -> dict[tuple[str, int], str]:
 
 
 def _trajectory_table() -> pd.DataFrame:
-    """Reproduce **exactly** the construction that produced the frozen 78.
+    """The frozen population's trajectory rows, minus ground truth.
 
-    `scripts/track_c_adjudication_pilot.py` built the stratum from the
-    `phase2b` table *unfiltered* and the `phase1_pooled` table restricted to
-    `condition == "instrumented"`. That asymmetry is deliberate there: Phase
-    2B's evaluation-only shadow trajectories are part of the candidate sets
-    D-37 froze, and therefore part of the frozen plurality floor (0.4103) and
-    oracle ceiling (0.6026).
+    Pool filtering (`phase2b` unfiltered, `phase1_pooled` instrumented-only,
+    reproducing exactly what `track_c_adjudication_pilot.py` used to build the
+    frozen 78) lives in `stage_c_population.py`, the single source both this
+    script and `stage_c_analyze.py` read from — they diverged once when the
+    filter was duplicated, dropping a reward row for a shadow-held candidate,
+    and that is why it now lives in exactly one place.
 
-    Filtering them out here would silently change the candidate sets and make
-    Δ incomparable with D-38 — the one thing the frozen bars exist to prevent.
-    The shadow-trajectory exclusion rule binds a *controller* choosing what to
-    do next (`policy.TrajectoryView`); it does not retrospectively redefine a
-    frozen population.
+    Ground truth is dropped here, immediately, so the barrier is visible at
+    this call site: this script never reads a reward.
     """
-    frames = []
-    for pool, path in POOL_TABLES.items():
-        df = pd.read_csv(path)
-        if pool == "phase1_pooled":
-            df = df[df.condition == "instrumented"]
-        frames.append(df.assign(pool=pool))
-    df = pd.concat(frames, ignore_index=True)
-    # Ground truth is dropped here and never re-joined in this script.
+    df = stage_c_population.raw_trajectory_table()
     return df.drop(columns=[c for c in ("reward", "strict_reward", "correct") if c in df.columns])
 
 

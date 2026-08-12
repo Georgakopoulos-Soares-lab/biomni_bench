@@ -27,12 +27,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 REPO = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import stage_c_population  # noqa: E402
 
 # --------------------------------------------------------------------------
 # Frozen constants. Never recomputed from data, never widened.
@@ -49,26 +52,23 @@ BOOTSTRAP_REPLICATES = 10000
 BOOTSTRAP_SEED = 20260811001
 VALIDITY_BAR = 0.95
 
-POOL_TABLES = {
-    "phase2b": "/scratch/11034/atzanakak/biomni_unc_runs/phase2b/results/tables/p2b_pooled_trajectories.csv",
-    "phase1_pooled": "/scratch/11034/atzanakak/biomni_unc_runs/phase1_pooled/results/tables/trajectories.csv",
-}
-
 
 def _reward_lookup() -> dict[tuple[str, str, int, str], float]:
     """Map (pool, task, instance, canonical answer) -> official reward.
 
-    Read here and only here. `stage_c_run.py` never opens it.
+    Read here and only here. `stage_c_run.py` never opens it. Uses the exact
+    same pool filtering as candidate construction
+    (`stage_c_population.raw_trajectory_table`) — the two must never diverge,
+    or a candidate held only by a `phase2b` shadow trajectory has no reward to
+    look up. See that module's docstring for why this is a shared function and
+    not two copies of the same filter.
     """
     out: dict[tuple[str, str, int, str], float] = {}
-    for pool, path in POOL_TABLES.items():
-        df = pd.read_csv(path)
-        if "condition" in df.columns:
-            df = df[df.condition == "instrumented"]
-        for r in df.itertuples():
-            key = (pool, r.task_name, int(r.task_instance_id), str(r.answer_canonical))
-            if not pd.isna(r.reward):
-                out.setdefault(key, float(r.reward))
+    df = stage_c_population.raw_trajectory_table()
+    for r in df.itertuples():
+        key = (r.pool, r.task_name, int(r.task_instance_id), str(r.answer_canonical))
+        if not pd.isna(r.reward):
+            out.setdefault(key, float(r.reward))
     return out
 
 
