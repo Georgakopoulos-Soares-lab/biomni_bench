@@ -105,6 +105,22 @@ def _ref_repo() -> str:
     return os.environ.get("LLM_VERIFIER_REPO", DEFAULT_REF_REPO)
 
 
+def reference_commit() -> str:
+    """Commit of the pinned reference checkout, for the run's provenance."""
+    import subprocess
+
+    r = subprocess.run(["git", "-C", _ref_repo(), "rev-parse", "HEAD"], capture_output=True, text=True, check=False)
+    return r.stdout.strip() or "unknown"
+
+
+def served_model(base_url: str) -> str:
+    """The model id the endpoint reports, recorded per cell per the stop rule."""
+    from openai import OpenAI
+
+    client = OpenAI(base_url=base_url, api_key=os.environ.get("OPENAI_API_KEY", "EMPTY"))
+    return client.models.list().data[0].id
+
+
 def _import_reference():
     repo = _ref_repo()
     if repo not in sys.path:

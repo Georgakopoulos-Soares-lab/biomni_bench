@@ -176,6 +176,22 @@ def cmd_prep(args: argparse.Namespace) -> int:
 
 def cmd_score(args: argparse.Namespace) -> int:
     out = Path(args.out)
+
+    # Stop rule §9: clean tree at launch, D-36 guard, never bypassed; model ids
+    # and revision hashes recorded; source hashes so a D-29-style audit is one
+    # equality check. There is deliberately no --allow-dirty here: this is a
+    # confirmatory run, and D-36 reserves that flag for throwaway work.
+    from biomni_uncertainty import provenance
+
+    git = provenance.assert_clean_tree(REPO)
+    launch = {
+        "project_commit": git["commit"],
+        "dirty": git["dirty"],
+        "source_hashes": provenance.source_hashes(REPO),
+        "reference_repo_commit": port.reference_commit(),
+    }
+    print(f"launch commit {git['commit']} (clean tree)")
+
     os.environ["OPENAI_BASE_URL"] = args.base_url
     os.environ.setdefault("OPENAI_API_KEY", "EMPTY")
 
@@ -271,6 +287,8 @@ def cmd_score(args: argparse.Namespace) -> int:
     meta = {
         "cell": args.cell,
         "base_url": args.base_url,
+        "served_model": port.served_model(args.base_url),
+        "launch": launch,
         "criteria": criteria_ids,
         "n_evaluations": N_EVALUATIONS,
         "ranking": "full round-robin, both directions",
