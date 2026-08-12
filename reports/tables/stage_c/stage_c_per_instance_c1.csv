@@ -1,0 +1,79 @@
+pool,task_name,task_instance_id,n_candidates,margin,selected_answer,unresolved_tie,selector_reward,oracle_over_candidates,plurality_reward_descriptive,reachable
+phase2b,crispr_delivery,18,2,4.8199994273634417e-08,f,False,0.0,0.0,0.0,False
+phase2b,gwas_causal_gene_gwas_catalog,64,2,0.46174624379728235,ANGPTL4,False,0.0,0.0,0.0,False
+phase2b,gwas_causal_gene_gwas_catalog,128,3,0.027628843986388985,ZPR1,False,0.0,0.0,0.0,False
+phase2b,gwas_causal_gene_gwas_catalog,138,2,0.1132502812665308,SLCO1A2,False,0.0,1.0,0.0,True
+phase2b,gwas_causal_gene_gwas_catalog,170,2,0.3049898756728675,PRKAG1,False,1.0,1.0,0.0,True
+phase2b,gwas_causal_gene_gwas_catalog,379,3,0.00546115207570097,HP,False,0.0,0.0,0.0,False
+phase2b,gwas_causal_gene_gwas_catalog,418,2,0.3641382647406355,C4B,False,0.0,0.0,0.0,False
+phase2b,gwas_causal_gene_gwas_catalog,492,2,0.4103791125759939,NDUFA11,False,0.0,0.0,0.0,False
+phase2b,gwas_causal_gene_opentargets,47,2,0.10717630685911278,IL13,False,0.0,0.0,0.0,False
+phase2b,gwas_causal_gene_opentargets,397,2,0.23968099288482841,RREB1,False,1.0,1.0,0.0,True
+phase2b,gwas_causal_gene_opentargets,612,2,0.1851704759704647,PAM,False,1.0,1.0,1.0,True
+phase2b,gwas_causal_gene_opentargets,690,2,0.0037256847106572066,CYP2E1,False,0.0,1.0,0.0,True
+phase2b,gwas_causal_gene_pharmaprojects,509,2,0.3920199077482682,GNMT,False,0.0,1.0,0.0,True
+phase2b,gwas_causal_gene_pharmaprojects,1300,2,0.32094920721596054,HTR3A,False,0.0,1.0,1.0,True
+phase2b,gwas_causal_gene_pharmaprojects,1463,2,0.4410349012772645,KRT20,False,0.0,0.0,0.0,False
+phase2b,gwas_causal_gene_pharmaprojects,1640,2,0.28281159947051066,IL21R,False,0.0,1.0,0.0,True
+phase2b,gwas_causal_gene_pharmaprojects,1645,3,0.02237152708626,CCHCR1,False,0.0,0.0,0.0,False
+phase2b,gwas_variant_prioritization,37,2,0.4621171139867195,rs2270968,False,1.0,1.0,0.0,True
+phase2b,gwas_variant_prioritization,87,2,0.2540824411048024,rs662138,False,0.0,0.0,0.0,False
+phase2b,gwas_variant_prioritization,102,2,0.2107134498345858,rs2160387,False,0.0,0.0,0.0,False
+phase2b,gwas_variant_prioritization,121,2,0.13314043664753816,rs10455872,False,1.0,1.0,1.0,True
+phase2b,gwas_variant_prioritization,130,2,0.1522284125909002,rs2073547,False,0.0,0.0,0.0,False
+phase2b,lab_bench_dbqa,80,2,0.37380939871351243,B,False,1.0,1.0,0.0,True
+phase2b,lab_bench_dbqa,269,2,0.2037937151396304,B,False,1.0,1.0,0.0,True
+phase2b,lab_bench_dbqa,315,2,0.34493262254562873,A,False,1.0,1.0,1.0,True
+phase2b,lab_bench_dbqa,345,2,0.11935889087124835,D,False,1.0,1.0,0.0,True
+phase2b,lab_bench_dbqa,350,2,0.28259481733641895,B,False,1.0,1.0,0.0,True
+phase2b,lab_bench_dbqa,430,2,0.09502854835492469,E,False,1.0,1.0,0.0,True
+phase2b,lab_bench_seqqa,27,3,0.2891291307912618,C,False,0.0,1.0,1.0,True
+phase2b,patient_gene_detection,34,3,0.10642349252659328,"{""causal_gene"":[""ENSG00000155657""]}",False,0.0,1.0,1.0,True
+phase2b,patient_gene_detection,49,2,0.3288350489809985,"{""causal_gene"":[""ENSG00000171302""]}",False,1.0,1.0,0.0,True
+phase2b,patient_gene_detection,88,3,0.11372052070951788,"{""causal_gene"":[""ENSG00000092330""]}",False,0.0,0.0,0.0,False
+phase2b,patient_gene_detection,205,2,0.3006609430886291,"{""causal_gene"":[""ENSG00000139219""]}",False,1.0,1.0,1.0,True
+phase2b,patient_gene_detection,251,3,0.0499193262572134,"{""causal_gene"":[""ENSG00000120457""]}",False,0.0,1.0,0.0,True
+phase2b,patient_gene_detection,259,4,0.04313341930909009,"{""causal_gene"":[""ENSG00000103494""]}",False,0.0,0.0,0.0,False
+phase2b,patient_gene_detection,264,2,0.436516788731923,"{""causal_gene"":[""ENSG00000102081""]}",False,1.0,1.0,1.0,True
+phase2b,patient_gene_detection,306,2,0.1594221481139153,"{""causal_gene"":[""ENSG00000129757""]}",False,0.0,0.0,0.0,False
+phase2b,patient_gene_detection,319,3,0.2930463288057755,"{""causal_gene"":[""ENSG00000102580""]}",False,1.0,1.0,1.0,True
+phase2b,patient_gene_detection,339,3,0.18208529228532921,"{""causal_gene"":[""ENSG00000130707""]}",False,1.0,1.0,1.0,True
+phase2b,patient_gene_detection,401,4,0.02179507790781754,"{""causal_gene"":[""ENSG00000168769""]}",False,1.0,1.0,0.0,True
+phase2b,patient_gene_detection,419,2,0.12801525469160613,"{""causal_gene"":[""ENSG00000054983""]}",False,1.0,1.0,1.0,True
+phase2b,patient_gene_detection,482,2,0.11019090826489863,"{""causal_gene"":[""ENSG00000125779""]}",False,1.0,1.0,1.0,True
+phase2b,rare_disease_diagnosis,1,2,0.2194810438398005,"{""disease_name"":""Congenital contractures of the limbs and face, hypotonia, and developmental delay"",""OMIM_ID"":""616266""}",False,1.0,1.0,1.0,True
+phase2b,rare_disease_diagnosis,20,2,0.16100063221184385,"{""disease_name"":""Freeman-Sheldon syndrome"",""OMIM_ID"":""193700""}",False,1.0,1.0,0.0,True
+phase2b,rare_disease_diagnosis,88,2,0.08631576002873492,"{""disease_name"":""Distal arthrogryposis type 5"",""OMIM_ID"":""108145""}",False,0.0,0.0,0.0,False
+phase2b,rare_disease_diagnosis,90,2,0.1141421239799319,"{""disease_name"":"""",""OMIM_ID"":""108145""}",False,0.0,0.0,0.0,False
+phase2b,rare_disease_diagnosis,92,2,0.28696002438831036,"{""disease_name"":"""",""OMIM_ID"":""248700""}",False,0.0,0.0,0.0,False
+phase2b,rare_disease_diagnosis,102,3,0.17772470841692062,"{""disease_name"":""Arthrogryposis, distal, with impaired proprioception and touch"",""OMIM_ID"":""617146""}",False,0.0,1.0,1.0,True
+phase2b,rare_disease_diagnosis,140,2,0.1553320923284116,"{""disease_name"":""digitotalar dysmorphism"",""OMIM_ID"":""15240""}",False,0.0,0.0,0.0,False
+phase2b,screen_gene_retrieval,166,2,0.008092137620344664,COX17,False,1.0,1.0,1.0,True
+phase2b,screen_gene_retrieval,317,3,0.004009336872528579,USP22,False,0.0,1.0,0.0,True
+phase2b,screen_gene_retrieval,318,2,0.0029675368504554767,PDCD4,False,0.0,0.0,0.0,False
+phase2b,screen_gene_retrieval,346,2,0.3113519512563054,IRF8,False,1.0,1.0,1.0,True
+phase1_pooled,crispr_delivery,28,2,0.0023079675423443025,e,False,1.0,1.0,1.0,True
+phase1_pooled,gwas_causal_gene_gwas_catalog,27,3,0.0031250924140910907,BANK1,False,0.0,1.0,0.0,True
+phase1_pooled,gwas_causal_gene_gwas_catalog,406,3,0.062411312856699985,PCSK7,False,0.0,0.0,0.0,False
+phase1_pooled,gwas_causal_gene_gwas_catalog,520,2,0.3986565321718468,GAS7,False,0.0,0.0,0.0,False
+phase1_pooled,gwas_causal_gene_pharmaprojects,956,2,0.18965004911605726,TGFB1,False,0.0,0.0,0.0,False
+phase1_pooled,gwas_causal_gene_pharmaprojects,1475,2,0.3229601793813863,COMMD1,False,0.0,1.0,0.0,True
+phase1_pooled,gwas_causal_gene_pharmaprojects,1554,2,0.22568731154855803,TTC5,False,0.0,0.0,0.0,False
+phase1_pooled,gwas_variant_prioritization,1,2,0.20221502997727464,rs9637599,False,1.0,1.0,0.0,True
+phase1_pooled,lab_bench_dbqa,190,2,0.40190118008465886,E,False,1.0,1.0,0.0,True
+phase1_pooled,lab_bench_dbqa,309,2,0.3420336553798831,E,False,0.0,0.0,0.0,False
+phase1_pooled,lab_bench_seqqa,230,2,0.29370103602663633,A,False,0.0,0.0,0.0,False
+phase1_pooled,lab_bench_seqqa,292,2,0.38545910031401054,D,False,1.0,1.0,0.0,True
+phase1_pooled,lab_bench_seqqa,547,2,0.28810339537007085,A,False,1.0,1.0,1.0,True
+phase1_pooled,patient_gene_detection,1,3,0.040097478054079705,"{""causal_gene"":[""ENSG00000168000""]}",False,0.0,1.0,0.0,True
+phase1_pooled,patient_gene_detection,80,2,0.34168478875314245,"{""causal_gene"":[""ENSG00000105983""]}",False,1.0,1.0,1.0,True
+phase1_pooled,patient_gene_detection,161,2,0.24282351799832402,"{""causal_gene"":[""ENSG00000139687""]}",False,0.0,0.0,0.0,False
+phase1_pooled,patient_gene_detection,350,2,0.2848526386918859,"{""causal_gene"":[""ENSG00000187498""]}",False,0.0,0.0,0.0,False
+phase1_pooled,patient_gene_detection,488,3,0.18180605736047017,"{""causal_gene"":[""ENSG00000197912""]}",False,0.0,1.0,1.0,True
+phase1_pooled,rare_disease_diagnosis,21,2,0.4275598606544495,"{""disease_name"":""Arthrogryposis, distal, type 2A (Freeman-Sheldon)"",""OMIM_ID"":""193700""}",False,1.0,1.0,0.0,True
+phase1_pooled,rare_disease_diagnosis,59,3,0.13768857126656575,"{""disease_name"":""Atrial septal defect 5"",""OMIM_ID"":""612794""}",False,0.0,0.0,0.0,False
+phase1_pooled,rare_disease_diagnosis,103,2,0.09715337149443481,"{""disease_name"":""Arthrogryposis, distal, type 5"",""OMIM_ID"":""108145""}",False,1.0,1.0,1.0,True
+phase1_pooled,rare_disease_diagnosis,106,2,0.3740559908114982,"{""disease_name"":""Marden-Walker syndrome"",""OMIM_ID"":""248700""}",False,0.0,1.0,1.0,True
+phase1_pooled,screen_gene_retrieval,1,2,0.1642437129644987,DUSP10,False,0.0,0.0,0.0,False
+phase1_pooled,screen_gene_retrieval,243,3,0.0007670860629841458,MAU2,False,1.0,1.0,1.0,True
+phase1_pooled,screen_gene_retrieval,306,2,0.3052271642009967,DDX21,False,0.0,0.0,0.0,False

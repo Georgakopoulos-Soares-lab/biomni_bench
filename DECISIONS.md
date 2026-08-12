@@ -1974,3 +1974,188 @@ invariance check and pins on the frozen family/primary/correction constants.
 frozen artifacts and are not reversible by argument. A.5b's band is explicitly
 provisional pending the operator review sheet, which is the one outstanding
 input.
+
+---
+
+## D-43 Stage C verdict: NO-GO (C2) and INCONCLUSIVE (C1) — the experimental program ends
+
+**Decided:** 2026-08-12. Reports: `reports/stage_c_stop_rule.md` (Amendments
+1–2), `reports/stage_c_preregistration.md` (+ ADDENDUM 1), `reports/tables/
+stage_c/stage_c_verdict_{c1,c2}.json`, `reports/tables/stage_c/
+stage_c_report_{c1,c2}.json`. Driver: `scripts/stage_c_run.py` +
+`scripts/stage_c_analyze.py` + `scripts/stage_c_report.py`. Frozen 78
+`B_substantive_disagreement` instances, zero held-out consumed, zero new
+Biomni trajectories generated.
+
+> **Headline.** Neither cell clears the pre-registered bar. C2 (same-model
+> interface control) is a decisive **NO-GO**: Δ = −0.0641, 95% CI
+> [−0.1667, 0.0384], upper bound below the 0.0641 bar. C1 (cross-family
+> primary) is **INCONCLUSIVE**: Δ ≈ 0.0000, 95% CI [−0.1154, 0.1025] — neither
+> harmful nor recovering headroom. Per the stop rule's §6, **both outcomes
+> independently end the experimental program.** This is not a close call
+> requiring judgment; two frozen thresholds both land on stop.
+
+### 1. Primary verdict, both cells, computed once
+
+| | C1 `gemma-4-31B-it` (cross-family) | C2 `Biomni-R0-32B` (same-model) |
+| --- | ---: | ---: |
+| n | 78 | 78 |
+| validity (1 − comparison error rate) | 1.0000 | 1.0000 |
+| unresolved ties | 0 | 0 |
+| selector mean reward | 0.4103 (32/78) | 0.3462 (27/78) |
+| plurality floor (frozen) | 0.4103 | 0.4103 |
+| **Δ** | **−0.0000** | **−0.0641** |
+| 95% CI | [−0.1154, 0.1025] | [−0.1667, 0.0384] |
+| NO-GO bar (gap/3) | 0.0641 | 0.0641 |
+| **verdict** | **INCONCLUSIVE** | **NO-GO** |
+| secondary, reachable-47, Δ | −0.0000, CI [−0.1277, 0.1276] vs bar 0.1064 | −0.1064, CI [−0.2554, 0.0212] vs bar 0.1064 |
+
+Secondary decides nothing on either cell, exactly as Amendment 1 specifies.
+C1's selector mean landing at exactly 32/78 = 0.410256... is a coincidence of
+integer counts against the frozen floor's own 0.4103, not identity by
+construction — the locally-computed descriptive-plurality baseline used for
+the capture/harm decomposition (§3 below) differs materially (mean 0.2949),
+confirming C1's selections are not simply reproducing plurality.
+
+**GO was structurally unreachable for both cells**: GO requires the CI lower
+bound to exceed 0, and neither cell's does (C1 −0.1154, C2 −0.1667), independent
+of the validity and task-heterogeneity conditions.
+
+### 2. Two bugs caught and fixed before either number existed
+
+Both are recorded because the class matters, and because neither touched a
+result that had already been seen:
+
+* **Reward-lookup/candidate-construction divergence** (`9905804`).
+  `stage_c_analyze.py`'s reward lookup duplicated `stage_c_run.py`'s pool
+  filter and got it wrong — restricting **both** pools to
+  `condition == "instrumented"`, where `stage_c_run.py` correctly leaves
+  `phase2b` unfiltered (D-37's shadow trajectories are part of the frozen
+  candidate sets). Crashed on the very first `stage_c_analyze.py` invocation
+  (`no reward for candidates ['c']` on `crispr_delivery/18`) — a crash, not a
+  silently wrong number. Fixed by factoring the trajectory-table construction
+  into `scripts/stage_c_population.py`, one source of truth both scripts
+  import.
+* **Bash brace-parsing bug in the batch launcher** (`1386f23`), caught at
+  server-startup, before any comparison was scored:
+  `"${C2_OVERRIDE:-{...}}"`'s default value contained JSON braces, and bash
+  ended the parameter expansion at the first balancing brace, silently
+  swallowing the one closing `rope_scaling`. `max_position_embeddings` landed
+  *inside* `rope_scaling` instead of at the top level, the D-04 context
+  override never applied, and SGLang refused the requested 65536 context.
+  Fixed with a plain single-quoted assignment plus a launch-time JSON
+  validation step that asserts a top-level `max_position_embeddings` before
+  any server starts.
+
+Neither bug reached a scored comparison; both are infrastructure defects
+caught by the discipline the project already has (fail loudly, fix forward,
+never silently retry into a plausible-looking wrong number).
+
+### 3. Mechanism / secondary findings — §9, reported after the verdict, decides nothing
+
+| | C1 | C2 |
+| --- | ---: | ---: |
+| capture / harm (local descriptive plurality baseline) | 15 / 6 | 16 / 12 |
+| harm breakdown | 6 wrong-in-menu, 0 tie, 0 unreachable | 12 wrong-in-menu, 0 tie, 0 unreachable |
+| candidate-ranking AUROC | **0.6345** (177 candidates, 53 correct) | **0.5218** (near chance) |
+| intransitivity rate (n=19 eligible, N≥3 only) | **1/19 = 5.3%** | **10/19 = 52.6%** |
+| risk-coverage AURC | 0.4762 | 0.6130 |
+| PPT secondary (re-aggregation, decides nothing) | Δ = +0.0384 (still under bar) | Δ = −0.0641 (identical to round-robin) |
+| unconstrained on-scale mass (this run's endpoints) | 0.99999996 | 0.6299 |
+
+**Harm is 0% interface-attributable for both cells** — zero unresolved ties,
+zero comparison errors — which is exactly the condition Stage C was built to
+produce and did: whatever separates the two cells here, it is not elicitation
+instability.
+
+**C2's intransitivity rate (52.6%) is the sharpest single finding in this
+table.** A verifier that flips its own pairwise preference into a cycle on
+more than half of the instances where a cycle is even possible is not
+producing a coherent ranking, and this is measurable without touching a
+reward. It is consistent with — and likely explains much of — C2's low
+unconstrained on-scale mass (0.630): a noisier underlying score distribution
+produces less transitive pairwise comparisons. C1's 5.3% rate is close to
+what a coherent ranker should show.
+
+### 4. Reading through the pre-registered addenda (Amendment 2 / ADDENDUM 1)
+
+**A1.1 — the family-neutral capability anchor.** Gate 1's C1−C2 margin was
+**69.5 pp** of oracle headroom recovered on MedAgentBench, where family was
+held constant (neither cell is Claude Opus 4.8, the generating model). Here,
+in the same units (fraction of the gap recovered): C1 ≈ 0.0%, C2 ≈ −33.4%, a
+margin of **≈33.3 pp** — **materially smaller** than the 69.5 pp anchor, not
+comparable to it and not larger. Per A1.1's pre-registered third branch, this
+leans toward the direction the General AgentBench self-trace hypothesis
+predicts (a model judging its own execution traces somewhat better than pure
+capability difference alone would predict) — **stated only as that**, bounded
+exactly as pre-registered: it rests on an assumption (verifier capability
+ranking is stable between mechanically-checkable and judgment tasks) that this
+very result gives some reason to doubt, since the margin compressed. It does
+not change either verdict, and no numeric threshold was ever attached to this
+reading, by design.
+
+**A1.2 — the C2 asymmetry, applied.** C2's NO-GO is **ambiguous**, exactly as
+pre-registered: gate 1 already showed C2 recovers only 23.6% of headroom on a
+clean, mechanically-checkable corpus with zero interface error, so this NO-GO
+is not distinguishable from "this checkpoint is a weak verifier generally" —
+it does **not** license concluding that D-39's retraction was wrong. C1's
+result is the more informative one for that question: cross-family **and**
+demonstrably strong on gate 1 **and** zero interface error, and it still lands
+at Δ ≈ 0, not positive. D-39's retraction is not undone by this — the
+retraction was about an invalid *inference* (information monotonicity), which
+remains invalid regardless — but the empirical question the retraction
+reopened is now answered for this population: removing both confounds named in
+D-39 does not recover headroom.
+
+### 5. Interpretation, against the table fixed in the preregistration §10
+
+The best-supported row: **"all cells fail, and A.4/A.6 found trace features at
+AUROC ≈ 0.5 → supports a broader trajectory-verification gap: the traces, not
+the verifier."** A.4 and A.6 already found no separating signal in cheap
+structural or semantic trace features. C1 — cross-family, strong on an
+independent benchmark, zero interface error, scoring the **full** rich capsule
+rather than a cheap feature — still does not clear the bar, though it does not
+harm either (its 177-candidate AUROC of 0.6345 shows *some* signal, just not
+enough to consistently outrank plurality at the instance level). Taken
+together this triangulates toward the candidate pool itself carrying limited
+separating signal for this judgment task, largely independent of verifier
+capability (C1 proved itself capable elsewhere) or interface stability (both
+cells: 0% comparison-error rate).
+
+**Task heterogeneity, descriptive only, not decision-relevant** (GO was
+already foreclosed by both CIs): `gwas_causal_gene_gwas_catalog` was the
+weakest task for both cells (0.10 accuracy, n=10, the largest single-task
+subgroup); `lab_bench_dbqa` the strongest for both (0.875 / 0.75, n=8).
+
+### 6. Stop semantics — applied exactly, per §6 of the stop rule
+
+**The experimental program ends.** Stage C ran once, per cell, as specified.
+No verifier model beyond the two pre-registered cells. No prompt or criteria
+search. No debate/persona/ensemble variants. No re-aggregation shopping — PPT
+is reported above as mechanism analysis and was never substituted into either
+verdict. No bar movement — both bars (0.0641, 0.1064) are exactly as frozen.
+No temperature/diversity variants. No expansion to another benchmark.
+
+**The manuscript ships with Stage C as a bounded negative result**, per §6's
+table: C2's NO-GO and C1's INCONCLUSIVE, read through Amendment 2's
+family-neutral anchor and asymmetry pre-registrations, converging on the
+traces-not-the-verifier reading already supported by A.4/A.6.
+
+### 7. What does not follow from this entry
+
+* No fourth cell, no capability-ceiling cell, no re-run at a different K or
+  granularity.
+* The deferred capability covariate (§8 of the preregistration, 156 K=1
+  Biomni trajectories) remains **deferred**. It was scheduling, not a
+  finding, before this verdict, and this verdict does not change that — the
+  program has already ended per §6, so there is no longer a pending
+  conditioning question for it to resolve. It is not launched.
+* D-38's empirical result and D-39's retraction both stand, unchanged. What
+  changes is that the empirical question D-39 reopened is now closed by this
+  entry, not left open pending Stage C.
+
+**Reversal condition.** None applies to the stop itself — per §6, NO-GO and
+INCONCLUSIVE both end the program by construction, and that is not reversible
+by further analysis of this data. A future *separately pre-registered* study
+on a different population or with different verifiers is not a reversal of
+this entry; it would be new work, subject to its own north-star check.

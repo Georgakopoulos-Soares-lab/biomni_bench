@@ -1,0 +1,33 @@
+{
+  "cell": "c1",
+  "n": 78,
+  "validity": 1.0,
+  "comparison_errors": 0,
+  "unresolved_ties": 0,
+  "primary": {
+    "selector_mean_reward": 0.4103,
+    "plurality_floor": 0.4103,
+    "oracle_ceiling": 0.6026,
+    "delta": -0.0,
+    "ci95": [
+      -0.1154,
+      0.1025
+    ],
+    "nogo_bar": 0.0641,
+    "gap_fraction_recovered": -0.0002,
+    "verdict": "INCONCLUSIVE"
+  },
+  "secondary_reachable": {
+    "n": 47,
+    "expected_n": 47,
+    "selector_mean_reward": 0.6809,
+    "floor": 0.6809,
+    "delta": -0.0,
+    "ci95": [
+      -0.1277,
+      0.1276
+    ],
+    "bar": 0.1064,
+    "note": "decides nothing; cannot produce or overturn a verdict"
+  }
+}

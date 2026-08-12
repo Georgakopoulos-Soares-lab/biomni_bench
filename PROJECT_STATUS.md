@@ -145,12 +145,54 @@ list (inflating `singled_out` from 18 to 24), and a normaliser too weak to see
 
 ---
 
-### Stage C, OPEN (2026-08-11) — published-verifier pilot, gates in progress
+### Stage C, CLOSED (2026-08-12, D-43) — NO-GO (C2) and INCONCLUSIVE (C1); the experimental program ends
 
-**Awaiting operator approval to launch the verdict run (gate 6). Nothing on
-BiomniEval1 has been scored.** Method: LLM-as-a-Verifier (arXiv 2607.05391,
+**Verdict computed. The experimental program ends per stop rule §6. Full
+detail: D-43.** Method: LLM-as-a-Verifier (arXiv 2607.05391,
 `github.com/llm-as-a-verifier/llm-as-a-verifier`), training-free, scoring
 candidates by the expectation over score-token logits.
+
+**Primary verdict, both cells, run once:**
+
+| | C1 `gemma-4-31B-it` (cross-family) | C2 `Biomni-R0-32B` (same-model) |
+| --- | ---: | ---: |
+| Δ | −0.0000 | **−0.0641** |
+| 95% CI | [−0.1154, 0.1025] | [−0.1667, 0.0384] |
+| validity / comparison errors / unresolved ties | 1.0000 / 0 / 0 | 1.0000 / 0 / 0 |
+| **verdict** | **INCONCLUSIVE** | **NO-GO** |
+
+Both outcomes independently trigger §6's stop. **Sharpest mechanism finding**:
+C2's pairwise preferences are cyclic on **52.6%** of the 19 instances where a
+cycle is possible (vs C1's 5.3%) — C2 is not producing a coherent ranking, at
+zero interface-error rate, consistent with its much lower unconstrained
+on-scale mass (0.630 vs C1's 1.000). Read through the pre-registered addenda:
+A1.2 makes C2's NO-GO **ambiguous** (cannot distinguish "interface wasn't
+D-38's problem" from "weak verifier"); C1's INCONCLUSIVE — cross-family,
+strong on gate 1, zero interface error — is the more informative result and
+still does not recover headroom. Best-supported reading, matching the
+preregistration's §10 table: **a broader trajectory-verification gap** — the
+candidate pool itself carries limited separating signal for this judgment
+task, consistent with A.4's and A.6's prior null trace-feature findings.
+
+**Two infrastructure bugs caught and fixed before either verdict number
+existed** — a reward-lookup/candidate-construction divergence (`9905804`) and
+a bash brace-parsing bug in the batch launcher (`1386f23`) — neither reached a
+scored comparison. Detail in D-43 §2.
+
+**Deferred capability covariate: still not launched, and now moot for Stage
+C.** The program has already ended per §6; there is no longer a pending
+conditioning question for the covariate to resolve. No fourth cell, no
+capability-ceiling cell, no re-run at a different K or granularity. D-38's
+result and D-39's retraction both stand unchanged — what changes is that the
+empirical question D-39 reopened is now closed by D-43.
+
+**Full per-instance tables:** `reports/tables/stage_c/
+stage_c_{verdict,per_instance,report}_{c1,c2}.{json,csv}`.
+
+---
+
+Everything below this line describes the run that produced the verdict above
+and is kept for provenance.
 
 **Design frozen before any BiomniEval1 score exists:**
 `reports/stage_c_stop_rule.md` **Amendment 2** (cell identities, C2's role
@@ -181,12 +223,11 @@ agent-task RL cost verification ability**, and none is added later.
 | 2 — capsule-able evidence exists in the traces | **PASS**, verified against live `phase2b` and `phase1_pooled` event logs |
 | 3 — token logprobs through SGLang, per model | **PASS** for both cells, after a port fix |
 | 4 — cells/criteria/format/rule/budget frozen | **PASS** (the two documents above) |
-| 5 — clean tree, D-36 guard, GPU allocation | clean tree; **allocation expired**, verdict run queued |
+| 5 — clean tree, D-36 guard, GPU allocation | **PASS**, ran on `c563-001`, launch commit `1386f23`, clean tree |
 | 6 — explicit operator approval | **GRANTED** 2026-08-11 |
 
-**Where it stands (2026-08-11): everything is built, frozen and committed; the
-verdict run is waiting on a GPU allocation. Nothing on BiomniEval1 has been
-scored.**
+**Verdict computed 2026-08-12. See D-43 for the full result. All six gates
+closed.**
 
 | commit | contents |
 | --- | --- |
@@ -195,6 +236,9 @@ scored.**
 | `247a1d2` | batch launcher, D-36 guard on the score entrypoint, run provenance |
 | `1c3a8ea` | login-node submit helper |
 | `aa17f9b` | the §9 reporting analyses |
+| `1386f23` | fix: bash brace parsing silently dropped the D-04 context override |
+| `9905804` | fix: reward-lookup/candidate-construction pool-filter divergence |
+| (this commit) | D-43 verdict, PROJECT_STATUS update |
 
 **Capsules built and frozen:** 78 instances → **177 capsules → 244 directed
 pairs → 5,856 comparisons per cell**, matching the pre-registered figure
@@ -235,17 +279,9 @@ changed the candidate sets and made Δ incomparable with D-38. That rule binds a
 *controller* choosing what to do next; it does not retrospectively redefine a
 frozen population.
 
-**Capability covariate: DEFERRED, and the deferral is scheduling, not a
-finding.** 156 agent trajectories do not fit alongside the two verdict cells,
-and the verdict does not wait on it. §9's conditioning on solve capability is
-reported as **pending**, never as satisfied. Per the operator's instruction the
-programme **STOPs** after the verdict + reporting, before any covariate run.
-
-**To launch** (must be a login node — `sbatch` is refused on compute nodes):
-
-```
-slurm/submit_stage_c.sh -A <account>
-```
+**Capability covariate: DEFERRED, now moot.** It was scheduling, not a
+finding, and the programme has since ended per D-43/§6 — there is no longer a
+pending conditioning question for it to resolve. **Not launched.**
 
 **Gate 1 result (2026-08-11): PASS.** Full 300-task MedAgentBench, published
 configuration unmodified (g20, criteria `query`/`consistency`/`structure`, K=8,
