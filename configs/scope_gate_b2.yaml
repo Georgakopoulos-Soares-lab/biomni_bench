@@ -1,0 +1,90 @@
+# Solver-B capability gate, candidate B2 -- the single predeclared fallback.
+#
+# RUN THIS ONLY IF B1 MEETS THE FROZEN FAIL CRITERION (preflight SS6.3). A
+# disappointing-but-acceptable B1 accuracy does not authorise it.
+# Frozen by reports/scope_study_preflight.md SS4-SS6 before any B1 trajectory existed.
+#
+# Everything that CAN be matched to Solver A (Biomni-R0-32B, experiment phase2b)
+# is matched, so that a gate difference is attributable to the model rather than
+# to the configuration around it: temperature, max_tokens, confidence mode,
+# served context length, tool retriever, timeouts, retry policy and seeding all
+# carry Solver A's values. The three things that differ are the model, its
+# revision, and K -- the gate spends one trajectory per instance, not four.
+
+experiment:
+  name: scope_gate_b2
+  seed: 20260812
+  output_root: ${BIOMNI_UNC_OUTPUT_ROOT:-./runs}
+
+benchmark:
+  dataset: biomni/Eval1
+  parquet_uri: hf://datasets/biomni/Eval1/biomni_eval1_dataset.parquet
+  local_parquet: ${BIOMNI_UNC_EVAL1_PARQUET:-}
+  # The gate manifest is built by scripts/prepare_scope_gate_manifest.py from an
+  # explicit list of ALREADY-CONSUMED phase2b instances, never by the balanced
+  # sampler below. These fields exist only to satisfy the schema.
+  target_total_instances: 24
+  per_task_target: 3
+  preferred_split: val
+  manifest_seed: 20260812
+  exclude_tasks: []
+  max_prompt_chars: null
+
+model:
+  identifier: google/gemma-4-31B-it
+  revision: 842da3794eaa0b77d5f08bae87a17459d91ff475
+  source: Custom
+  # Biomni's own default, and Solver A's value. Not tuned.
+  temperature: 0.7
+  max_tokens: 8192
+  request_timeout_seconds: 1800
+  # Served at 65536, the same context every earlier phase used for this model
+  # served context exactly, so context length is not a variable in the contrast.
+  context_length: 65536
+  dtype: bfloat16
+  # None needed: 65536 is well inside this model's native position range, so
+  # unlike Biomni-R0 (native 40960) no YaRN override is required. Introducing one
+  # would be an unnecessary difference from the stock serving configuration.
+  json_model_override_args: null
+  request_seed_enabled: true
+
+confidence:
+  mode: final_only
+  open_delimiter: "<BIOMNI_CONFIDENCE>"
+  close_delimiter: "</BIOMNI_CONFIDENCE>"
+  epsilon: 0.001
+
+trajectories:
+  # K=1 per instance. The gate measures whether the scaffold can be operated at
+  # all; it is not a reliability-detection experiment and must not be read as one.
+  instrumented_k: 1
+  standard_k: 0
+  seed_base: 1000
+
+execution:
+  max_concurrency: 4
+  run_timeout_seconds: 3600
+  tool_timeout_seconds: 600
+  scratch_root: ${BIOMNI_UNC_SCRATCH:-/tmp/biomni_unc_scratch}
+  data_path: ${BIOMNI_PATH:-./biomni_data_root}
+  use_tool_retriever: true
+  retry_policy:
+    max_attempts: 2
+    retryable_failure_classes:
+      - model_server_failure
+      - model_timeout
+      - external_resource_failure
+    backoff_seconds: 20.0
+
+logging:
+  stdout_limit: 4000
+  stderr_limit: 4000
+  max_event_payload_chars: 20000
+
+analysis:
+  bootstrap_replicates: 2000
+  bootstrap_seed: 20260812
+  calibration_bins: 5
+  primary_length_field: total_output_tokens
+  binary_reward_threshold: 0.5
+  srlm_epsilon: 0.001

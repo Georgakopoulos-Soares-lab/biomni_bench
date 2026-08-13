@@ -1,0 +1,61 @@
+{
+  "manifest_hash": "dd084f0e81243be40e2cd2f24ffedf76b4eaf608cad3d5f01e3b6eb56286a6d2",
+  "n_entries": 24,
+  "never_used_instances_consumed": 0,
+  "per_task": {
+    "gwas_causal_gene_gwas_catalog": [
+      128,
+      138,
+      541
+    ],
+    "gwas_causal_gene_opentargets": [
+      460,
+      546,
+      745
+    ],
+    "gwas_causal_gene_pharmaprojects": [
+      821,
+      1158,
+      1250
+    ],
+    "gwas_variant_prioritization": [
+      50,
+      121,
+      130
+    ],
+    "lab_bench_dbqa": [
+      105,
+      273,
+      401
+    ],
+    "lab_bench_seqqa": [
+      27,
+      171,
+      378
+    ],
+    "patient_gene_detection": [
+      49,
+      88,
+      339
+    ],
+    "screen_gene_retrieval": [
+      160,
+      189,
+      339
+    ]
+  },
+  "per_task_count": {
+    "gwas_causal_gene_gwas_catalog": 3,
+    "gwas_causal_gene_opentargets": 3,
+    "gwas_causal_gene_pharmaprojects": 3,
+    "gwas_variant_prioritization": 3,
+    "lab_bench_dbqa": 3,
+    "lab_bench_seqqa": 3,
+    "patient_gene_detection": 3,
+    "screen_gene_retrieval": 3
+  },
+  "purpose": "Solver-B capability gate; already-consumed instances only",
+  "seed": 20260812,
+  "selection_rule": "benchmark._rng_order(task, seed, phase2b_consumed_ids)[:per_task]",
+  "source_pool": "manifests/phase2b.jsonl (already consumed, K=4 Solver-A trajectories exist)"
+}

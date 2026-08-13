@@ -1,0 +1,11 @@
+task_name,total_in_benchmark,consumed_phase1_or_phase2b,consumed_other,consumed_total,never_used,eligible_for_scope_study
+crispr_delivery,10,10,0,10,0,False
+gwas_causal_gene_gwas_catalog,50,20,2,22,28,True
+gwas_causal_gene_opentargets,50,20,1,21,29,True
+gwas_causal_gene_pharmaprojects,50,20,0,20,30,True
+gwas_variant_prioritization,43,20,0,20,23,True
+lab_bench_dbqa,50,20,3,23,27,True
+lab_bench_seqqa,50,20,1,21,29,True
+patient_gene_detection,50,20,3,23,27,True
+rare_disease_diagnosis,30,30,0,30,0,False
+screen_gene_retrieval,50,20,3,23,27,True
