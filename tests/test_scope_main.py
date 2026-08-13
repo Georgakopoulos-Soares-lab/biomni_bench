@@ -173,3 +173,18 @@ def test_resume_launcher_refuses_dirty_trees_and_commit_drift():
     assert "REFUSING: HEAD moved since launch" in s
     assert "REFUSING: $MANIFEST changed since launch" in s
     assert "--allow-commit-drift" in s
+
+
+def test_launcher_verifies_the_SERVED_MODEL_not_just_a_healthy_port():
+    """A healthy port serving the wrong model would silently swap the solvers.
+
+    Ports are reused across experiments on this node, and the run record takes
+    the model identity from the config rather than from the endpoint, so nothing
+    downstream would catch it. The probe must match the pinned snapshot path.
+    """
+    s = (ROOT / "scripts" / "scope_main_run.sh").read_text()
+    assert "serving the WRONG model for arm" in s
+    assert 'server_healthy "$port" "${ARM_MODEL[$arm]}"' in s
+    # both arms' snapshot paths must appear, so the probe has something to match
+    assert "71432eb3d5e583bee757e0f9437a17e711e8e3d1" in s
+    assert "68faf511d618ef198fef186659617cfd2eb8e33a" in s

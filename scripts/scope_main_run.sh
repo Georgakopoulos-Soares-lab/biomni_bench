@@ -74,8 +74,11 @@ HOSTF="$(hostname -f 2>/dev/null || hostname)"
 
 declare -A ARM_CONFIG=( [a]="configs/scope_main_a.yaml" [b]="configs/scope_main_b.yaml" )
 declare -A ARM_RUNS=(   [a]="manifests/scope_main_a_runs.jsonl" [b]="manifests/scope_main_b_runs.jsonl" )
-declare -A ARM_PORT=(   [a]=30000 [b]=30010 )
-declare -A ARM_GPUS=(   [a]="0,1" [b]="2,3" )
+# Arm B keeps :30000/GPUs 0-1, where its server already runs from the capability
+# gate; Arm A takes :30010/GPUs 2-3. The mapping is arbitrary but fixed, and
+# choosing it this way means only one server has to be started.
+declare -A ARM_PORT=(   [a]=30010 [b]=30000 )
+declare -A ARM_GPUS=(   [a]="2,3" [b]="0,1" )
 declare -A ARM_MODEL=(
   [a]="/scratch/11034/atzanakak/hf_cache/hub/models--biomni--Biomni-R0-32B-Preview/snapshots/71432eb3d5e583bee757e0f9437a17e711e8e3d1"
   [b]="/scratch/11034/atzanakak/hf_cache/hub/models--mistralai--Mistral-Small-3.1-24B-Instruct-2503/snapshots/68faf511d618ef198fef186659617cfd2eb8e33a"
@@ -169,13 +172,30 @@ done
 # ---------------------------------------------------------------------------
 # servers: probe, then launch only what is missing
 # ---------------------------------------------------------------------------
-server_healthy() { curl -s -m 5 -o /dev/null -w '%{http_code}' "http://localhost:$1/v1/models" 2>/dev/null | grep -q 200; }
+# A port answering 200 is NOT enough. Ports are reused across experiments on this
+# node, and a healthy server for the WRONG model would silently give an arm the
+# other solver's trajectories -- the most damaging failure this study could have,
+# and one no downstream check would catch, because the run records the model
+# identity from the config rather than from the endpoint. So the probe demands
+# that the served model path match the arm's pinned snapshot.
+server_healthy() {  # port, expected-model-path
+  local body
+  body="$(curl -s -m 5 "http://localhost:$1/v1/models" 2>/dev/null)" || return 1
+  [[ "$body" == *'"data"'* ]] || return 1
+  [[ "$body" == *"$2"* ]]
+}
 
 for arm in a b; do
   port="${ARM_PORT[$arm]}"
-  if server_healthy "$port"; then
-    echo "[server] arm $arm already healthy on :$port"
+  if server_healthy "$port" "${ARM_MODEL[$arm]}"; then
+    echo "[server] arm $arm already serving the correct model on :$port"
     continue
+  fi
+  if curl -s -m 5 -o /dev/null -w '%{http_code}' "http://localhost:$port/v1/models" 2>/dev/null | grep -q 200; then
+    echo "ERROR: :$port is healthy but serving the WRONG model for arm $arm." >&2
+    echo "       expected: ${ARM_MODEL[$arm]}" >&2
+    echo "       Stop that server before resuming; refusing to mix solvers." >&2
+    exit 2
   fi
   # Extract the serving override from the YAML rather than writing JSON braces in
   # bash. D-43 lost a whole server start to `"${VAR:-{...}}"` ending the
@@ -202,10 +222,11 @@ for arm in a b; do
   port="${ARM_PORT[$arm]}"
   echo -n "[server] waiting for arm $arm on :$port "
   for _ in $(seq 1 240); do
-    if server_healthy "$port"; then echo "OK"; break; fi
+    if server_healthy "$port" "${ARM_MODEL[$arm]}"; then echo "OK"; break; fi
     sleep 15; echo -n "."
   done
-  server_healthy "$port" || { echo; echo "ERROR: arm $arm never became healthy; see $LOGS/sglang_scope_main_$arm.log" >&2; exit 1; }
+  server_healthy "$port" "${ARM_MODEL[$arm]}" || {
+    echo; echo "ERROR: arm $arm never became healthy; see $LOGS/sglang_scope_main_$arm.log" >&2; exit 1; }
   cat > "$BIOMNI_UNC_OUTPUT_ROOT/endpoints_scope_main_$arm.json" <<EOF
 {"endpoints": [{"url": "http://$HOSTF:$port/v1", "label": "scope_main_${arm}_${HOSTF}", "max_concurrent": 4}]}
 EOF
