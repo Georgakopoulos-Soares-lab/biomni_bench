@@ -1,0 +1,9 @@
+task_name,n,completion_rate,usable_rate,accuracy,mean_wall_seconds
+gwas_causal_gene_gwas_catalog,3,1.0,1.0,0.6667,104.9937
+gwas_causal_gene_opentargets,3,1.0,1.0,0.6667,55.747
+gwas_causal_gene_pharmaprojects,3,1.0,1.0,0.6667,73.032
+gwas_variant_prioritization,3,1.0,1.0,0.0,153.6763
+lab_bench_dbqa,3,1.0,1.0,0.3333,60.4343
+lab_bench_seqqa,3,1.0,1.0,0.3333,87.113
+patient_gene_detection,3,0.6667,0.3333,0.3333,173.1737
+screen_gene_retrieval,3,1.0,1.0,0.0,143.7543

@@ -578,3 +578,249 @@ Stage-C re-run, amendment or new cell. No modification to D-43. No search over
 Solver-B models beyond B1 and the single predeclared B2. No accuracy-driven
 tuning. No second verifier. No new controller. No HealthAgentBench. No new
 benchmark. No K>4. No GPU time spent on additional Biomni-R0 trajectories.
+
+---
+
+# RESULTS — Solver-B capability gate, B1, 2026-08-13
+
+**Appended after the freeze commit `e40c773`, not folded back into the sections
+above.** Everything in §§2–9 was committed before the first B1 trajectory
+existed; every trajectory's `metadata.json` records `project_git.commit =
+e40c773…` with `dirty: false` and 61 source hashes, so the claim is checkable
+rather than asserted.
+
+## R.1 Execution
+
+| item | value |
+| --- | --- |
+| experiment | `scope_gate_b1` |
+| model | `mistralai/Mistral-Small-3.1-24B-Instruct-2503` @ `68faf511d618ef198fef186659617cfd2eb8e33a` |
+| serving | SGLang 0.5.16, tp2 on GPUs 0–1 of `c563-001`, bf16, context 65536, `mem-fraction-static` 0.85 |
+| population | the frozen 24 historical instances, K=1 |
+| dispatch | 24 planned, 24 executed, 0 skipped, **735 s wall** |
+| launch commit | `e40c773`, clean tree, D-36 guard passed |
+| never-used instances consumed | **0** |
+| single bounded interface repair | **not used** — none was needed |
+
+`seed_supported=false` on this endpoint, recorded per trajectory as the schema
+requires. Solver A's own runs carry the same field; it is provenance, not a
+defect, and no determinism claim is made anywhere.
+
+**One serving-stack warning, measured rather than assumed.** transformers 5.12.1
+warns that this checkpoint's HF tokenizer carries an incorrect pre-tokenizer
+regex and offers `fix_mistral_regex=True`. Before the run, all 24 gate prompts
+plus the scaffold-critical strings (`<execute>…</execute>`,
+`<solution>…</solution>`, rsID/ENSG/HPO identifier strings) were tokenized both
+ways: **0 of 28 differed**, token-for-token. The default configuration was kept
+and no repair was applied. Had the check come out otherwise, correcting it
+before any result existed would have been part of configuring the serving stack,
+not the §8.1 repair.
+
+## R.2 Gate metrics against the frozen bars
+
+| metric | **B1** | Solver A (n=120 reference) | Solver A (same 24) | bar |
+| --- | ---: | ---: | ---: | --- |
+| completion rate | **0.9583** | 0.8917 | 0.9167 | FAIL < 0.50 |
+| usable-answer rate | **0.9167** | 0.8250 | 0.8333 | FAIL < 0.40; CONF < 0.65 |
+| `solution_block_ok` (of completed) | **1.0000** | — | 1.0000 | FAIL < 0.50 |
+| degeneration rate | **0.0417** | 0.1083 | 0.0833 | FAIL ≥ 0.40; CONF ≥ 0.25 |
+| infrastructure-failure rate | **0.0000** | — | 0.0000 | FAIL ≥ 0.25 |
+| **accuracy** | **0.3750** | 0.5417 | 0.5833 | CONF < 0.2708 |
+| erroring code-block fraction | 0.5870 | 0.2604 | 0.3882 | (reported, no bar) |
+| mean tool calls / zero-tool fraction | 3.58 / 0.375 | — | 1.58 / 0.375 | (reported) |
+| mean LLM calls | 8.13 | — | 15.71 | (reported) |
+| mean output tokens | 3,796 | — | 9,690 | (reported) |
+| mean wall seconds | **106.5** | — | 309.7 | (reported) |
+
+## R.3 VERDICT: **PASS**
+
+**No FAIL condition and no CAPABILITY-CONFOUNDED condition is met.**
+
+B1 operates the Biomni scaffold **more cleanly than Solver A does** on the same
+instances: it completes more often (0.958 vs 0.917), returns a usable answer
+more often (0.917 vs 0.833), degenerates less (0.042 vs 0.083), and emitted a
+well-formed `<solution>` block on **every** completed run. There were zero
+infrastructure failures and zero unresolved endpoint problems. It is also
+**2.9× cheaper per trajectory** (106 s vs 310 s; 3,796 vs 9,690 output tokens),
+because it takes about half the LLM calls to reach an answer.
+
+`mistralai/Mistral-Small-3.1-24B-Instruct-2503` @ `68faf511…` is therefore
+**frozen as Solver B** for the matched scope study.
+
+**B2 was not run.** The frozen rule reaches `google/gemma-4-31B-it` only through
+the FAIL branch, and B1 did not fail. The gemma server remains up and untouched.
+
+## R.4 The accuracy gap, stated with its uncertainty
+
+The one metric where B1 sits below Solver A is accuracy: **0.375 vs 0.583** on
+the same 24 instances. It clears the 0.2708 bar comfortably, so the gate says
+PASS — but two point estimates side by side would overstate what 24 instances
+can distinguish, so the paired statistics are reported instead
+(`scripts/scope_gate_paired.py`, which decides nothing):
+
+| quantity | value |
+| --- | --- |
+| B1 accuracy | 9/24 = 0.3750, 95% Wilson [0.212, 0.573] |
+| Solver A accuracy | 14/24 = 0.5833, 95% Wilson [0.388, 0.755] |
+| paired difference (B1 − A) | **−0.2083**, 95% CI **[−0.4583, +0.0417]** (10,000 instance-clustered bootstrap replicates, seed 20260812) |
+| exact McNemar, 11 discordant pairs | **p = 0.2266** |
+
+**The paired CI includes zero and McNemar is not significant.** At this n the
+gate set cannot establish that B1 is less accurate than Solver A; it can only
+establish that B1 is not a floor-effect solver, which is what the gate was built
+to decide. The honest statement is: *the point estimate is lower, the difference
+is not resolved at n=24, and the matched study is powered to resolve it at
+n=120.*
+
+**The interpretation rule in §6.4 still binds and is not discharged by this
+PASS.** If the matched study's own K=4 numbers show Solver B materially weaker,
+that must be labelled, and normalized headroom recovery does not cure it.
+
+## R.5 Failure detail — all of it
+
+Two of 24 runs did not yield a usable answer, both on the same task family:
+
+| instance | completed | failure class | parse status |
+| --- | --- | --- | --- |
+| `patient_gene_detection/49` | no | `model_context_overflow` | `empty` |
+| `patient_gene_detection/88` | yes | `agent_parse_failure` | `unparseable` (solution block itself was `ok`) |
+
+`patient_gene_detection` is consequently B1's weakest family on scaffold
+mechanics (completion 0.667, usable 0.333) while every other family ran at
+1.000/1.000. One context overflow in 24 is below Solver A's own rate and does
+not approach any bar, but it is the failure mode to watch at K=4 scale.
+
+## R.6 Per-task breakdown
+
+| task | tier | n | completion | usable | B1 accuracy | Solver A accuracy (same 3) | mean wall s |
+| --- | :---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `gwas_causal_gene_gwas_catalog` | 2 | 3 | 1.000 | 1.000 | 0.667 | 0.667 | 105.0 |
+| `gwas_causal_gene_opentargets` | 2 | 3 | 1.000 | 1.000 | 0.667 | 0.667 | 55.7 |
+| `gwas_causal_gene_pharmaprojects` | 2 | 3 | 1.000 | 1.000 | 0.667 | 1.000 | 73.0 |
+| `gwas_variant_prioritization` | 2 | 3 | 1.000 | 1.000 | 0.000 | 0.667 | 153.7 |
+| `lab_bench_dbqa` | 2 | 3 | 1.000 | 1.000 | 0.333 | 0.667 | 60.4 |
+| `lab_bench_seqqa` | **1** | 3 | 1.000 | 1.000 | 0.333 | 0.667 | 87.1 |
+| `patient_gene_detection` | 2 | 3 | 0.667 | 0.333 | 0.333 | 0.333 | 173.2 |
+| `screen_gene_retrieval` | **3** | 3 | 1.000 | 1.000 | 0.000 | 0.000 | 143.8 |
+
+**Three instances per cell. Nothing here supports a per-task or per-tier claim**,
+and in particular the Tier-1 / Tier-3 cells hold three instances each. They are
+reported for scaffold coverage — every family was exercised — not as a preview of
+the secondary analysis.
+
+## R.7 A positive control on the bars themselves
+
+Before B1's data existed, `scripts/scope_gate_analyze.py` was run against Solver
+A's own K=1 trajectories on the identical 24 instances
+(`reports/tables/scope_study/solver_a_gateset_k1.csv`). Solver A returns
+**PASS**. A gate whose bars accidentally excluded the reference solver would be
+miscalibrated in the direction that matters most, and this check rules that out.
+
+## R.8 Cross-solver error structure — a preview, not a finding
+
+On the 24 matched instances:
+
+| | count |
+| --- | ---: |
+| both solvers correct | 6 |
+| B1 only | 3 |
+| Solver A only | 8 |
+| neither | 7 |
+
+**11 of 24 are discordant and 7 of 24 are hard for both.** This is analysis 4 of
+the future study computed on a sample far too small to conclude from, and it is
+labelled as such. It is reported for one reason: it shows the cross-solver
+matched comparison is not degenerate — the two solvers do not simply agree, so
+the question of whether the same questions are intrinsically hard across solver
+families is answerable rather than foreclosed.
+
+## R.9 Artifacts
+
+| artifact | path |
+| --- | --- |
+| verdict | `reports/tables/scope_study/scope_gate_verdict_b1.json` |
+| per-task | `reports/tables/scope_study/scope_gate_by_task_b1.csv` |
+| paired comparison | `reports/tables/scope_study/scope_gate_paired_b1.json` |
+| Solver-A matched reference | `reports/tables/scope_study/solver_a_gateset_k1.csv` |
+| pool audit | `reports/tables/scope_study/pool_audit.{json,csv}` |
+| raw trajectories | `<output_root>/scope_gate_b1/runs/**` (preserved, including both failures) |
+| aggregated tables | `<output_root>/scope_gate_b1/results/tables/` |
+
+---
+
+# PART E — proposed matched scope study. **NOT LAUNCHED.**
+
+A solver passed, so the design below is written. **No fresh manifest exists and
+none was built.** Selecting the 120 instances is the operator's decision.
+
+## E.1 Structure
+
+| item | value |
+| --- | --- |
+| instances | **~120 fresh** BiomniEval1, **15 per each of the 8 eligible families** |
+| pool | the **220** never-used instances verified in §2; **100 remain unspent** afterwards |
+| overlap with prior work | **zero**, by construction — the never-used set is the complement of all 213 consumed instances |
+| Solver A | `biomni/Biomni-R0-32B-Preview` @ `71432eb3…` |
+| Solver B | `mistralai/Mistral-Small-3.1-24B-Instruct-2503` @ `68faf511…` (frozen tonight) |
+| questions | **identical for both solvers**, matched instance by instance |
+| K | **4** per solver per instance |
+| trajectories | **~960** |
+| scaffold | the same Biomni A1 adapter, retriever, budget, canonicalizer, temperature 0.7, `max_tokens` 8192, served context 65536 |
+| verifier | the **frozen Stage-C C1** `google/gemma-4-31B-it` @ `842da379…`, unchanged port, capsule format and three criteria |
+
+Solver B's lineage is independent of both Solver A (Qwen3) and the verifier
+(Gemma), so neither solver is same-model with the verifier and the
+error-correction contrast is not confounded by solver–verifier relatedness.
+
+## E.2 Budget, from measured rates
+
+| | per trajectory | ×480 |
+| --- | ---: | ---: |
+| Solver A | 310 s | ≈41 GPU-h |
+| Solver B | 106 s | ≈14 GPU-h |
+
+≈**55 GPU-hours** of trajectory wall time at concurrency 1, before verifier
+compute; roughly 14 h of a 4-GPU node at the concurrency this gate used. Stage
+C's verifier cost scales with unique candidates, not instances, and is small
+beside this.
+
+## E.3 Primary analyses
+
+**1 — Reliability detection, per solver.** Pass@1, plurality, Oracle@4,
+available headroom, and agreement → correctness AUROC. **Verifier-free**, so
+this half of the primary is untouched by any question about the verifier.
+
+**2 — Error correction, per solver.** Absolute verifier gain, and normalized
+oracle-headroom recovery **subject to §7's denominator guard** — reported as
+`undefined` wherever headroom < 0.10 or fewer than 5 instances are recoverable,
+with the absolute gain reported in its place.
+
+> **The main scientific question.** Does the separation between detectable
+> uncertainty and successful post-hoc error correction replicate across solver
+> families?
+
+## E.4 Pre-registered secondary analyses
+
+**3 — Verifiability tier.** Absolute and normalized recovery by the tier frozen
+in §3. **Directional and secondary only.** No monotonic law is claimed; with one
+task family at each extreme, tier and task identity are confounded there (§3.4),
+and the guard will likely mark both singleton tiers' ratios undefined at 15
+instances. MedAgentBench appears separately as an external positive control,
+never as a fourth point in a within-Biomni fit.
+
+**4 — Cross-solver error structure on matched questions.** Overlap in
+`no-correct-at-K4`, in wrong pluralities, in substantive disagreement, in
+verifier failures, and in high-agreement-but-wrong; and whether the same
+questions are intrinsically hard across solver families. **This is a major
+objective, not an afterthought** — and R.8 already shows it will not be
+degenerate.
+
+## E.5 What must be decided before it can launch
+
+1. Operator approval to spend 120 of the 220 never-used instances.
+2. The fresh manifest, built by the same deterministic keyed-hash procedure
+   under a new seed, with a build-time assertion of zero overlap against all
+   213 consumed instances.
+3. Its own pre-registration: hypotheses, primary/secondary split, stopping
+   semantics, and the bars — frozen and committed before the first trajectory,
+   as tonight's design was.

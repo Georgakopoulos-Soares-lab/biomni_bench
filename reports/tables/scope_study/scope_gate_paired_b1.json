@@ -1,0 +1,51 @@
+{
+  "bootstrap": {
+    "replicates": 10000,
+    "seed": 20260812,
+    "unit": "instance"
+  },
+  "candidate": "B1",
+  "decides": "nothing; the verdict is in scope_gate_verdict_*.json",
+  "error_structure_preview": {
+    "both_correct": 6,
+    "neither": 7,
+    "note": "Preview of the future study's cross-solver analysis 4, on n=24. Not a finding.",
+    "solver_a_only": 8,
+    "solver_b_only": 3
+  },
+  "mcnemar_exact": {
+    "a_only": 8,
+    "b_only": 3,
+    "discordant_pairs": 11,
+    "p_value": 0.2265625
+  },
+  "n_matched_instances": 24,
+  "paired_difference_b_minus_a": -0.20833333333333334,
+  "paired_difference_ci95": [
+    -0.4583333333333333,
+    0.041666666666666664
+  ],
+  "paired_difference_ci_excludes_zero": false,
+  "solver_a_accuracy": {
+    "k": 14,
+    "n": 24,
+    "rate": 0.5833333333333334,
+    "wilson95": [
+      0.3883433764938864,
+      0.7553265275346177
+    ]
+  },
+  "solver_b_accuracy": {
+    "k": 9,
+    "n": 24,
+    "rate": 0.375,
+    "wilson95": [
+      0.21159133433631458,
+      0.5729038096209293
+    ]
+  },
+  "usable_rate": {
+    "solver_a": 0.8333333333333334,
+    "solver_b": 0.9166666666666666
+  }
+}

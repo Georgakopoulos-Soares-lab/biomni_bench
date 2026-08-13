@@ -1,0 +1,125 @@
+{
+  "by_task": [
+    {
+      "accuracy": 0.6667,
+      "completion_rate": 1.0,
+      "mean_wall_seconds": 104.9937,
+      "n": 3,
+      "task_name": "gwas_causal_gene_gwas_catalog",
+      "usable_rate": 1.0
+    },
+    {
+      "accuracy": 0.6667,
+      "completion_rate": 1.0,
+      "mean_wall_seconds": 55.747,
+      "n": 3,
+      "task_name": "gwas_causal_gene_opentargets",
+      "usable_rate": 1.0
+    },
+    {
+      "accuracy": 0.6667,
+      "completion_rate": 1.0,
+      "mean_wall_seconds": 73.032,
+      "n": 3,
+      "task_name": "gwas_causal_gene_pharmaprojects",
+      "usable_rate": 1.0
+    },
+    {
+      "accuracy": 0.0,
+      "completion_rate": 1.0,
+      "mean_wall_seconds": 153.6763,
+      "n": 3,
+      "task_name": "gwas_variant_prioritization",
+      "usable_rate": 1.0
+    },
+    {
+      "accuracy": 0.3333,
+      "completion_rate": 1.0,
+      "mean_wall_seconds": 60.4343,
+      "n": 3,
+      "task_name": "lab_bench_dbqa",
+      "usable_rate": 1.0
+    },
+    {
+      "accuracy": 0.3333,
+      "completion_rate": 1.0,
+      "mean_wall_seconds": 87.113,
+      "n": 3,
+      "task_name": "lab_bench_seqqa",
+      "usable_rate": 1.0
+    },
+    {
+      "accuracy": 0.3333,
+      "completion_rate": 0.6667,
+      "mean_wall_seconds": 173.1737,
+      "n": 3,
+      "task_name": "patient_gene_detection",
+      "usable_rate": 0.3333
+    },
+    {
+      "accuracy": 0.0,
+      "completion_rate": 1.0,
+      "mean_wall_seconds": 143.7543,
+      "n": 3,
+      "task_name": "screen_gene_retrieval",
+      "usable_rate": 1.0
+    }
+  ],
+  "candidate": "B1",
+  "confounded_bars": {
+    "accuracy_lt": 0.2708,
+    "degeneration_rate_gte": 0.25,
+    "usable_rate_lt": 0.65
+  },
+  "fail_bars": {
+    "completion_rate_lt": 0.5,
+    "degeneration_rate_gte": 0.4,
+    "infra_failure_rate_gte": 0.25,
+    "solution_block_ok_rate_lt": 0.5,
+    "usable_rate_lt": 0.4
+  },
+  "failure_class_counts": {
+    "(none)": 18,
+    "agent_parse_failure": 1,
+    "confidence_parse_failure": 4,
+    "model_context_overflow": 1
+  },
+  "interpretation_rule": "If Solver B is materially capability-confounded, normalized headroom recovery does NOT cure the confound. The main cross-family claim must be labelled capability-confounded.",
+  "metrics": {
+    "accuracy": 0.375,
+    "code_block_error_fraction": 0.5869565217391305,
+    "completion_rate": 0.9583333333333334,
+    "degeneration_rate": 0.041666666666666664,
+    "infra_failure_rate": 0.0,
+    "mean_llm_calls": 8.125,
+    "mean_output_tokens": 3796.2916666666665,
+    "mean_tool_calls": 3.5833333333333335,
+    "mean_wall_seconds": 106.49054166666667,
+    "n": 24,
+    "solution_block_ok_rate": 1.0,
+    "total_wall_seconds": 2555.773,
+    "usable_rate": 0.9166666666666666,
+    "zero_tool_fraction": 0.375
+  },
+  "model": "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+  "revision": "68faf511d618ef198fef186659617cfd2eb8e33a",
+  "solver_a_on_gate_set": {
+    "accuracy": 0.5833,
+    "completion_rate": 0.9167,
+    "mean_wall_seconds": 309.7,
+    "n": 24,
+    "oracle_at_4": 0.7083,
+    "usable_rate": 0.8333
+  },
+  "solver_a_reference": {
+    "accuracy": 0.5417,
+    "code_block_error_fraction_all_k": 0.2604,
+    "completion_rate": 0.8917,
+    "degeneration_rate": 0.1083,
+    "n": 120,
+    "population": "phase2b, 8 eligible task families, trajectory_index == 0",
+    "usable_rate": 0.825
+  },
+  "verdict": "PASS",
+  "verdict_reasons": []
+}

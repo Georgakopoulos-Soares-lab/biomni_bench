@@ -1,6 +1,101 @@
 # PROJECT_STATUS
 
+**Last updated:** 2026-08-13 (**New work opened: the scope-and-boundary study.
+D-43 / Stage C remains CLOSED and untouched.** Preflight frozen and committed
+before inference (`e40c773`); Solver **B1 = `Mistral-Small-3.1-24B-Instruct-2503`
+PASSES** its frozen capability gate and is frozen as Solver B. Zero fresh
+scope-study instances consumed. See *Scope study* below and **D-44**. Previously,
+2026-08-11:)
+
+---
+
+## Scope-and-boundary study — preflight complete, Solver B frozen (2026-08-13, D-44)
+
+**Design:** `reports/scope_study_preflight.md`. **Tables:**
+`reports/tables/scope_study/`. **Full suite: 577 passed.**
+
+**Boundary.** D-43 is closed and is not altered, recomputed, rescued, overturned
+or reinterpreted. This is separate work on a **disjoint population** (the
+never-used pool, not Stage C's frozen 78), with a new primary question — *does
+the separation between reliability detection and successful error correction
+replicate under an independent solver family?* — and a pre-registered secondary
+question about criterion verifiability. D-43's own reversal condition anticipates
+exactly this kind of follow-on.
+
+### Frozen before any inference, committed at `e40c773`
+
+* **Remaining-pool table, rebuilt from artifacts.** 433 total, **213 consumed,
+  220 never used**. `crispr_delivery` and `rare_disease_diagnosis` **confirmed
+  exhausted**; 8 families remain; **15 × 8 = 120 is feasible with 100 to spare**.
+  **Correction to the record: the reserved pool is 220, not the 233 in D-22 and
+  `phase2_protocol.md` §3.1** — 13 instances were consumed later by
+  `verify_prereq_diag3` (8) and `phase2b_smoke` (5), neither of which wrote a
+  manifest. Any document citing 233 is stale.
+* **Criterion-verifiability rubric**, from task definition and the official
+  `_compute_reward` only: Tier 1 `lab_bench_seqqa`; Tier 2 six families; Tier 3
+  `screen_gene_retrieval`. **Tier and task identity are fully confounded at both
+  extremes** and the secondary analysis is bound by that. MedAgentBench stays an
+  external anchor.
+* **Solver B1 / B2**, chosen on independence, availability and servability, never
+  on accuracy. The obvious choice (`gemma-4-31B-it`, already served) was rejected
+  because the study fixes the verifier at the frozen Stage-C C1 gemma, which
+  would have made Solver B same-model with the verifier where Solver A is
+  cross-family. Operator chose the three-family design.
+* **24-instance capability gate** over already-consumed Phase-2B instances, plus
+  frozen **PASS / FAIL / CAPABILITY-CONFOUNDED** bars and the
+  **normalized-headroom denominator guard** (absolute ≥ 0.10 **and** ≥ 5
+  recoverable instances, else the ratio is reported `undefined`).
+* Dirty-tree launch guard **exercised on the real entrypoint** first: exit 2.
+
+### Gate result — **PASS**
+
+| | B1 `Mistral-Small-3.1-24B` | Solver A, same 24 |
+| --- | ---: | ---: |
+| completion | **0.9583** | 0.9167 |
+| usable answer | **0.9167** | 0.8333 |
+| degeneration | **0.0417** | 0.0833 |
+| infrastructure failure | 0.0000 | 0.0000 |
+| accuracy | 0.3750 | 0.5833 |
+| mean wall s / trajectory | **106.5** | 309.7 |
+
+B1 operates the scaffold **more cleanly than Biomni-R0 does** and at **2.9×
+lower cost**, with a well-formed `<solution>` block on every completed run and no
+interface repair used. **The accuracy gap is not established at n=24 and is not
+claimed:** paired difference −0.2083, 95% CI **[−0.4583, +0.0417]**, exact
+McNemar p = 0.2266. Solver A run through the same adjudicator also returns PASS —
+a positive control on the bars.
+
+**`mistralai/Mistral-Small-3.1-24B-Instruct-2503` @ `68faf511…` is frozen as
+Solver B. B2 (`gemma-4-31B-it`) was NOT run** — the frozen rule reaches it only
+through FAIL.
+
+### Current blockers / next actions
+
+1. **Operator approval** to spend 120 of the 220 never-used instances. **The
+   fresh manifest does not exist and must not be built without it.**
+2. The matched study needs **its own pre-registration** — hypotheses, bars,
+   stopping semantics — frozen and committed before its first trajectory.
+3. Proposed design in `reports/scope_study_preflight.md` Part E: ~120 fresh
+   instances, K=4 per solver, ~960 trajectories, ≈55 GPU-hours, same scaffold,
+   same frozen C1 gemma verifier.
+
+### Server / allocation state, for the operator to decide
+
+Job `3396219` on `c563-001`. The **Biomni-R0 server on GPUs 0–1 was stopped with
+operator approval** to serve B1 there; `Mistral-Small-3.1-24B` is now serving on
+:30000. The **`gemma-4-31B-it` server on GPUs 2–3 (:30010) is untouched and
+healthy**. No further experiment is running. **Terminating or reusing either
+server, and the remainder of the allocation, is left to the operator** — nothing
+else was started.
+
+---
+
+<details>
+<summary>Previous status header (2026-08-11)</summary>
+
 **Last updated:** 2026-08-11 (**Stage 0, Stage A, and all pre-Stage-C items closed** — A.6 NULL, A.7 reachability pre-registered in the stop rule, A.8 shows Arm 2 was re-solving not adjudicating, shrink guard installed (D-41), A.5b's 51% restated as a 20–51% band pending operator review. **Stage C is unblocked**; it runs in a separate session under its frozen rule + Amendment 1. Previously: **Stage 0 and Stage A closed** — D-39 retraction, Stage C stop rule frozen first, write-up reframed, and the A.1–A.5 decomposition complete (**D-40**). The paper is submittable on this material. Stage C runs in a separate session under its frozen stop rule. The live-GPU-window plan below is superseded and closed.)
+
+</details>
 
 ## Current plan: Stage 0 → Stage A → (separate session) Stage C
 

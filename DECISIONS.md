@@ -2159,3 +2159,138 @@ INCONCLUSIVE both end the program by construction, and that is not reversible
 by further analysis of this data. A future *separately pre-registered* study
 on a different population or with different verifiers is not a reversal of
 this entry; it would be new work, subject to its own north-star check.
+
+---
+
+## D-44 Scope study opened as separate work; Solver B1 PASSES its frozen capability gate
+
+**Decided:** 2026-08-13. Design: `reports/scope_study_preflight.md` (§§0–9
+frozen at `e40c773` before inference; results appended after). Drivers:
+`scripts/scope_pool_audit.py`, `scripts/prepare_scope_gate_manifest.py`,
+`scripts/scope_gate_analyze.py`, `scripts/scope_gate_paired.py`. Tests:
+`tests/test_scope_gate.py` (29). Artifacts: `reports/tables/scope_study/`.
+
+> **Headline.** A new, separately pre-registered **scope-and-boundary study** is
+> opened. **D-43 is untouched** — no cell, no bar, no artifact, and a disjoint
+> population. Tonight was preflight plus one GPU gate. `mistralai/
+> Mistral-Small-3.1-24B-Instruct-2503` **PASSES** and is frozen as Solver B; it
+> operates the Biomni scaffold *better* than Biomni-R0 does (completion 0.958 vs
+> 0.917, usable 0.917 vs 0.833, degeneration 0.042 vs 0.083, `<solution>` block
+> well-formed on every completed run) at **2.9× lower cost**. **Zero fresh
+> scope-study instances were consumed.** B2 was not run: the frozen rule reaches
+> it only through FAIL.
+
+### 1. Why this is not a Stage-C rescue
+
+D-43's own reversal condition anticipates it: *"a future separately
+pre-registered study on a different population or with different verifiers is
+not a reversal of this entry."* This study takes a **different population** (the
+never-used pool, disjoint from Stage C's frozen 78), a **different primary
+question** (does the reliability-detection / error-correction separation
+replicate across solver families?), and adds a **second solver**, which is the
+one axis Stage C held fixed. Nothing recomputes, rescues or reinterprets D-43.
+
+### 2. The reserved pool is 220, not 233 — a correction to the record
+
+D-22 and `reports/phase2_protocol.md` §3.1 both record 233 reserved
+(433 − 50 − 150). Reconstructed from artifacts rather than prose — the parquet,
+every manifest, and every run directory on disk — the true figure is **220**.
+Thirteen instances were consumed after those documents were written by two runs
+that never wrote a manifest: `verify_prereq_diag3` (8, D-34's deliberately fresh
+unscreened sample) and `phase2b_smoke` (5). Neither was a scientific error; the
+bookkeeping simply was never decremented. **Any future document citing 233 is
+citing a stale number**, and the scope study's exclusion set is the full
+213-instance consumed set.
+
+`crispr_delivery` and `rare_disease_diagnosis` are **confirmed exhausted** (0
+each), exactly as D-22 declared it would spend them. Eight families remain, and
+a 15 × 8 = 120 design is feasible with 100 instances to spare.
+
+### 3. The rubric is frozen, and its confound is stated rather than smoothed
+
+Three tiers assigned from the task definition and the official `_compute_reward`
+criterion only: Tier 1 `lab_bench_seqqa`; Tier 2 six families; Tier 3
+`screen_gene_retrieval`. **Task identity and tier are fully confounded at both
+extremes** — each singleton tier is one family, so a Tier-1-vs-Tier-3 contrast is
+numerically identical to a two-task contrast. The secondary analysis therefore
+cannot support "verifiability causes recovery" and is not permitted to; it stays
+secondary, no monotonic law is pre-registered, and MedAgentBench remains an
+external anchor rather than a fourth point in a within-Biomni fit.
+
+The ordering is disclosed because it matters: tiers were fixed before any
+per-task accuracy was computed, and the per-task numbers computed afterwards are
+*suggestive* of the hypothesis (Tier 1 at 0.867, Tier 3 at 0.067). That is
+exactly why the rubric is not revised in light of them.
+
+### 4. Solver B1/B2, and a confound surfaced before it could bite
+
+The obvious B1 was the already-served `gemma-4-31B-it`. It was rejected on a
+design ground the brief did not anticipate: the study fixes the verifier at the
+frozen Stage-C C1 `gemma-4-31B-it`, so a gemma Solver B would be **same-model**
+with the verifier where Solver A is **cross-family** — confounding solver family
+with solver–verifier relatedness on precisely the axis D-43 measured as large
+(candidate-ranking AUROC 0.6345 vs 0.5218; intransitivity 5.3% vs 52.6%). Put to
+the operator, who chose the three-family design.
+
+**B1 = `mistralai/Mistral-Small-3.1-24B-Instruct-2503` @ `68faf511…`;
+B2 = `google/gemma-4-31B-it` @ `842da379…`. No B3.** Selected on family
+independence, availability, ungated reproducibility, servability on the pinned
+SGLang 0.5.16 without a stack change, context feasibility and resource fit —
+never on accuracy, which did not exist for either candidate at freeze time. The
+newer Mistral-Small-3.2 was downloaded and rejected on inspection: it ships only
+a Mistral-format tokenizer and SGLang 0.5.16 has no `mistral` tokenizer mode.
+
+### 5. The gate: PASS, with the accuracy gap stated honestly
+
+24 already-consumed Phase-2B instances, 3 per family, selected label-free by
+keyed hash, with two fatal guards asserting no never-used instance is touched.
+24 executed in 735 s from commit `e40c773`, clean tree, 61 source hashes per
+trajectory, **no interface repair used**.
+
+| | B1 | Solver A (same 24) |
+| --- | ---: | ---: |
+| completion | **0.9583** | 0.9167 |
+| usable answer | **0.9167** | 0.8333 |
+| `solution_block_ok` | **1.0000** | 1.0000 |
+| degeneration | **0.0417** | 0.0833 |
+| infrastructure failure | **0.0000** | 0.0000 |
+| accuracy | 0.3750 | 0.5833 |
+| mean wall seconds | **106.5** | 309.7 |
+
+**No FAIL and no CAPABILITY-CONFOUNDED condition is met → PASS.**
+
+**The accuracy gap is not established at this n, and is not claimed.** Paired on
+the same 24 instances: difference **−0.2083, 95% CI [−0.4583, +0.0417]** (10,000
+instance-clustered replicates), exact McNemar on 11 discordant pairs
+**p = 0.2266**. The gate can establish that B1 is not a floor-effect solver —
+which is what it was built to decide — and cannot establish that it is weaker.
+§6.4's interpretation rule still binds: if the matched study shows Solver B
+materially weaker, that must be labelled, and normalized headroom recovery does
+not cure it.
+
+**A positive control on the bars:** Solver A's own K=1 trajectories on the same
+24 instances were run through the same adjudicator and also return PASS. A gate
+whose bars excluded the reference solver would be miscalibrated in the direction
+that matters most.
+
+### 6. What this does not license
+
+* **B2 was not run and must not be**, unless a *future* candidate meets the
+  frozen FAIL criterion. B1 passing closes the fallback branch.
+* **No fresh scope-study manifest exists.** Spending 120 of the 220 never-used
+  instances is an operator decision, and the main study needs its own
+  pre-registration — hypotheses, bars and stopping semantics frozen and committed
+  before its first trajectory, exactly as tonight's design was.
+* The gate's per-task cells hold **three instances**. Nothing in them supports a
+  per-task or per-tier claim, and in particular they are not a preview of the
+  verifiability secondary.
+* The 24-instance cross-solver error structure (6 both / 3 B1-only / 8 A-only /
+  7 neither) is reported only to show the matched comparison is **not
+  degenerate**. It is not a finding.
+
+**Reversal condition.** B1's freeze as Solver B reverses if a serving or
+scaffold defect specific to this checkpoint is later found to have depressed the
+gate — in which case the gate is re-run under the corrected configuration on the
+same 24 instances, and the correction is committed first. A disappointing
+accuracy in the matched study is **not** a reversal condition and does not
+reopen the choice.
