@@ -69,24 +69,67 @@ a positive control on the bars.
 Solver B. B2 (`gemma-4-31B-it`) was NOT run** — the frozen rule reaches it only
 through FAIL.
 
-### Current blockers / next actions
+Both approvals have since been granted; see below.
 
-1. **Operator approval** to spend 120 of the 220 never-used instances. **The
-   fresh manifest does not exist and must not be built without it.**
-2. The matched study needs **its own pre-registration** — hypotheses, bars,
-   stopping semantics — frozen and committed before its first trajectory.
-3. Proposed design in `reports/scope_study_preflight.md` Part E: ~120 fresh
-   instances, K=4 per solver, ~960 trajectories, ≈55 GPU-hours, same scaffold,
-   same frozen C1 gemma verifier.
+---
 
-### Server / allocation state, for the operator to decide
+## Matched scope study — FROZEN and RUNNING (2026-08-13, D-45)
 
-Job `3396219` on `c563-001`. The **Biomni-R0 server on GPUs 0–1 was stopped with
-operator approval** to serve B1 there; `Mistral-Small-3.1-24B` is now serving on
-:30000. The **`gemma-4-31B-it` server on GPUs 2–3 (:30010) is untouched and
-healthy**. No further experiment is running. **Terminating or reusing either
-server, and the remainder of the allocation, is left to the operator** — nothing
-else was started.
+**Pre-registration:** `reports/scope_study_preregistration.md`, committed
+**before the first trajectory existed**. **Full suite: 592 passed.**
+
+| item | value |
+| --- | --- |
+| population | **120 fresh** instances, 15 per eligible family, **zero overlap** with any prior work |
+| manifest | `manifests/scope_main.jsonl`, hash `89bf418928b4846f93cdaf7e3d009cffd8e0c514586fda05effd473353441457` |
+| pool left afterwards | **100** never-used instances |
+| Arm A | `biomni/Biomni-R0-32B-Preview` @ `71432eb3…`, K=4, 480 trajectories |
+| Arm B | `mistralai/Mistral-Small-3.1-24B-Instruct-2503` @ `68faf511…`, K=4, 480 trajectories |
+| verifier (Phase 2) | the **frozen Stage-C C1** `gemma-4-31B-it` @ `842da379…`, unchanged |
+
+**H1, its operational definition, the four-row verdict table, the −0.15
+capability-confound bar, the denominator guard and the stopping semantics are all
+fixed in advance.** Secondaries (verifiability tier, cross-solver error structure)
+stay secondary.
+
+### Resumability — the study is built to span allocations
+
+≈55 GPU-hours will not reliably fit one allocation, so the run **will** be
+interrupted. `scripts/scope_main_run.sh` is idempotent and safe to re-run on any
+new allocation or node:
+
+```bash
+scripts/scope_main_run.sh            # launch or resume on this node
+scripts/scope_main_run.sh --status   # progress only, starts nothing
+```
+
+It probes each port before launching a server, rewrites endpoints from the
+current hostname, and relies on the existing exact trajectory-level resume
+(`is_valid_complete` requires the marker **and** all four artifacts **and**
+`metadata.completed`).
+
+> **Standing instruction while the run is in flight: do not commit to this
+> repository.** `<output_root>/scope_main/LAUNCH.json` pins the launch commit and
+> manifest hash, and the launcher **refuses to resume** if HEAD has moved —
+> deliberately, so a multi-allocation run cannot repeat D-29 and end up with
+> trajectories spread across two trees. `--allow-commit-drift` exists, logs
+> loudly, and its use must be recorded.
+
+### Next actions
+
+1. **Phase 1** — 960 trajectories, both arms in parallel. Resume with the command
+   above on each new allocation until `--status` reads 480/480 on both arms.
+2. **Phase 2** — verifier scoring with the frozen C1 gemma. Needs the gemma server
+   back up and a capsule-builder adapter that changes **which** traces are read
+   and nothing about how they are scored.
+3. Analysis per pre-registration §5.
+
+### Server / allocation state
+
+Job `3396219` on `c563-001`. Serving for Phase 1: **Arm A Biomni-R0 on GPUs 0–1
+(:30000), Arm B Mistral on GPUs 2–3 (:30010)**. The `gemma-4-31B-it` verifier
+server was stopped to free GPUs for Arm A; it is not needed until Phase 2 and is
+relaunchable from `scripts/launch_sglang_server.sh`.
 
 ---
 

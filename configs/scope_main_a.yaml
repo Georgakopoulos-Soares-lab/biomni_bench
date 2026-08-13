@@ -1,0 +1,91 @@
+# Matched scope study -- ARM A (Solver A, the incumbent).
+#
+# Frozen by reports/scope_study_preregistration.md before any trajectory existed.
+# Identical to configs/scope_main_b.yaml in every field except model identity:
+# same 120 instances, same K, same temperature, max_tokens, confidence mode,
+# served context, retriever, timeouts, retry policy and seeds. Every comparison
+# in the study is paired on the instance, so the configuration must not vary.
+# Frozen by reports/scope_study_preflight.md SS4-SS6 before any B1 trajectory existed.
+#
+# Everything that CAN be matched to Solver A (Biomni-R0-32B, experiment phase2b)
+# is matched, so that a gate difference is attributable to the model rather than
+# to the configuration around it: temperature, max_tokens, confidence mode,
+# served context length, tool retriever, timeouts, retry policy and seeding all
+# carry Solver A's values. The three things that differ are the model, its
+# revision, and K -- the gate spends one trajectory per instance, not four.
+
+experiment:
+  name: scope_main_a
+  seed: 20260813
+  output_root: ${BIOMNI_UNC_OUTPUT_ROOT:-./runs}
+
+benchmark:
+  dataset: biomni/Eval1
+  parquet_uri: hf://datasets/biomni/Eval1/biomni_eval1_dataset.parquet
+  local_parquet: ${BIOMNI_UNC_EVAL1_PARQUET:-}
+  # The gate manifest is built by scripts/prepare_scope_gate_manifest.py from an
+  # explicit list of ALREADY-CONSUMED phase2b instances, never by the balanced
+  # sampler below. These fields exist only to satisfy the schema.
+  target_total_instances: 120
+  per_task_target: 15
+  preferred_split: val
+  manifest_seed: 20260813
+  exclude_tasks: []
+  max_prompt_chars: null
+
+model:
+  identifier: biomni/Biomni-R0-32B-Preview
+  revision: 71432eb3d5e583bee757e0f9437a17e711e8e3d1
+  source: Custom
+  # Biomni's own default, and Solver A's value. Not tuned.
+  temperature: 0.7
+  max_tokens: 8192
+  request_timeout_seconds: 1800
+  # D-04/D-17: native max_position_embeddings is 40960, served at 65536 with the
+  # model card's YaRN override at factor 1.0 (an identity transform on the RoPE
+  # frequencies that only lifts the position ceiling). Unchanged from phase2b.
+  context_length: 65536
+  dtype: bfloat16
+  json_model_override_args: '{"rope_scaling":{"rope_type":"yarn","factor":1.0,"original_max_position_embeddings":32768}, "max_position_embeddings": 131072}'
+  request_seed_enabled: true
+
+confidence:
+  mode: final_only
+  open_delimiter: "<BIOMNI_CONFIDENCE>"
+  close_delimiter: "</BIOMNI_CONFIDENCE>"
+  epsilon: 0.001
+
+trajectories:
+  # K=1 per instance. The gate measures whether the scaffold can be operated at
+  # all; it is not a reliability-detection experiment and must not be read as one.
+  instrumented_k: 4
+  standard_k: 0
+  seed_base: 1000
+
+execution:
+  max_concurrency: 4
+  run_timeout_seconds: 3600
+  tool_timeout_seconds: 600
+  scratch_root: ${BIOMNI_UNC_SCRATCH:-/tmp/biomni_unc_scratch}
+  data_path: ${BIOMNI_PATH:-./biomni_data_root}
+  use_tool_retriever: true
+  retry_policy:
+    max_attempts: 2
+    retryable_failure_classes:
+      - model_server_failure
+      - model_timeout
+      - external_resource_failure
+    backoff_seconds: 20.0
+
+logging:
+  stdout_limit: 4000
+  stderr_limit: 4000
+  max_event_payload_chars: 20000
+
+analysis:
+  bootstrap_replicates: 2000
+  bootstrap_seed: 20260813
+  calibration_bins: 5
+  primary_length_field: total_output_tokens
+  binary_reward_threshold: 0.5
+  srlm_epsilon: 0.001

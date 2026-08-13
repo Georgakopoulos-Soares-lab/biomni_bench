@@ -2294,3 +2294,93 @@ gate — in which case the gate is re-run under the corrected configuration on t
 same 24 instances, and the correction is committed first. A disappointing
 accuracy in the matched study is **not** a reversal condition and does not
 reopen the choice.
+
+---
+
+## D-45 The matched scope study is frozen and launched, built to survive allocation expiry
+
+**Decided:** 2026-08-13, **before the first `scope_main` trajectory existed.**
+Pre-registration: `reports/scope_study_preregistration.md`. Population:
+`manifests/scope_main.jsonl` (hash `89bf4189…`). Launcher:
+`scripts/scope_main_run.sh`. Tests: `tests/test_scope_main.py` (15).
+
+> **Headline.** 120 fresh instances, 15 per eligible family, **zero overlap**
+> with any prior work, spending 120 of the 220 never-used and leaving **100**.
+> Both solvers get the identical manifest, K=4, **960 trajectories**. H1, its
+> operational definition, the verdict table, the capability-confound bar and the
+> stopping semantics are all fixed in advance. The run is **designed to span
+> allocations**, and the provenance guard that makes that safe is the reason
+> this entry exists.
+
+### 1. Why the operator's green light changed the scope
+
+The preflight deliberately withheld the fresh manifest: spending 120 irreplaceable
+instances on a solver whose scaffold capability was unproven would have been the
+expensive mistake. D-44 resolved that — B1 PASSED, and operates the scaffold more
+cleanly than the incumbent. With the uncertainty discharged, holding the pool back
+buys nothing, and the operator authorised the study.
+
+### 2. The design decision that mattered: one tree for a multi-allocation run
+
+≈55 GPU-hours of trajectory time will not reliably fit one allocation, so the run
+**will** be interrupted and resumed. That is precisely the condition that produced
+D-29 — a prospective run whose execution commit could not afterwards be named.
+
+Three mechanisms, enforced rather than intended:
+
+* **Trajectory-level resume is exact.** `sampling.pending_specs` skips a run only
+  when its COMPLETE marker exists **and** all four artifacts are present **and**
+  `metadata.completed` is true; a trajectory interrupted mid-write is re-run, not
+  silently skipped. This already existed and is relied on, not reinvented.
+* **`LAUNCH.json` pins the tree.** First launch records the commit and manifest
+  hash; every resume **refuses** if HEAD moved or the manifest changed.
+  `--allow-commit-drift` exists, logs loudly, and a run using it is no longer
+  attributable to one tree. **Standing instruction: do not commit while the run
+  is in flight.**
+* **The D-36 dirty-tree guard is never bypassed**, on first launch or on resume.
+
+The launcher is also idempotent about serving: it probes each port before
+launching, rewrites endpoints from the *current* hostname (the one thing that
+genuinely changes between allocations), and extracts the serving override from
+YAML via python rather than writing JSON braces in bash — D-43 lost a server start
+to exactly that shell bug, and it cannot recur here.
+
+### 3. What is fixed in advance
+
+* **H1** — the separation replicates iff, for **both** solvers, detection is
+  established (agreement→correctness AUROC CI lower bound > 0.5) and correction
+  is **not** (verifier absolute gain CI lower bound > 0). Four-row verdict table:
+  REPLICATED / NOT REPLICATED (correction solver-specific) / NOT REPLICATED
+  (detection absent for B) / MIXED.
+* **Capability-confound bar** — paired Pass@1 difference (B − A) with 95% CI
+  upper bound < **−0.15** labels the cross-family claim CAPABILITY-CONFOUNDED.
+  The difference and CI are reported either way. The gate's n=24 estimate was
+  −0.2083 [−0.4583, +0.0417]: past the bar with an interval spanning it, which
+  is why the gate is explicitly **not** the test.
+* **Denominator guard** carried unchanged from the preflight.
+* **Secondaries stay secondary**: the tier analysis is descriptive with tier and
+  task identity confounded at both extremes, and the cross-solver overlap is
+  reported against a chance-overlap baseline from each solver's own marginal —
+  overlap that merely reflects two marginals is not shared difficulty.
+
+### 4. Two phases, and what Phase 2 may not change
+
+Phase 1 is the 960 trajectories. Phase 2 is verifier scoring with the **frozen
+Stage-C C1** gemma at unchanged port, capsule allowlist, criteria, granularity,
+repeats and aggregation. Phase 2 needs an adapter so the capsule builder reads
+`scope_main_{a,b}` trees rather than `phase2b`/`phase1_pooled`; that adapter
+changes **which traces are read and nothing about how they are scored**. Any
+verifier parameter that turns out to need changing is a new pre-registration.
+
+### 5. What this does not license
+
+No instances added after a result is seen, no K>4, no third solver, no second
+verifier, no pooling of arms, no best-arm reporting, no bar movement, and no
+re-run of a completed arm. Resuming an interrupted dispatch is infrastructure
+recovery and is expected by design.
+
+**Reversal condition.** The population and both arms are frozen. A serving or
+scaffold defect discovered mid-run that demonstrably corrupts one arm would
+require discarding that arm's affected trajectories and re-running **them**, with
+the defect and the fix committed first — never a silent re-run, and never a
+change to the manifest, which is a new experiment by definition.
