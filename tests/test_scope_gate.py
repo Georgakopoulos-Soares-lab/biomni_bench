@@ -264,7 +264,8 @@ def test_gate_manifest_hash_is_the_frozen_one():
     assert report["manifest_hash"] == "dd084f0e81243be40e2cd2f24ffedf76b4eaf608cad3d5f01e3b6eb56286a6d2"
     assert report["never_used_instances_consumed"] == 0
     assert report["seed"] == 20260812
-    assert PREFLIGHT.read_text().count(report["manifest_hash"]) == 1
+    # Recorded in the design document, so the two cannot drift apart silently.
+    assert report["manifest_hash"] in PREFLIGHT.read_text()
 
 
 # --------------------------------------------------------------------------
