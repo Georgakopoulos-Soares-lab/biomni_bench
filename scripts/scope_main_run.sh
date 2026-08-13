@@ -160,12 +160,22 @@ PY
 fi
 
 # ---------------------------------------------------------------------------
-# run manifests (idempotent; expand-runs is deterministic)
+# run manifests must already exist and be COMMITTED
+#
+# The launcher used to generate these on first run. That was wrong twice over:
+# it dirtied the tree, which the resume guard above then refuses; and a run
+# manifest is a frozen artifact in this project (manifests/phase1_runs.jsonl is
+# tracked for exactly this reason) because run IDs and run directories derive
+# from it. Generating it at launch would mean the mapping from instance to run
+# directory was never reviewed and never committed.
 # ---------------------------------------------------------------------------
 for arm in a b; do
   if [[ ! -f "${ARM_RUNS[$arm]}" ]]; then
-    "$AGENT_PY" -m biomni_uncertainty.cli expand-runs \
-      --config "${ARM_CONFIG[$arm]}" --manifest "$MANIFEST" --output "${ARM_RUNS[$arm]}"
+    echo "REFUSING: ${ARM_RUNS[$arm]} does not exist." >&2
+    echo "  Freeze it first, then commit it:" >&2
+    echo "    $AGENT_PY -m biomni_uncertainty.cli expand-runs \\" >&2
+    echo "        --config ${ARM_CONFIG[$arm]} --manifest $MANIFEST --output ${ARM_RUNS[$arm]}" >&2
+    exit 2
   fi
 done
 

@@ -188,3 +188,33 @@ def test_launcher_verifies_the_SERVED_MODEL_not_just_a_healthy_port():
     # both arms' snapshot paths must appear, so the probe has something to match
     assert "71432eb3d5e583bee757e0f9437a17e711e8e3d1" in s
     assert "68faf511d618ef198fef186659617cfd2eb8e33a" in s
+
+
+def test_launcher_requires_committed_run_manifests():
+    """Run manifests are frozen artifacts, not something a launcher invents.
+
+    Generating them at launch dirtied the tree, which the launcher's own resume
+    guard then refuses -- and it meant the instance -> run-directory mapping was
+    never reviewed or committed.
+    """
+    s = (ROOT / "scripts" / "scope_main_run.sh").read_text()
+    assert "REFUSING: ${ARM_RUNS[$arm]} does not exist." in s
+    assert "expand-runs" in s
+    for arm in ("a", "b"):
+        assert (ROOT / "manifests" / f"scope_main_{arm}_runs.jsonl").exists()
+
+
+def test_run_manifests_cover_120_instances_at_k4_with_matching_run_dirs():
+    for arm, exp in (("a", "scope_main_a"), ("b", "scope_main_b")):
+        specs = _entries(ROOT / "manifests" / f"scope_main_{arm}_runs.jsonl")
+        assert len(specs) == 480
+        assert len({(s["task_name"], s["task_instance_id"]) for s in specs}) == 120
+        assert {s["trajectory_index"] for s in specs} == {0, 1, 2, 3}
+        assert all(s["experiment_id"] == exp for s in specs)
+        assert all(f"/{exp}/" in s["run_dir"] for s in specs)
+
+
+def test_both_arms_target_the_same_instances():
+    a = {(s["task_name"], s["task_instance_id"]) for s in _entries(ROOT / "manifests" / "scope_main_a_runs.jsonl")}
+    b = {(s["task_name"], s["task_instance_id"]) for s in _entries(ROOT / "manifests" / "scope_main_b_runs.jsonl")}
+    assert a == b, "the matched design requires identical instances in both arms"
