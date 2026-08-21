@@ -2565,3 +2565,77 @@ of this data. The §4 mechanism finding is a flagged design defect, not a
 reversal condition of any conclusion above; fixing it and re-running is new
 work, subject to its own north-star check, exactly as D-43's and D-45's
 reversal conditions already state for this line of study.
+
+---
+
+## D-47 RL-signal preflight opened: pre-registration frozen before any mixed-reward number exists
+
+**Decided:** 2026-08-21. Design: `reports/rl_signal_preflight_preregistration.md`.
+No `mixed_reward`, AUROC, enrichment ratio, or simulation number has been
+computed as of this entry.
+
+**What this is.** A new, third question on top of the scope study's frozen
+120-instance / K=4 / two-solver-family trajectory set (D-44/D-45/D-46), which
+is **reused as data, not reopened as a decision**. The scope study asked (1)
+does agreement detect correctness, and (2) does a verifier correct errors — and
+answered both (detection generalizes, correction doesn't robustly). This asks
+a genuinely different question: does the same agreement signal identify
+prompts whose K=4 rollouts contain useful within-prompt reward variation — the
+raw material a GRPO-style update needs. Not "sample uncertain prompts more at
+inference time" (already failed prospectively, Phase 2B/D-26) — this is about
+which prompts are informative **for training**, evaluated offline from
+already-consumed trajectories only.
+
+**Verified before writing the predictor definition, not assumed:** every one of
+the 120 instances in both arms has exactly 4 trajectory rows in
+`results/tables/instrumented.csv`, including every terminal
+`model_context_overflow` failure, each scored `reward=0.0` and given its own
+singleton cluster key. The reward vector is therefore always a full length-4
+vector for every instance in both arms with no exclusion and no special case —
+checked directly against the aggregated tables before the representation
+choice was written into the preregistration, per the brief's explicit
+instruction not to silently drop or hand-wave terminal failures.
+
+**Primary predictor: `plurality_fraction`** (already computed by
+`features.compute_consistency`, already written to `results/tables/
+instances.csv`) — the per-instance analogue of the trajectory-level
+`agreement_fraction` signal that carried Phase 1's and the scope study's own
+detection results. `U = 1 - plurality_fraction`, a monotonic re-expression
+only. No new learned uncertainty score. `pairwise_agreement` is a labelled
+secondary robustness check and never enters the GO rule.
+
+**GO rule, frozen as a compound bar, not a bare AUROC point estimate**, per
+arm independently:
+
+* (a) `AUROC(U, mixed_reward)` 95% CI (10,000 instance-bootstrap replicates,
+  seed 20260821) **lower bound > 0.5**;
+* (b) the lowest-agreement natural stratum (`plurality_fraction == 0.25`,
+  fixed now rather than an arbitrary quantile cut, since the K=4 predictor
+  only takes 4 distinct values) shows `P(mixed_reward)` enrichment **≥ 1.5x**
+  the base rate, with the stratum's own CI lower bound exceeding the base
+  rate;
+* (c) in the offline simulation, uncertainty-ranked sampling at a **25%**
+  budget captures more `mixed_reward` instances than uniform's CI-supported
+  expectation at that budget.
+
+**Denominator guard**: fewer than 10 `mixed_reward` instances in an arm →
+INCONCLUSIVE regardless of point estimates, in the spirit of D-44/45/46's
+normalized-recovery guard. **NO-GO** requires either no CI-supported
+discrimination at all, or the high-uncertainty stratum performing at or below
+chance enrichment (actively uninformative, not merely weak).
+
+**Cross-solver interpretation table fixed now** (§7 of the preregistration):
+GO+GO licenses a cross-solver uncertainty-guided-RL hypothesis; GO on one arm
+only narrows the claim to that solver; NO-GO/INCONCLUSIVE on both means the
+current uncertainty-guided curriculum hypothesis does not proceed.
+
+**What this does not authorise.** A GO here authorises drafting an RL protocol
+(epoch-1-identical, prompt-prioritization-only intervention, already scoped in
+the accompanying report) — never launching training, which needs its own
+explicit operator approval. No Stage-C, adjudication, diversity-by-resampling,
+or adaptive-K branch is reopened.
+
+**Reversal condition.** None applies to the frozen predictor, outcome, or GO
+thresholds — they are checked against the result, not adjusted by it. A
+different predictor or bar would be new work, subject to its own
+pre-registration, exactly as this project requires everywhere else.
