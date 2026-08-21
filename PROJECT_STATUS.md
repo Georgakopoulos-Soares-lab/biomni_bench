@@ -1,15 +1,59 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-21 (**The matched scope-and-boundary study is
-COMPLETE. H1 NOT REPLICATED — correction is solver-specific.** Both solvers show
-reliability detection established (AUROC 0.90 / 0.81); error correction via the
-frozen Stage-C verifier is established for the incumbent solver (Biomni-R0,
-gain +0.083 CI clear of 0) and not for the independent one (Mistral, gain
-−0.017, null). A verified mechanism finding qualifies the incumbent's result:
-restricted to genuinely-contested candidates its gain CI no longer excludes
-zero. **D-43 / Stage C remains CLOSED and untouched throughout.** See *Matched
-scope study* below and **D-46**. No further experiment was started; all GPU
-servers are shut down. Previously, 2026-08-13:)
+**Last updated:** 2026-08-21 (**RL-signal preflight COMPLETE: both arms
+NO-GO.** Agreement-based uncertainty (`plurality_fraction`) does **not**
+identify prompts with useful within-prompt reward variation, for either
+Biomni-R0 or Mistral, on the frozen 120-instance scope-study population. Both
+arms show the same non-monotonic pattern: enrichment peaks at *moderate*
+disagreement and falls to at-or-below chance at *maximal* disagreement — the
+stratum a naive prioritization policy would target. **The current
+uncertainty-guided curriculum hypothesis does not proceed for either solver.**
+No RL protocol drafted, no harness engineering started, per the brief's own
+"only if GO" instruction. See *RL-signal preflight* below and **D-48**.
+Reminder: `agreement → correctness` (D-46, established) and `agreement → RL
+reward contrast` (this entry, NOT established) are separate findings, not
+conflated. Previously, 2026-08-21 (scope study complete, D-46):)
+
+---
+
+## RL-signal preflight — COMPLETE, both arms NO-GO (2026-08-21, D-48)
+
+**Pre-registration:** `reports/rl_signal_preflight_preregistration.md`, frozen
+`ad0af40` before any `mixed_reward` number existed. **Full suite: 623 passed.**
+
+Reuses the scope study's frozen 120-instance/K=4 trajectory set as data only —
+no new inference, no new instance. Question: does agreement-based uncertainty
+identify prompts whose rollouts carry useful within-prompt reward variation
+(the raw material a GRPO update needs), as distinct from whether it detects
+correctness (already answered, D-46).
+
+| | Arm A (Biomni-R0) | Arm B (Mistral) |
+| --- | ---: | ---: |
+| n_mixed_reward / all_correct / all_wrong | 67 / 28 / 25 | 47 / 20 / 53 |
+| AUROC(U, mixed_reward) | **0.685** [0.577, 0.786] | 0.594 [0.496, 0.690] |
+| (a) discrimination CI-supported | **yes** | no |
+| highest-uncertainty-stratum enrichment | 0.96x | 0.85x |
+| (b) enrichment ≥ 1.5x, CI-supported | no | no |
+| (c) 25%-budget capture beats uniform | no | no |
+| **verdict** | **NO-GO** | **NO-GO** |
+
+**The stratum table is the finding, not a footnote.** Both solvers show the
+same inverted-U: enrichment peaks at *moderate* disagreement (1.4–1.6x) and
+falls back to at-or-below baseline at *maximal* (four-way) disagreement — the
+exact stratum a "sample the most uncertain prompts" policy would target, and
+the one fixed in advance for the GO check, precisely to prevent picking the
+best-looking stratum after seeing the table.
+
+**Steps requiring a GO were not performed**: no RL protocol drafted, no
+matched-compute design, no post-RL evaluation plan, no harness engineering.
+**A descriptive (not GO-licensed) model note**: Biomni-R0's prompt pool
+carries more GRPO-learnable signal on this population (55.8% mixed-reward,
+20.8% all-wrong — dead weight for GRPO) than Mistral's (39.2% mixed-reward,
+44.2% all-wrong), at the cost of ~2.9x slower rollouts and a higher
+context-overflow rate. This bears on a *plain* uniform-sampling GRPO run, not
+on the (unsupported) uncertainty-guided one.
+
+**No RL training, no new experiment. All prior GPU servers remain shut down.**
 
 ---
 

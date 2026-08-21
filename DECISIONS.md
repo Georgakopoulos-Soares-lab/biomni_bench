@@ -2639,3 +2639,156 @@ or adaptive-K branch is reopened.
 thresholds — they are checked against the result, not adjusted by it. A
 different predictor or bar would be new work, subject to its own
 pre-registration, exactly as this project requires everywhere else.
+
+---
+
+## D-48 RL-signal preflight COMPLETE: both arms NO-GO — uncertainty does not identify RL-informative prompts
+
+**Decided:** 2026-08-21. Design: `reports/rl_signal_preflight_preregistration.md`
+(frozen `ad0af40`, before any `mixed_reward` number existed). Drivers:
+`scripts/rl_signal_preflight_analyze.py`, `rl_signal_prioritization_sim.py`,
+`rl_signal_verdict.py`. Artifacts: `reports/tables/rl_signal_preflight/
+rl_signal_final_verdict.json`, `<output_root>/rl_signal_preflight/
+rl_signal_{report,simulation}_{a,b}.json`, `rl_signal_per_instance_{a,b}.csv`,
+`rl_signal_budget_curve_{a,b}.csv`.
+
+> **Headline.** Offline analysis of the scope study's already-frozen 120-
+> instance/K=4 trajectory set (D-44/45/46), reused as data only. **Both arms
+> return NO-GO** on the frozen compound rule. Arm A (Biomni-R0) shows real,
+> CI-supported rank discrimination (AUROC 0.685, CI [0.577, 0.786]) but **the
+> pre-registered highest-uncertainty stratum shows enrichment at or below
+> chance** (0.96x). Arm B (Mistral) shows neither CI-supported discrimination
+> (AUROC 0.594, CI [0.496, 0.690] — lower bound just under 0.5) nor enrichment
+> (0.85x). **Both arms show the identical non-monotonic (inverted-U) pattern**:
+> full agreement is structurally never mixed; enrichment peaks at *moderate*
+> disagreement (1.4–1.6x); and falls back to at-or-below baseline at *maximal*
+> disagreement — the stratum a naive "sample the most uncertain prompts" policy
+> would actually target. **The current uncertainty-guided curriculum
+> hypothesis is not supported and does not proceed for either solver.**
+
+### 1. Population and representation — verified, not assumed
+
+The scope study's 120 instances per arm, reused wholesale — no new instance,
+no new inference. Verified directly against `results/tables/instrumented.csv`
+before the predictor was even defined: every instance in both arms has
+**exactly 4 trajectory rows**, including every terminal
+`model_context_overflow` failure, each scored `reward=0.0` with its own
+singleton cluster key. The reward vector is therefore a full length-4 vector
+for all 120 instances in both arms, with **no exclusion and no special case**
+— `mixed_reward`, `reward_variance`, `oracle_positive` and `selection_failure`
+apply uniformly.
+
+### 2. Primary predictor and outcome, exactly as frozen
+
+`U = 1 - plurality_fraction` (already computed by `features.compute_
+consistency`, the per-instance analogue of the trajectory-level
+`agreement_fraction` signal behind every prior detection result in this
+project). `mixed_reward := 0 < sum(r) < 4`. No new learned uncertainty score.
+
+### 3. Per-arm numbers
+
+| | Arm A (Biomni-R0) | Arm B (Mistral) |
+| --- | ---: | ---: |
+| n_mixed_reward / n_all_correct / n_all_wrong | 67 / 28 / 25 | 47 / 20 / 53 |
+| base rate `P(mixed_reward)` | 0.558 | 0.392 |
+| **AUROC(U, mixed_reward)** | **0.685**, CI [0.577, 0.786] | 0.594, CI [0.496, 0.690] |
+| **(a) discrimination CI-supported** | **yes** | no |
+| highest-uncertainty stratum (`agreement=0.25`) `P(mixed_reward)` | 0.536, CI [0.357, 0.714] | 0.333, CI [0.205, 0.487] |
+| enrichment ratio at that stratum | **0.959** | **0.851** |
+| **(b) enrichment ≥ 1.5x, CI-supported** | **no** | no |
+| 25%-budget capture diff (uncertainty − uniform expectation) | −0.75, CI [−4.75, 4.75] | −0.75, CI [−5.5, 4.25] |
+| **(c) budget-verified capture** | **no** | no |
+| reward-variance Spearman ρ | 0.337, CI [0.161, 0.507] | 0.154, CI [−0.006, 0.312] |
+| selection-failure rate / AUROC | 0.175 / 0.760 [0.664, 0.844] | 0.150 / 0.656 [0.544, 0.761] |
+
+**Verdict, per arm, per the frozen rule: NO-GO, NO-GO.**
+
+### 4. The stratum table is the important finding, not a footnote
+
+| agreement level (`plurality_fraction`) | Arm A `P(mixed)` | Arm A enrichment | Arm B `P(mixed)` | Arm B enrichment |
+| --- | ---: | ---: | ---: | ---: |
+| 1.00 (unanimous) | 0.000 | 0.00x | 0.000 | 0.00x |
+| 0.75 | 0.844 | **1.51x** | 0.591 | **1.51x** |
+| 0.50 | 0.781 | **1.40x** | 0.636 | **1.62x** |
+| 0.25 (maximal disagreement) | 0.536 | 0.96x | 0.333 | 0.85x |
+
+`agreement=1.0` is **structural, not empirical**: if all four trajectories
+share one canonical answer they share one reward, so `mixed_reward` is
+impossible by construction — this row is a check on the definition, not a
+finding. The finding is the **hump shape** across the other three: both
+solvers peak at *moderate* disagreement (one clear majority plus a minority,
+or two even pairs) and *decline* at maximal (four-way) disagreement, where a
+plausible mechanism is that four genuinely different guesses are often four
+different wrong answers on hard multi-candidate tasks (`gwas_variant_
+prioritization`, `screen_gene_retrieval`), not "some right, some wrong."
+
+**This is exactly why the pre-registered stratum, fixed before any number
+existed, was the maximal-disagreement one — and exactly why the compound GO
+rule does not reduce to a bare AUROC check.** Arm A's AUROC alone (0.685,
+clearing its CI bar) would read as real signal; picking the *best-performing*
+stratum after seeing this table (`agreement=0.75`, 1.51x) instead of the
+pre-registered one would have been exactly the bar-shopping this document was
+frozen to prevent. The frozen stratum is reported, and it fails.
+
+### 5. What this does and does not conflate
+
+Restated because the brief is explicit about it: **`agreement → correctness`
+(D-46: AUROC 0.896 / 0.814, both established) and `agreement → RL reward
+contrast` (this entry: NO-GO, NO-GO) are separate findings and are not
+conflated.** The first is a detection result about individual trajectories'
+correctness. The second is a prompt-level result about whether the same
+signal identifies useful within-prompt training variation. They can, and here
+do, point in different directions — a real detection signal does not imply a
+useful curriculum signal.
+
+### 6. Steps 6–8, 10 (RL protocol draft, matched-compute design, post-RL
+evaluation plan, harness engineering) — not performed, per the brief's own
+"if and only if GO" instruction
+
+No RL protocol was drafted. No harness engineering was started. Nothing about
+Agent Lightning/verl integration exists in this repository as of this entry.
+This is a deliberate stop, not an oversight: the brief is explicit that these
+steps are conditional on a GO, and both arms returned NO-GO.
+
+### 7. Model recommendation — descriptive only, not licensed by any GO
+
+Offered because the brief requests it regardless of outcome, and scoped
+honestly: **this is not a recommendation for uncertainty-guided RL** (nothing
+licenses that for either solver). It is a descriptive comparison of which
+solver's prompt pool carries more learnable signal for a **plain,
+uniform-sampling** GRPO run, if the operator chooses to pursue one despite
+this preflight's result.
+
+**Biomni-R0's prompt pool carries substantially more GRPO-learnable signal on
+this population**: 55.8% mixed-reward vs Mistral's 39.2%, and — the more
+important number for GRPO specifically, where an all-wrong group contributes
+exactly zero policy-gradient signal at every step it is sampled — Biomni-R0's
+all-wrong rate is 20.8% against **Mistral's 44.2%**. Nearly half of Mistral's
+prompt pool on this population is dead weight for GRPO; Biomni-R0's is a
+quarter. Against this: Biomni-R0 is ~2.9x slower per trajectory and has a
+higher context-overflow rate (18.5% vs 12.9%, D-46), both real engineering
+costs at RL scale, and Mistral's smaller footprint is easier on rollout+
+training GPU memory. **On the numbers actually in hand, Biomni-R0 is the more
+RL-training-rich substrate for a plain GRPO experiment on this task pool**; the
+speed and memory costs are real and should weigh into any actual compute
+budget, not into which pool has more signal to learn from.
+
+### 8. What this rules out and what remains open
+
+* **Ruled out**: the specific hypothesis that agreement-based uncertainty
+  (via `plurality_fraction`) identifies which prompts are RL-informative, for
+  either Biomni-R0 or Mistral, on this population. Not ruled out: some other
+  operationalization of uncertainty (e.g. a signal specifically sensitive to
+  the moderate-disagreement regime rather than monotonic in disagreement)
+  might behave differently — but that would be a new predictor and a new,
+  separately pre-registered study, not a re-analysis of this one.
+* **Not addressed at all**: whether a *uniform-sampling* GRPO run would work
+  on either solver. This preflight only tested whether uncertainty *improves
+  targeting* over uniform sampling — it says nothing about whether RL itself
+  would help, which remains an open, separate, and much larger question.
+
+**Reversal condition.** None applies to the frozen predictor, outcome, or GO
+thresholds — checked against the result, not adjusted by it, exactly as
+D-47 states. A different predictor, a non-monotonic-aware stratification
+scheme, or a different outcome definition (e.g., graded rather than binary
+mixed-reward) would be new work, subject to its own pre-registration.
