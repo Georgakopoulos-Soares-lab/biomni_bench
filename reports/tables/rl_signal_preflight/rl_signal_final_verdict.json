@@ -1,0 +1,863 @@
+{
+  "arm_a": {
+    "reasons": [
+      "(a) discrimination CI-supported: True",
+      "(b) high-uncertainty-stratum enrichment: False",
+      "(c) budget-verified capture: False",
+      "denominator guard clear (n_mixed=67 >= 10): True"
+    ],
+    "report": {
+      "arm": "a",
+      "base_rate_mixed_reward": 0.5583,
+      "bootstrap": {
+        "replicates": 10000,
+        "seed": 20260821,
+        "unit": "instance"
+      },
+      "denominator_guard": {
+        "guard_clear": true,
+        "min_mixed_reward_n": 10,
+        "observed_n_mixed": 67
+      },
+      "go_condition_a_discrimination": true,
+      "go_condition_b_enrichment": false,
+      "high_uncertainty_stratum": {
+        "U_level": 0.75,
+        "agreement_level": 0.25,
+        "ci95": [
+          0.35714285714285715,
+          0.7142857142857143
+        ],
+        "enrichment_ratio": 0.9594882729211087,
+        "n": 28,
+        "p_mixed_reward": 0.5357142857142857
+      },
+      "n_all_correct": 28,
+      "n_all_wrong": 25,
+      "n_instances": 120,
+      "n_mixed_reward": 67,
+      "primary_auroc_U_mixed_reward": {
+        "auroc": 0.6852999155167558,
+        "ci95": [
+          0.5771593627929089,
+          0.7863891216089365
+        ],
+        "n": 120
+      },
+      "reward_variance_spearman": {
+        "ci95": [
+          0.1609022152176667,
+          0.5066192226281546
+        ],
+        "rho": 0.33690661552366763
+      },
+      "secondary_auroc_U2_mixed_reward": {
+        "auroc": 0.6843142776682625,
+        "ci95": [
+          0.5762806693306693,
+          0.785775818478616
+        ],
+        "n": 120
+      },
+      "selection_failure_auroc": {
+        "auroc": 0.7597402597402597,
+        "ci95": [
+          0.6638090225563911,
+          0.8438060382376775
+        ],
+        "n": 120
+      },
+      "selection_failure_rate": {
+        "ci95": [
+          0.10833333333333334,
+          0.25
+        ],
+        "n": 120,
+        "rate": 0.175
+      },
+      "uncertainty_strata": [
+        {
+          "U_level": 0.0,
+          "agreement_level": 1.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "enrichment_ratio": 0.0,
+          "n": 28,
+          "p_mixed_reward": 0.0
+        },
+        {
+          "U_level": 0.25,
+          "agreement_level": 0.75,
+          "ci95": [
+            0.71875,
+            0.96875
+          ],
+          "enrichment_ratio": 1.5111940298507462,
+          "n": 32,
+          "p_mixed_reward": 0.84375
+        },
+        {
+          "U_level": 0.5,
+          "agreement_level": 0.5,
+          "ci95": [
+            0.625,
+            0.90625
+          ],
+          "enrichment_ratio": 1.3992537313432836,
+          "n": 32,
+          "p_mixed_reward": 0.78125
+        },
+        {
+          "U_level": 0.75,
+          "agreement_level": 0.25,
+          "ci95": [
+            0.35714285714285715,
+            0.7142857142857143
+          ],
+          "enrichment_ratio": 0.9594882729211087,
+          "n": 28,
+          "p_mixed_reward": 0.5357142857142857
+        }
+      ]
+    },
+    "simulation": {
+      "arm": "a",
+      "bootstrap": {
+        "replicates": 10000,
+        "seed": 20260821,
+        "unit": "instance"
+      },
+      "budget_25pct": {
+        "budget_n": 30,
+        "ci95": [
+          -4.75,
+          4.75
+        ],
+        "uncertainty_minus_uniform_expected_capture": -0.75
+      },
+      "budget_curve": [
+        {
+          "budget_fraction": 0.05,
+          "budget_n_instances": 6,
+          "enrichment_uncertainty_over_uniform": 0.6028636021100227,
+          "mixed_per_100_prompts_uncertainty": 33.33,
+          "mixed_per_100_prompts_uniform": 55.29,
+          "oracle_capture": 6,
+          "uncertainty_capture": 2,
+          "uniform_ci95": [
+            1.0,
+            6.0
+          ],
+          "uniform_mean_capture": 3.3175
+        },
+        {
+          "budget_fraction": 0.1,
+          "budget_n_instances": 12,
+          "enrichment_uncertainty_over_uniform": 0.7455453664355476,
+          "mixed_per_100_prompts_uncertainty": 41.67,
+          "mixed_per_100_prompts_uniform": 55.89,
+          "oracle_capture": 12,
+          "uncertainty_capture": 5,
+          "uniform_ci95": [
+            3.0,
+            10.0
+          ],
+          "uniform_mean_capture": 6.7065
+        },
+        {
+          "budget_fraction": 0.15,
+          "budget_n_instances": 18,
+          "enrichment_uncertainty_over_uniform": 0.7977185250184472,
+          "mixed_per_100_prompts_uncertainty": 44.44,
+          "mixed_per_100_prompts_uniform": 55.71,
+          "oracle_capture": 18,
+          "uncertainty_capture": 8,
+          "uniform_ci95": [
+            6.0,
+            14.0
+          ],
+          "uniform_mean_capture": 10.0286
+        },
+        {
+          "budget_fraction": 0.2,
+          "budget_n_instances": 24,
+          "enrichment_uncertainty_over_uniform": 1.0445656472203362,
+          "mixed_per_100_prompts_uncertainty": 58.33,
+          "mixed_per_100_prompts_uniform": 55.84,
+          "oracle_capture": 24,
+          "uncertainty_capture": 14,
+          "uniform_ci95": [
+            9.0,
+            18.0
+          ],
+          "uniform_mean_capture": 13.4027
+        },
+        {
+          "budget_fraction": 0.25,
+          "budget_n_instances": 30,
+          "enrichment_uncertainty_over_uniform": 0.9541814018117519,
+          "mixed_per_100_prompts_uncertainty": 53.33,
+          "mixed_per_100_prompts_uniform": 55.89,
+          "oracle_capture": 30,
+          "uncertainty_capture": 16,
+          "uniform_ci95": [
+            12.0,
+            21.0
+          ],
+          "uniform_mean_capture": 16.7683
+        },
+        {
+          "budget_fraction": 0.3,
+          "budget_n_instances": 36,
+          "enrichment_uncertainty_over_uniform": 1.0440177781313076,
+          "mixed_per_100_prompts_uncertainty": 58.33,
+          "mixed_per_100_prompts_uniform": 55.87,
+          "oracle_capture": 36,
+          "uncertainty_capture": 21,
+          "uniform_ci95": [
+            15.0,
+            25.0
+          ],
+          "uniform_mean_capture": 20.1146
+        },
+        {
+          "budget_fraction": 0.35,
+          "budget_n_instances": 42,
+          "enrichment_uncertainty_over_uniform": 1.1077263915812794,
+          "mixed_per_100_prompts_uncertainty": 61.9,
+          "mixed_per_100_prompts_uniform": 55.88,
+          "oracle_capture": 42,
+          "uncertainty_capture": 26,
+          "uniform_ci95": [
+            18.0,
+            28.024999999999636
+          ],
+          "uniform_mean_capture": 23.4715
+        },
+        {
+          "budget_fraction": 0.4,
+          "budget_n_instances": 48,
+          "enrichment_uncertainty_over_uniform": 1.1944042162468833,
+          "mixed_per_100_prompts_uncertainty": 66.67,
+          "mixed_per_100_prompts_uniform": 55.82,
+          "oracle_capture": 48,
+          "uncertainty_capture": 32,
+          "uniform_ci95": [
+            22.0,
+            32.0
+          ],
+          "uniform_mean_capture": 26.7916
+        },
+        {
+          "budget_fraction": 0.45,
+          "budget_n_instances": 54,
+          "enrichment_uncertainty_over_uniform": 1.2271159458742371,
+          "mixed_per_100_prompts_uncertainty": 68.52,
+          "mixed_per_100_prompts_uniform": 55.84,
+          "oracle_capture": 54,
+          "uncertainty_capture": 37,
+          "uniform_ci95": [
+            25.0,
+            35.0
+          ],
+          "uniform_mean_capture": 30.152
+        },
+        {
+          "budget_fraction": 0.5,
+          "budget_n_instances": 60,
+          "enrichment_uncertainty_over_uniform": 1.1945005196077259,
+          "mixed_per_100_prompts_uncertainty": 66.67,
+          "mixed_per_100_prompts_uniform": 55.81,
+          "oracle_capture": 60,
+          "uncertainty_capture": 40,
+          "uniform_ci95": [
+            28.0,
+            39.0
+          ],
+          "uniform_mean_capture": 33.4868
+        },
+        {
+          "budget_fraction": 0.55,
+          "budget_n_instances": 66,
+          "enrichment_uncertainty_over_uniform": 1.1939747691422649,
+          "mixed_per_100_prompts_uncertainty": 66.67,
+          "mixed_per_100_prompts_uniform": 55.84,
+          "oracle_capture": 66,
+          "uncertainty_capture": 44,
+          "uniform_ci95": [
+            32.0,
+            42.0
+          ],
+          "uniform_mean_capture": 36.8517
+        },
+        {
+          "budget_fraction": 0.6,
+          "budget_n_instances": 72,
+          "enrichment_uncertainty_over_uniform": 1.2448463361682636,
+          "mixed_per_100_prompts_uncertainty": 69.44,
+          "mixed_per_100_prompts_uniform": 55.79,
+          "oracle_capture": 67,
+          "uncertainty_capture": 50,
+          "uniform_ci95": [
+            35.0,
+            45.0
+          ],
+          "uniform_mean_capture": 40.1656
+        },
+        {
+          "budget_fraction": 0.65,
+          "budget_n_instances": 78,
+          "enrichment_uncertainty_over_uniform": 1.2635573965203926,
+          "mixed_per_100_prompts_uncertainty": 70.51,
+          "mixed_per_100_prompts_uniform": 55.8,
+          "oracle_capture": 67,
+          "uncertainty_capture": 55,
+          "uniform_ci95": [
+            38.0,
+            49.0
+          ],
+          "uniform_mean_capture": 43.5279
+        },
+        {
+          "budget_fraction": 0.7,
+          "budget_n_instances": 84,
+          "enrichment_uncertainty_over_uniform": 1.2797979625616436,
+          "mixed_per_100_prompts_uncertainty": 71.43,
+          "mixed_per_100_prompts_uniform": 55.81,
+          "oracle_capture": 67,
+          "uncertainty_capture": 60,
+          "uniform_ci95": [
+            42.0,
+            52.0
+          ],
+          "uniform_mean_capture": 46.8824
+        },
+        {
+          "budget_fraction": 0.75,
+          "budget_n_instances": 90,
+          "enrichment_uncertainty_over_uniform": 1.2935786754550413,
+          "mixed_per_100_prompts_uncertainty": 72.22,
+          "mixed_per_100_prompts_uniform": 55.83,
+          "oracle_capture": 67,
+          "uncertainty_capture": 65,
+          "uniform_ci95": [
+            46.0,
+            55.0
+          ],
+          "uniform_mean_capture": 50.2482
+        },
+        {
+          "budget_fraction": 0.8,
+          "budget_n_instances": 96,
+          "enrichment_uncertainty_over_uniform": 1.2487628860214972,
+          "mixed_per_100_prompts_uncertainty": 69.79,
+          "mixed_per_100_prompts_uniform": 55.89,
+          "oracle_capture": 67,
+          "uncertainty_capture": 67,
+          "uniform_ci95": [
+            49.0,
+            58.0
+          ],
+          "uniform_mean_capture": 53.6531
+        },
+        {
+          "budget_fraction": 0.85,
+          "budget_n_instances": 102,
+          "enrichment_uncertainty_over_uniform": 1.176675137556836,
+          "mixed_per_100_prompts_uncertainty": 65.69,
+          "mixed_per_100_prompts_uniform": 55.82,
+          "oracle_capture": 67,
+          "uncertainty_capture": 67,
+          "uniform_ci95": [
+            53.0,
+            61.0
+          ],
+          "uniform_mean_capture": 56.9401
+        },
+        {
+          "budget_fraction": 0.9,
+          "budget_n_instances": 108,
+          "enrichment_uncertainty_over_uniform": 1.1109876680368849,
+          "mixed_per_100_prompts_uncertainty": 62.04,
+          "mixed_per_100_prompts_uniform": 55.84,
+          "oracle_capture": 67,
+          "uncertainty_capture": 67,
+          "uniform_ci95": [
+            57.0,
+            63.0
+          ],
+          "uniform_mean_capture": 60.3067
+        },
+        {
+          "budget_fraction": 0.95,
+          "budget_n_instances": 114,
+          "enrichment_uncertainty_over_uniform": 1.0526481170167639,
+          "mixed_per_100_prompts_uncertainty": 58.77,
+          "mixed_per_100_prompts_uniform": 55.83,
+          "oracle_capture": 67,
+          "uncertainty_capture": 67,
+          "uniform_ci95": [
+            61.0,
+            66.0
+          ],
+          "uniform_mean_capture": 63.649
+        },
+        {
+          "budget_fraction": 1.0,
+          "budget_n_instances": 120,
+          "enrichment_uncertainty_over_uniform": 1.0,
+          "mixed_per_100_prompts_uncertainty": 55.83,
+          "mixed_per_100_prompts_uniform": 55.83,
+          "oracle_capture": 67,
+          "uncertainty_capture": 67,
+          "uniform_ci95": [
+            67.0,
+            67.0
+          ],
+          "uniform_mean_capture": 67.0
+        }
+      ],
+      "go_condition_c_budget_verified_capture": false,
+      "monte_carlo": {
+        "draws": 10000,
+        "seed_base": 20260821
+      },
+      "n_instances": 120,
+      "n_mixed_reward": 67
+    },
+    "verdict": "NO-GO"
+  },
+  "arm_b": {
+    "reasons": [
+      "(a) discrimination CI-supported: False",
+      "(b) high-uncertainty-stratum enrichment: False",
+      "(c) budget-verified capture: False",
+      "denominator guard clear (n_mixed=47 >= 10): True"
+    ],
+    "report": {
+      "arm": "b",
+      "base_rate_mixed_reward": 0.3917,
+      "bootstrap": {
+        "replicates": 10000,
+        "seed": 20260821,
+        "unit": "instance"
+      },
+      "denominator_guard": {
+        "guard_clear": true,
+        "min_mixed_reward_n": 10,
+        "observed_n_mixed": 47
+      },
+      "go_condition_a_discrimination": false,
+      "go_condition_b_enrichment": false,
+      "high_uncertainty_stratum": {
+        "U_level": 0.75,
+        "agreement_level": 0.25,
+        "ci95": [
+          0.20512820512820512,
+          0.48717948717948717
+        ],
+        "enrichment_ratio": 0.851063829787234,
+        "n": 39,
+        "p_mixed_reward": 0.3333333333333333
+      },
+      "n_all_correct": 20,
+      "n_all_wrong": 53,
+      "n_instances": 120,
+      "n_mixed_reward": 47,
+      "primary_auroc_U_mixed_reward": {
+        "auroc": 0.5938501894491401,
+        "ci95": [
+          0.4963501723713932,
+          0.6898930169489379
+        ],
+        "n": 120
+      },
+      "reward_variance_spearman": {
+        "ci95": [
+          -0.006419783444297745,
+          0.31223761098190733
+        ],
+        "rho": 0.15408080090032028
+      },
+      "secondary_auroc_U2_mixed_reward": {
+        "auroc": 0.5929758088020985,
+        "ci95": [
+          0.49471458773784355,
+          0.6895167781562043
+        ],
+        "n": 120
+      },
+      "selection_failure_auroc": {
+        "auroc": 0.6560457516339869,
+        "ci95": [
+          0.5438001878249844,
+          0.7606351838808136
+        ],
+        "n": 120
+      },
+      "selection_failure_rate": {
+        "ci95": [
+          0.09166666666666666,
+          0.21666666666666667
+        ],
+        "n": 120,
+        "rate": 0.15
+      },
+      "uncertainty_strata": [
+        {
+          "U_level": 0.0,
+          "agreement_level": 1.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "enrichment_ratio": 0.0,
+          "n": 26,
+          "p_mixed_reward": 0.0
+        },
+        {
+          "U_level": 0.25,
+          "agreement_level": 0.75,
+          "ci95": [
+            0.36363636363636365,
+            0.7727272727272727
+          ],
+          "enrichment_ratio": 1.5087040618955514,
+          "n": 22,
+          "p_mixed_reward": 0.5909090909090909
+        },
+        {
+          "U_level": 0.5,
+          "agreement_level": 0.5,
+          "ci95": [
+            0.45454545454545453,
+            0.7878787878787878
+          ],
+          "enrichment_ratio": 1.6247582205029014,
+          "n": 33,
+          "p_mixed_reward": 0.6363636363636364
+        },
+        {
+          "U_level": 0.75,
+          "agreement_level": 0.25,
+          "ci95": [
+            0.20512820512820512,
+            0.48717948717948717
+          ],
+          "enrichment_ratio": 0.851063829787234,
+          "n": 39,
+          "p_mixed_reward": 0.3333333333333333
+        }
+      ]
+    },
+    "simulation": {
+      "arm": "b",
+      "bootstrap": {
+        "replicates": 10000,
+        "seed": 20260821,
+        "unit": "instance"
+      },
+      "budget_25pct": {
+        "budget_n": 30,
+        "ci95": [
+          -5.5,
+          4.25
+        ],
+        "uncertainty_minus_uniform_expected_capture": -0.75
+      },
+      "budget_curve": [
+        {
+          "budget_fraction": 0.05,
+          "budget_n_instances": 6,
+          "enrichment_uncertainty_over_uniform": 2.1362956633198036,
+          "mixed_per_100_prompts_uncertainty": 83.33,
+          "mixed_per_100_prompts_uniform": 39.01,
+          "oracle_capture": 6,
+          "uncertainty_capture": 5,
+          "uniform_ci95": [
+            0.0,
+            5.0
+          ],
+          "uniform_mean_capture": 2.3405
+        },
+        {
+          "budget_fraction": 0.1,
+          "budget_n_instances": 12,
+          "enrichment_uncertainty_over_uniform": 1.271994912020352,
+          "mixed_per_100_prompts_uncertainty": 50.0,
+          "mixed_per_100_prompts_uniform": 39.31,
+          "oracle_capture": 12,
+          "uncertainty_capture": 6,
+          "uniform_ci95": [
+            2.0,
+            8.0
+          ],
+          "uniform_mean_capture": 4.717
+        },
+        {
+          "budget_fraction": 0.15,
+          "budget_n_instances": 18,
+          "enrichment_uncertainty_over_uniform": 1.13277544142843,
+          "mixed_per_100_prompts_uncertainty": 44.44,
+          "mixed_per_100_prompts_uniform": 39.23,
+          "oracle_capture": 18,
+          "uncertainty_capture": 8,
+          "uniform_ci95": [
+            3.0,
+            11.0
+          ],
+          "uniform_mean_capture": 7.0623
+        },
+        {
+          "budget_fraction": 0.2,
+          "budget_n_instances": 24,
+          "enrichment_uncertainty_over_uniform": 1.0650648091936394,
+          "mixed_per_100_prompts_uncertainty": 41.67,
+          "mixed_per_100_prompts_uniform": 39.12,
+          "oracle_capture": 24,
+          "uncertainty_capture": 10,
+          "uniform_ci95": [
+            5.0,
+            14.0
+          ],
+          "uniform_mean_capture": 9.3891
+        },
+        {
+          "budget_fraction": 0.25,
+          "budget_n_instances": 30,
+          "enrichment_uncertainty_over_uniform": 0.9362738005055878,
+          "mixed_per_100_prompts_uncertainty": 36.67,
+          "mixed_per_100_prompts_uniform": 39.16,
+          "oracle_capture": 30,
+          "uncertainty_capture": 11,
+          "uniform_ci95": [
+            7.0,
+            16.0
+          ],
+          "uniform_mean_capture": 11.7487
+        },
+        {
+          "budget_fraction": 0.3,
+          "budget_n_instances": 36,
+          "enrichment_uncertainty_over_uniform": 0.8487823509856485,
+          "mixed_per_100_prompts_uncertainty": 33.33,
+          "mixed_per_100_prompts_uniform": 39.27,
+          "oracle_capture": 36,
+          "uncertainty_capture": 12,
+          "uniform_ci95": [
+            9.0,
+            19.0
+          ],
+          "uniform_mean_capture": 14.1379
+        },
+        {
+          "budget_fraction": 0.35,
+          "budget_n_instances": 42,
+          "enrichment_uncertainty_over_uniform": 0.9094491769484948,
+          "mixed_per_100_prompts_uncertainty": 35.71,
+          "mixed_per_100_prompts_uniform": 39.27,
+          "oracle_capture": 42,
+          "uncertainty_capture": 15,
+          "uniform_ci95": [
+            12.0,
+            22.0
+          ],
+          "uniform_mean_capture": 16.4935
+        },
+        {
+          "budget_fraction": 0.4,
+          "budget_n_instances": 48,
+          "enrichment_uncertainty_over_uniform": 1.0110954420881781,
+          "mixed_per_100_prompts_uncertainty": 39.58,
+          "mixed_per_100_prompts_uniform": 39.15,
+          "oracle_capture": 47,
+          "uncertainty_capture": 19,
+          "uniform_ci95": [
+            14.0,
+            24.0
+          ],
+          "uniform_mean_capture": 18.7915
+        },
+        {
+          "budget_fraction": 0.45,
+          "budget_n_instances": 54,
+          "enrichment_uncertainty_over_uniform": 1.0396533228737908,
+          "mixed_per_100_prompts_uncertainty": 40.74,
+          "mixed_per_100_prompts_uniform": 39.19,
+          "oracle_capture": 47,
+          "uncertainty_capture": 22,
+          "uniform_ci95": [
+            16.0,
+            26.0
+          ],
+          "uniform_mean_capture": 21.1609
+        },
+        {
+          "budget_fraction": 0.5,
+          "budget_n_instances": 60,
+          "enrichment_uncertainty_over_uniform": 1.1066890842147827,
+          "mixed_per_100_prompts_uncertainty": 43.33,
+          "mixed_per_100_prompts_uniform": 39.16,
+          "oracle_capture": 47,
+          "uncertainty_capture": 26,
+          "uniform_ci95": [
+            18.0,
+            29.0
+          ],
+          "uniform_mean_capture": 23.4935
+        },
+        {
+          "budget_fraction": 0.55,
+          "budget_n_instances": 66,
+          "enrichment_uncertainty_over_uniform": 1.159326199612785,
+          "mixed_per_100_prompts_uncertainty": 45.45,
+          "mixed_per_100_prompts_uniform": 39.21,
+          "oracle_capture": 47,
+          "uncertainty_capture": 30,
+          "uniform_ci95": [
+            21.0,
+            31.0
+          ],
+          "uniform_mean_capture": 25.8771
+        },
+        {
+          "budget_fraction": 0.6,
+          "budget_n_instances": 72,
+          "enrichment_uncertainty_over_uniform": 1.2053104560682064,
+          "mixed_per_100_prompts_uncertainty": 47.22,
+          "mixed_per_100_prompts_uniform": 39.18,
+          "oracle_capture": 47,
+          "uncertainty_capture": 34,
+          "uniform_ci95": [
+            23.0,
+            33.0
+          ],
+          "uniform_mean_capture": 28.2085
+        },
+        {
+          "budget_fraction": 0.65,
+          "budget_n_instances": 78,
+          "enrichment_uncertainty_over_uniform": 1.1779950524207798,
+          "mixed_per_100_prompts_uncertainty": 46.15,
+          "mixed_per_100_prompts_uniform": 39.18,
+          "oracle_capture": 47,
+          "uncertainty_capture": 36,
+          "uniform_ci95": [
+            26.0,
+            36.0
+          ],
+          "uniform_mean_capture": 30.5604
+        },
+        {
+          "budget_fraction": 0.7,
+          "budget_n_instances": 84,
+          "enrichment_uncertainty_over_uniform": 1.2162453896698198,
+          "mixed_per_100_prompts_uncertainty": 47.62,
+          "mixed_per_100_prompts_uniform": 39.15,
+          "oracle_capture": 47,
+          "uncertainty_capture": 40,
+          "uniform_ci95": [
+            28.0,
+            38.0
+          ],
+          "uniform_mean_capture": 32.8881
+        },
+        {
+          "budget_fraction": 0.75,
+          "budget_n_instances": 90,
+          "enrichment_uncertainty_over_uniform": 1.2483934028083177,
+          "mixed_per_100_prompts_uncertainty": 48.89,
+          "mixed_per_100_prompts_uniform": 39.16,
+          "oracle_capture": 47,
+          "uncertainty_capture": 44,
+          "uniform_ci95": [
+            31.0,
+            40.0
+          ],
+          "uniform_mean_capture": 35.2453
+        },
+        {
+          "budget_fraction": 0.8,
+          "budget_n_instances": 96,
+          "enrichment_uncertainty_over_uniform": 1.249880330606644,
+          "mixed_per_100_prompts_uncertainty": 48.96,
+          "mixed_per_100_prompts_uniform": 39.17,
+          "oracle_capture": 47,
+          "uncertainty_capture": 47,
+          "uniform_ci95": [
+            33.0,
+            42.0
+          ],
+          "uniform_mean_capture": 37.6036
+        },
+        {
+          "budget_fraction": 0.85,
+          "budget_n_instances": 102,
+          "enrichment_uncertainty_over_uniform": 1.1774874422216932,
+          "mixed_per_100_prompts_uncertainty": 46.08,
+          "mixed_per_100_prompts_uniform": 39.13,
+          "oracle_capture": 47,
+          "uncertainty_capture": 47,
+          "uniform_ci95": [
+            36.0,
+            44.0
+          ],
+          "uniform_mean_capture": 39.9155
+        },
+        {
+          "budget_fraction": 0.9,
+          "budget_n_instances": 108,
+          "enrichment_uncertainty_over_uniform": 1.1110296881316026,
+          "mixed_per_100_prompts_uncertainty": 43.52,
+          "mixed_per_100_prompts_uniform": 39.17,
+          "oracle_capture": 47,
+          "uncertainty_capture": 47,
+          "uniform_ci95": [
+            39.0,
+            45.0
+          ],
+          "uniform_mean_capture": 42.3031
+        },
+        {
+          "budget_fraction": 0.95,
+          "budget_n_instances": 114,
+          "enrichment_uncertainty_over_uniform": 1.052037819640427,
+          "mixed_per_100_prompts_uncertainty": 41.23,
+          "mixed_per_100_prompts_uniform": 39.19,
+          "oracle_capture": 47,
+          "uncertainty_capture": 47,
+          "uniform_ci95": [
+            42.0,
+            47.0
+          ],
+          "uniform_mean_capture": 44.6752
+        },
+        {
+          "budget_fraction": 1.0,
+          "budget_n_instances": 120,
+          "enrichment_uncertainty_over_uniform": 1.0,
+          "mixed_per_100_prompts_uncertainty": 39.17,
+          "mixed_per_100_prompts_uniform": 39.17,
+          "oracle_capture": 47,
+          "uncertainty_capture": 47,
+          "uniform_ci95": [
+            47.0,
+            47.0
+          ],
+          "uniform_mean_capture": 47.0
+        }
+      ],
+      "go_condition_c_budget_verified_capture": false,
+      "monte_carlo": {
+        "draws": 10000,
+        "seed_base": 20260821
+      },
+      "n_instances": 120,
+      "n_mixed_reward": 47
+    },
+    "verdict": "NO-GO"
+  },
+  "cross_solver_reading": "agreement predicts correctness (established, D-46) but does NOT identify prompts with useful within-group reward variation on either solver -- the current uncertainty-guided curriculum hypothesis is NOT supported and should not proceed"
+}

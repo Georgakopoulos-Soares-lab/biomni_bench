@@ -20,13 +20,14 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 sys.path.insert(0, str(REPO / "src"))
 
-from biomni_uncertainty.analysis import auroc, grouped_bootstrap, spearman  # noqa: E402
+from biomni_uncertainty.analysis import auroc, spearman  # noqa: E402
 from biomni_uncertainty.selectors import candidates_from_frame, select_oracle, select_plurality  # noqa: E402
 
 # --------------------------------------------------------------------------
@@ -91,20 +92,46 @@ def build_per_instance_table(arm: str) -> pd.DataFrame:
     return out
 
 
+def _instance_bootstrap(
+    df: pd.DataFrame, statistic, replicates: int, seed: int
+) -> tuple[float | None, float | None, float | None]:
+    """Instance-clustered bootstrap: resample rows with replacement.
+
+    Every row in this module's tables is already exactly one instance (there
+    is no finer grain to cluster on), so this is the same resampling unit
+    `biomni_uncertainty.analysis.grouped_bootstrap` implements for genuinely
+    multi-row groups -- just done directly via numpy row-indexing rather than
+    a per-group `pd.concat`, which is the correct-but-slow path for a table
+    that is already one row per group. Same method, efficient implementation.
+    """
+    point = statistic(df)
+    n = len(df)
+    rng = np.random.default_rng(seed)
+    stats = []
+    for _ in range(replicates):
+        idx = rng.integers(0, n, size=n)
+        v = statistic(df.iloc[idx])
+        if v is not None and not (isinstance(v, float) and np.isnan(v)):
+            stats.append(v)
+    if not stats:
+        return point, None, None
+    return point, float(np.percentile(stats, 2.5)), float(np.percentile(stats, 97.5))
+
+
 def _auroc_ci(df: pd.DataFrame, score_col: str, label_col: str) -> dict:
     def stat(d: pd.DataFrame) -> float | None:
         return auroc(d[score_col].tolist(), d[label_col].tolist())
 
-    ci = grouped_bootstrap(df, "instance_uid", stat, replicates=BOOTSTRAP_REPLICATES, seed=BOOTSTRAP_SEED)
-    return {"auroc": ci.point, "ci95": [ci.lo, ci.hi], "n": ci.n}
+    point, lo, hi = _instance_bootstrap(df, stat, BOOTSTRAP_REPLICATES, BOOTSTRAP_SEED)
+    return {"auroc": point, "ci95": [lo, hi], "n": len(df)}
 
 
 def _rate_ci(df: pd.DataFrame, label_col: str) -> dict:
     def stat(d: pd.DataFrame) -> float:
         return float(d[label_col].mean())
 
-    ci = grouped_bootstrap(df, "instance_uid", stat, replicates=BOOTSTRAP_REPLICATES, seed=BOOTSTRAP_SEED)
-    return {"rate": ci.point, "ci95": [ci.lo, ci.hi], "n": ci.n}
+    point, lo, hi = _instance_bootstrap(df, stat, BOOTSTRAP_REPLICATES, BOOTSTRAP_SEED)
+    return {"rate": point, "ci95": [lo, hi], "n": len(df)}
 
 
 def main() -> int:
@@ -156,8 +183,8 @@ def main() -> int:
     def spearman_stat(d: pd.DataFrame) -> float | None:
         return spearman(d["U"].tolist(), d["reward_variance"].tolist())
 
-    variance_corr_ci = grouped_bootstrap(
-        df, "instance_uid", spearman_stat, replicates=BOOTSTRAP_REPLICATES, seed=BOOTSTRAP_SEED
+    variance_point, variance_lo, variance_hi = _instance_bootstrap(
+        df, spearman_stat, BOOTSTRAP_REPLICATES, BOOTSTRAP_SEED
     )
 
     # ---- secondary: selection-failure analysis -----------------------------
@@ -183,8 +210,8 @@ def main() -> int:
         "go_condition_b_enrichment": bool(enrichment_b),
         "high_uncertainty_stratum": high_unc,
         "reward_variance_spearman": {
-            "rho": variance_corr_ci.point,
-            "ci95": [variance_corr_ci.lo, variance_corr_ci.hi],
+            "rho": variance_point,
+            "ci95": [variance_lo, variance_hi],
         },
         "selection_failure_rate": sel_fail_rate,
         "selection_failure_auroc": sel_fail_auroc,

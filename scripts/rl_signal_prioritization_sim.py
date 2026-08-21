@@ -54,8 +54,6 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 sys.path.insert(0, str(REPO / "src"))
 
-from biomni_uncertainty.analysis import grouped_bootstrap  # noqa: E402
-
 BUDGET_FRACTIONS = [round(0.05 * i, 2) for i in range(1, 21)]  # 5% .. 100%
 MONTE_CARLO_DRAWS = 10_000
 MONTE_CARLO_SEED = 20260821
@@ -123,6 +121,11 @@ def main() -> int:
         )
 
     # ---- GO condition (c): paired bootstrap of the 25%-budget difference --
+    # Instance-clustered resample via numpy row-indexing: every row here is
+    # already one instance, so this is the same resampling unit as
+    # `analysis.grouped_bootstrap` (resample instances with replacement),
+    # implemented directly rather than through its per-group `pd.concat`
+    # path, which is markedly slower for a table with no genuine sub-grouping.
     budget_25_n = round(BUDGET_25_FRACTION * n)
 
     def diff_stat(d: pd.DataFrame) -> float:
@@ -131,8 +134,14 @@ def main() -> int:
         uniform_expected = BUDGET_25_FRACTION * d.mixed_reward.sum()
         return capture - uniform_expected
 
-    diff_ci = grouped_bootstrap(df, "instance_uid", diff_stat, replicates=10_000, seed=20260821)
-    go_condition_c = diff_ci.lo is not None and diff_ci.lo > 0
+    diff_point = diff_stat(df)
+    rng = np.random.default_rng(20260821)
+    diffs = np.empty(10_000)
+    for i in range(10_000):
+        idx = rng.integers(0, n, size=n)
+        diffs[i] = diff_stat(df.iloc[idx])
+    diff_lo, diff_hi = float(np.percentile(diffs, 2.5)), float(np.percentile(diffs, 97.5))
+    go_condition_c = diff_lo > 0
 
     report = {
         "arm": args.arm,
@@ -141,8 +150,8 @@ def main() -> int:
         "budget_curve": curve,
         "budget_25pct": {
             "budget_n": budget_25_n,
-            "uncertainty_minus_uniform_expected_capture": diff_ci.point,
-            "ci95": [diff_ci.lo, diff_ci.hi],
+            "uncertainty_minus_uniform_expected_capture": diff_point,
+            "ci95": [diff_lo, diff_hi],
         },
         "go_condition_c_budget_verified_capture": bool(go_condition_c),
         "monte_carlo": {"draws": MONTE_CARLO_DRAWS, "seed_base": MONTE_CARLO_SEED},
