@@ -1,11 +1,15 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-13 (**New work opened: the scope-and-boundary study.
-D-43 / Stage C remains CLOSED and untouched.** Preflight frozen and committed
-before inference (`e40c773`); Solver **B1 = `Mistral-Small-3.1-24B-Instruct-2503`
-PASSES** its frozen capability gate and is frozen as Solver B. Zero fresh
-scope-study instances consumed. See *Scope study* below and **D-44**. Previously,
-2026-08-11:)
+**Last updated:** 2026-08-21 (**The matched scope-and-boundary study is
+COMPLETE. H1 NOT REPLICATED — correction is solver-specific.** Both solvers show
+reliability detection established (AUROC 0.90 / 0.81); error correction via the
+frozen Stage-C verifier is established for the incumbent solver (Biomni-R0,
+gain +0.083 CI clear of 0) and not for the independent one (Mistral, gain
+−0.017, null). A verified mechanism finding qualifies the incumbent's result:
+restricted to genuinely-contested candidates its gain CI no longer excludes
+zero. **D-43 / Stage C remains CLOSED and untouched throughout.** See *Matched
+scope study* below and **D-46**. No further experiment was started; all GPU
+servers are shut down. Previously, 2026-08-13:)
 
 ---
 
@@ -73,63 +77,76 @@ Both approvals have since been granted; see below.
 
 ---
 
-## Matched scope study — FROZEN and RUNNING (2026-08-13, D-45)
+## Matched scope study — COMPLETE (2026-08-21, D-46)
 
-**Pre-registration:** `reports/scope_study_preregistration.md`, committed
-**before the first trajectory existed**. **Full suite: 592 passed.**
+**Pre-registration:** `reports/scope_study_preregistration.md`, committed before
+the first trajectory existed. **Phase 1 and Phase 2 both finished. Full suite:
+607 passed** (plus 15 Phase-2 tests, see D-46).
 
-| item | value |
-| --- | --- |
-| population | **120 fresh** instances, 15 per eligible family, **zero overlap** with any prior work |
-| manifest | `manifests/scope_main.jsonl`, hash `89bf418928b4846f93cdaf7e3d009cffd8e0c514586fda05effd473353441457` |
-| pool left afterwards | **100** never-used instances |
-| Arm A | `biomni/Biomni-R0-32B-Preview` @ `71432eb3…`, K=4, 480 trajectories |
-| Arm B | `mistralai/Mistral-Small-3.1-24B-Instruct-2503` @ `68faf511…`, K=4, 480 trajectories |
-| verifier (Phase 2) | the **frozen Stage-C C1** `gemma-4-31B-it` @ `842da379…`, unchanged |
+**Phase 1 (trajectory generation) — final counts.**
 
-**H1, its operational definition, the four-row verdict table, the −0.15
-capability-confound bar, the denominator guard and the stopping semantics are all
-fixed in advance.** Secondaries (verifiability tier, cross-solver error structure)
-stay secondary.
+| | valid/480 | terminal failures | rate |
+| --- | ---: | ---: | ---: |
+| Arm A `Biomni-R0-32B` | 391 | 89 `model_context_overflow` | 18.5% |
+| Arm B `Mistral-Small-3.1-24B` | 418 | 62 `model_context_overflow` | 12.9% |
 
-### Resumability — the study is built to span allocations
+Zero non-terminal/unresolved trajectories; both terminal-failure counts and
+rates fall inside the project's historical residual-failure band. No terminal
+failure was retried, repaired, or excluded from any denominator — an instance
+with zero usable trajectories scores 0 under every selector alike (D-18's
+"non-answer never wins a tie" convention, unchanged).
 
-≈55 GPU-hours will not reliably fit one allocation, so the run **will** be
-interrupted. `scripts/scope_main_run.sh` is idempotent and safe to re-run on any
-new allocation or node:
+**Phase 2 (verifier scoring) — 0 comparison errors, 0 unresolved ties, both
+arms.** 3,408 comparisons (Arm A) + 6,336 (Arm B) = 9,744, all via the frozen
+Stage-C C1 port, unchanged criteria/K/aggregation. Capsule adapter
+sanity-checked byte-for-byte against a real Stage-C capsule before touching any
+scope-study data (see D-46).
 
-```bash
-scripts/scope_main_run.sh            # launch or resume on this node
-scripts/scope_main_run.sh --status   # progress only, starts nothing
-```
+### H1 verdict: **NOT REPLICATED** — correction is solver-specific
 
-It probes each port before launching a server, rewrites endpoints from the
-current hostname, and relies on the existing exact trajectory-level resume
-(`is_valid_complete` requires the marker **and** all four artifacts **and**
-`metadata.completed`).
+| | Arm A (Biomni-R0) | Arm B (Mistral) |
+| --- | ---: | ---: |
+| Pass@1 / plurality / Oracle@4 | 0.4417 / 0.6167 / 0.7917 | 0.3833 / 0.4083 / 0.5583 |
+| agreement→correctness AUROC | **0.8956** [0.855, 0.930] | **0.8144** [0.752, 0.870] |
+| **detection established** | **yes** | **yes** |
+| verifier gain over plurality | **+0.0833**, CI [0.0083, 0.1583] | −0.0167, CI [−0.0917, 0.0583] |
+| **correction established** | **yes** | **no** |
+| normalized recovery | 47.6% (guard passed) | −11.1% (guard passed) |
 
-> **Standing instruction while the run is in flight: do not commit to this
-> repository.** `<output_root>/scope_main/LAUNCH.json` pins the launch commit and
-> manifest hash, and the launcher **refuses to resume** if HEAD has moved —
-> deliberately, so a multi-allocation run cannot repeat D-29 and end up with
-> trajectories spread across two trees. `--allow-commit-drift` exists, logs
-> loudly, and its use must be recorded.
+Both arms show detection established; correction is established for Arm A only
+→ **H1 NOT REPLICATED** (the frozen four-row rule's "correction solver-specific"
+row). Capability-confound check: paired Pass@1 diff (B−A) = −0.0583, CI
+[−0.1752, +0.0583] — **not** capability-confounded (upper bound far from the
+−0.15 bar).
 
-### Next actions
+**A mechanism finding qualifies Arm A's "correction established" result, and is
+reported prominently rather than folded into the headline.** Restricted to the
+47 instances where the verifier judged between ≥2 genuinely disagreeing
+candidates, Arm A's gain drops to +0.1064 with CI **[−0.0426, 0.2553]** —
+**does not exclude zero**. Half of Arm A's net capture (5 of 10) comes from a
+verified structural artifact on `patient_gene_detection`: `select_plurality`'s
+tie-break scope spans all 4 trajectories including unparseable singletons,
+while the verifier's candidate scope is parseable-answers-only, so it can never
+make the specific mistake the plurality baseline makes when an earlier-indexed
+parse failure ties against a later-indexed correct answer. **The frozen primary
+verdict is reported unmodified**; this decomposition decides nothing but means
+"correction established for Solver A" should not be read as demonstrated
+adjudication skill without this caveat. Flagged as a design-level asymmetry
+worth fixing before any future reuse of this comparison — not fixed now, per
+scope.
 
-1. **Phase 1** — 960 trajectories, both arms in parallel. Resume with the command
-   above on each new allocation until `--status` reads 480/480 on both arms.
-2. **Phase 2** — verifier scoring with the frozen C1 gemma. Needs the gemma server
-   back up and a capsule-builder adapter that changes **which** traces are read
-   and nothing about how they are scored.
-3. Analysis per pre-registration §5.
+### Artifacts
+
+`reports/tables/scope_study/scope_main_h1_verdict.json`,
+`h1_per_instance_{a,b}.csv`, `detection_report_{a,b}.json`,
+`detection_per_instance_{a,b}.csv`. Raw: `<output_root>/scope_main_verifier/`
+(capsules, selections, per-comparison caches, port self-tests, score metadata).
 
 ### Server / allocation state
 
-Job `3396219` on `c563-001`. Serving for Phase 1: **Arm A Biomni-R0 on GPUs 0–1
-(:30000), Arm B Mistral on GPUs 2–3 (:30010)**. The `gemma-4-31B-it` verifier
-server was stopped to free GPUs for Arm A; it is not needed until Phase 2 and is
-relaunchable from `scripts/launch_sglang_server.sh`.
+Verifier server (gemma) and both trajectory-generation servers have been shut
+down; no GPU process is running. Nothing further is scheduled — see D-46 for
+what this does and does not license next.
 
 ---
 

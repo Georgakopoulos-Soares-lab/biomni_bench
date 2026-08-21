@@ -1,0 +1,134 @@
+{
+  "arm_a": {
+    "absolute_verifier_gain": 0.0833,
+    "arm": "a",
+    "comparison_errors": 0,
+    "comparisons": 3408,
+    "correction_established": true,
+    "correction_rule": "verifier absolute gain over plurality, 95% CI lower bound > 0",
+    "denominator_guard": {
+      "guard_passed": true,
+      "min_abs_headroom": 0.1,
+      "min_recoverable_n": 5,
+      "observed_headroom": 0.175,
+      "observed_recoverable_n": 21
+    },
+    "detection": {
+      "agreement_fraction_auroc": {
+        "auprc": 0.9097,
+        "auroc": 0.8956,
+        "auroc_ci_hi": 0.9302,
+        "auroc_ci_lo": 0.8552,
+        "auroc_flipped": 0.1044,
+        "base_rate": 0.5125,
+        "n": 480,
+        "n_instances": 120,
+        "spearman_with_correct": 0.7229
+      },
+      "arm": "a",
+      "bootstrap": {
+        "replicates": 10000,
+        "seed": 20260813,
+        "unit": "instance"
+      },
+      "detection_established": true,
+      "detection_rule": "agreement_fraction AUROC 95% CI lower bound > 0.5",
+      "headroom": 0.175,
+      "n_instances": 120,
+      "oracle_at_4": 0.7917,
+      "pass_at_1": 0.4417,
+      "plurality": 0.6167
+    },
+    "gain_ci95": [
+      0.0083,
+      0.1583
+    ],
+    "headroom": 0.175,
+    "n_instances": 120,
+    "n_scoreable_ge2_candidates": 47,
+    "n_trivial_single_candidate": 69,
+    "n_unresolved_ties": 0,
+    "n_zero_candidate": 4,
+    "normalized_recovery": 0.4762,
+    "oracle_mean": 0.7917,
+    "per_instance_csv": "h1_per_instance_a.csv",
+    "plurality_mean": 0.6167,
+    "validity": 1.0,
+    "verifier_selected_mean": 0.7
+  },
+  "arm_b": {
+    "absolute_verifier_gain": -0.0167,
+    "arm": "b",
+    "comparison_errors": 0,
+    "comparisons": 6336,
+    "correction_established": false,
+    "correction_rule": "verifier absolute gain over plurality, 95% CI lower bound > 0",
+    "denominator_guard": {
+      "guard_passed": true,
+      "min_abs_headroom": 0.1,
+      "min_recoverable_n": 5,
+      "observed_headroom": 0.15,
+      "observed_recoverable_n": 18
+    },
+    "detection": {
+      "agreement_fraction_auroc": {
+        "auprc": 0.6737,
+        "auroc": 0.8144,
+        "auroc_ci_hi": 0.8697,
+        "auroc_ci_lo": 0.7521,
+        "auroc_flipped": 0.1856,
+        "base_rate": 0.3354,
+        "n": 480,
+        "n_instances": 120,
+        "spearman_with_correct": 0.5512
+      },
+      "arm": "b",
+      "bootstrap": {
+        "replicates": 10000,
+        "seed": 20260813,
+        "unit": "instance"
+      },
+      "detection_established": true,
+      "detection_rule": "agreement_fraction AUROC 95% CI lower bound > 0.5",
+      "headroom": 0.15,
+      "n_instances": 120,
+      "oracle_at_4": 0.5583,
+      "pass_at_1": 0.3833,
+      "plurality": 0.4083
+    },
+    "gain_ci95": [
+      -0.0917,
+      0.0583
+    ],
+    "headroom": 0.15,
+    "n_instances": 120,
+    "n_scoreable_ge2_candidates": 69,
+    "n_trivial_single_candidate": 42,
+    "n_unresolved_ties": 0,
+    "n_zero_candidate": 9,
+    "normalized_recovery": -0.1111,
+    "oracle_mean": 0.5583,
+    "per_instance_csv": "h1_per_instance_b.csv",
+    "plurality_mean": 0.4083,
+    "validity": 1.0,
+    "verifier_selected_mean": 0.3917
+  },
+  "bootstrap": {
+    "replicates": 10000,
+    "seed": 20260813,
+    "unit": "instance"
+  },
+  "capability_confound_check": {
+    "bar": "upper bound < -0.15",
+    "capability_confounded": false,
+    "ci95": [
+      -0.1752,
+      0.0583
+    ],
+    "paired_pass_at_1_diff_b_minus_a": -0.0583
+  },
+  "h1_label": "NOT REPLICATED",
+  "h1_verdict": "NOT REPLICATED",
+  "h1_verdict_reason": "correction is solver-specific (established for one arm, not the other)",
+  "study": "matched scope study, H1"
+}

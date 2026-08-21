@@ -2384,3 +2384,184 @@ scaffold defect discovered mid-run that demonstrably corrupts one arm would
 require discarding that arm's affected trajectories and re-running **them**, with
 the defect and the fix committed first — never a silent re-run, and never a
 change to the manifest, which is a new experiment by definition.
+
+---
+
+## D-46 Matched scope study COMPLETE: H1 NOT REPLICATED — correction is solver-specific
+
+**Decided:** 2026-08-21. Design: `reports/scope_study_preregistration.md`
+(frozen `fbd73a3`, before any Phase-2 trajectory existed). Drivers:
+`scripts/scope_main_verifier_run.py`, `scope_main_detection_analysis.py`,
+`scope_main_h1_verdict.py`. Artifacts: `reports/tables/scope_study/
+scope_main_h1_verdict.json`, `h1_per_instance_{a,b}.csv`,
+`detection_report_{a,b}.json`.
+
+> **Headline.** Phase 1 (960 trajectories, both arms) and Phase 2 (9,744
+> verifier comparisons, 0 errors, 0 unresolved ties) are both complete.
+> **Both solvers show reliability detection established** (agreement→
+> correctness AUROC 0.8956 for Arm A, 0.8144 for Arm B, both CIs clear of
+> 0.5). **Error correction is established for Arm A only** (gain +0.0833, CI
+> [0.0083, 0.1583]) and **not for Arm B** (gain −0.0167, CI [−0.0917,
+> 0.0583]). Per the frozen four-row rule, **H1 is NOT REPLICATED**: the
+> separation this study set out to test does not hold uniformly across
+> solver families — it holds for the new solver (B) and not for the
+> incumbent (A), the reverse of what a naive reading of D-43 might predict.
+> **A verified mechanism finding qualifies Arm A's result**: restricted to
+> genuinely-contested instances, Arm A's gain CI does not exclude zero.
+
+### 1. Phase 1 — final counts, zero retried
+
+| | valid/480 | terminal failures |
+| --- | ---: | ---: |
+| Arm A `Biomni-R0-32B` @ `71432eb3…` | 391 | 89 `model_context_overflow` (18.5%) |
+| Arm B `Mistral-Small-3.1-24B` @ `68faf511…` | 418 | 62 `model_context_overflow` (12.9%) |
+
+Zero unresolved trajectories in either arm — every one reached a terminal
+state (valid-complete, or FAILED with a non-retryable class). No terminal
+failure was retried, repaired, or excluded from any denominator, matching the
+pre-registration verbatim: an instance with zero usable trajectories scores 0
+under every selector alike, the same "non-answer never wins a tie" convention
+(D-18) `selectors.select_plurality` already enforces for the baseline. This
+was verified directly against `is_valid_complete` and each `FAILED` marker's
+recorded `failure_class`, not inferred from a stale progress read.
+
+One operational note, recorded because CLAUDE.md's scientific-integrity rules
+require it be visible rather than smoothed over: the two Phase-2 scoring
+processes were briefly launched non-detached and were killed when the
+underlying session dropped mid-run. **No data was lost** — every completed
+comparison had already been written to the per-comparison cache
+(`cache_{a,b}.json`) before the interruption, so resuming from the cache
+picked up exactly where it left off rather than rescoring anything. Both
+processes were then relaunched `setsid`+`nohup`+`disown`'d directly on the
+compute node for the remainder of the run, matching how every other
+long-running process in this project is launched.
+
+### 2. Phase 2 — verifier scoring, unchanged method
+
+Capsule adapter (`scope_main_verifier_run.py`) is a **new file**, never an
+edit to `scripts/stage_c_run.py` (which produced D-43's gating decision).
+Imports `stage_c_capsule.build_capsule`/`render_capsule` and
+`stage_c_verifier_port` unmodified; reads `reports/stage_c_criteria.md`
+verbatim; copies the round-robin/Bradley-Terry loop from
+`stage_c_run.py::cmd_score` with exactly one generalization Stage C's
+by-construction population never needed: handling instances with 0 or 1
+usable candidate (Stage C's frozen 78 was pre-filtered to substantive
+disagreement; this study's 120 were not filtered that way).
+
+**Sanity-checked before touching any scope-study data**: the adapter's exact
+capsule-construction code path was run against `phase2b/crispr_delivery/18`
+(an already-scored Stage-C instance) and diffed byte-for-byte against the
+frozen `reports/tables/stage_c/` capsules — both candidates identical.
+
+**Result: 3,408 (Arm A) + 6,336 (Arm B) = 9,744 comparisons, 0 comparison
+errors, 0 unresolved ties on both arms.** Validity = 1.0000 for both.
+
+### 3. The H1 verdict, computed exactly as pre-registered
+
+| | Arm A | Arm B |
+| --- | ---: | ---: |
+| Pass@1 / plurality / Oracle@4 | 0.4417 / 0.6167 / 0.7917 | 0.3833 / 0.4083 / 0.5583 |
+| headroom | 0.175 | 0.150 |
+| agreement→correctness AUROC | 0.8956 [0.8552, 0.9302] | 0.8144 [0.7521, 0.8697] |
+| **detection established** (CI lo > 0.5) | **yes** | **yes** |
+| verifier selected mean | 0.7000 | 0.3917 |
+| absolute verifier gain | **+0.0833**, CI [0.0083, 0.1583] | −0.0167, CI [−0.0917, 0.0583] |
+| **correction established** (CI lo > 0) | **yes** | **no** |
+| denominator guard | passed (headroom 0.175 ≥ 0.10, n=21 ≥ 5) | passed (headroom 0.150 ≥ 0.10, n=18 ≥ 5) |
+| normalized recovery | 47.62% | −11.11% |
+
+**H1 verdict: NOT REPLICATED** — "correction is solver-specific (established
+for one arm, not the other)", the frozen table's second row. Both arms clear
+the detection half; only Arm A clears the correction half.
+
+**Capability-confound check** (paired Pass@1 diff, B−A): −0.0583, 95% CI
+[−0.1752, +0.0583]. Upper bound is far from the −0.15 bar → **not
+capability-confounded**. Consistent with, though slightly larger than, the
+capability gate's n=24 point estimate (−0.2083, CI spanning the bar) — the
+gate correctly flagged this as unresolved at n=24 and declined to conclude
+either way; n=120 resolves it in the direction the gate's point estimate
+pointed, still comfortably clear of the confound bar.
+
+### 4. A verified mechanism finding that qualifies Arm A's result
+
+Decomposing Arm A's net capture (10 = 15 captured − 5 harmed, over all 120)
+by candidate-count bucket:
+
+| bucket | n | capture | harm | net |
+| --- | ---: | ---: | ---: | ---: |
+| zero candidates | 4 | 0 | 0 | 0 |
+| **trivial (exactly 1 usable candidate)** | 69 | 5 | 0 | **5** |
+| scoreable (≥2 usable candidates) | 47 | 10 | 5 | 5 |
+
+**Half of Arm A's net capture (5 of 10) comes from the trivial bucket, where
+the verifier cannot lose by construction** — with only one parseable
+candidate, the verifier trivially selects it. But this is not automatically
+equal to the plurality baseline: `selectors.select_plurality`'s tie-break
+scope spans **all four trajectories**, including unparseable ones (each its
+own singleton cluster per `cluster_key_for`), and ties are broken by lowest
+`trajectory_index`. **Verified directly against real data, not asserted**:
+all 5 of Arm A's trivial captures (and Arm B's 1) are on `patient_gene_detection`,
+where the single usable answer sits at a *later* trajectory index than one or
+more unparseable trajectories, so the plurality baseline's tie-break picks the
+non-answer over the correct answer — a mistake the verifier's narrower,
+parseable-only candidate scope structurally cannot make.
+
+**Restricted to the 47 genuinely-contested instances (≥2 real candidates),
+Arm A's gain is +0.1064 with 95% CI [−0.0426, 0.2553] — does not exclude
+zero.** Arm B's restricted gain is −0.0435, CI [−0.1739, 0.0725] — also
+includes zero, consistent with the full-population finding.
+
+**This does not change the primary verdict, which is reported exactly as the
+pre-registration specifies** — Δ over all 120, unmodified, exactly as D-38's
+`gap/3` and every other frozen decision rule in this project is applied
+without re-aggregation shopping. It is reported because "correction
+established for Solver A" would otherwise be read as demonstrated
+adjudication skill, and half the measured effect is a plurality-baseline
+tie-break artifact rather than the verifier discriminating between
+genuinely disagreeing answers. **Flagged, not fixed**: a future reuse of this
+comparison should either restrict the plurality baseline's tie-break scope to
+parseable candidates only, or give the verifier an explicit abstain/no-answer
+option so the two selectors' candidate scopes match. Per this study's scope
+and the operator's explicit instruction, no further experiment was run to
+correct this.
+
+### 5. What this licenses and rules out for the uncertainty-aware harnessed-RL phase
+
+* **Reliability detection generalises across solver family.** Both an
+  incumbent same-lineage-as-generator-family solver and a genuinely
+  independent one show a strong, CI-clear agreement→correctness signal
+  (0.82–0.90 AUROC). A future controller's detection half does not need to be
+  re-validated per solver family before being trusted at this level.
+* **Error correction via this specific verifier method does NOT generalise
+  across solver family, and the direction is solver-specific in a way not
+  predicted in advance.** A harnessed-RL design that assumes "the frozen C1
+  verifier recovers headroom" as a general property inherited from Arm A's
+  result would be wrong for an independent solver family (Arm B: null,
+  point estimate negative) — and, per §4, is not even robustly established
+  for Arm A once the tie-break artifact is set aside.
+* **No general-purpose "verifier corrects errors" claim survives this study.**
+  Any future RL phase that wants a correction signal to bootstrap from must
+  either (a) demonstrate it fresh for its own specific solver, not assume
+  transfer from this result, or (b) use a mechanism other than this
+  LLM-as-a-Verifier method, since neither arm's genuinely-contested subset
+  clears the correction bar.
+* **The plurality-vs-verifier candidate-scope asymmetry (§4) is a
+  measurement-definition problem, not a solver-family finding**, and must be
+  fixed in the harness before any future study reuses this comparison design
+  — otherwise a future "correction established" result cannot be trusted
+  without the same post-hoc decomposition this entry required.
+
+### 6. Stop, per operator instruction
+
+No further uncertainty experiment or RL experiment was started after this
+analysis. Both trajectory-generation servers and the verifier server have
+been shut down; all four GPUs on the allocation are free. Every manifest,
+hash, log, verifier configuration and generated scoring artifact from this
+study is preserved on disk and in this commit — nothing was deleted.
+
+**Reversal condition.** None applies to the H1 verdict itself — it is
+computed exactly as pre-registered and is not revisited by further analysis
+of this data. The §4 mechanism finding is a flagged design defect, not a
+reversal condition of any conclusion above; fixing it and re-running is new
+work, subject to its own north-star check, exactly as D-43's and D-45's
+reversal conditions already state for this line of study.
