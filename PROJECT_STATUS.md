@@ -1,18 +1,80 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-21 (**RL-signal preflight COMPLETE: both arms
-NO-GO.** Agreement-based uncertainty (`plurality_fraction`) does **not**
-identify prompts with useful within-prompt reward variation, for either
-Biomni-R0 or Mistral, on the frozen 120-instance scope-study population. Both
-arms show the same non-monotonic pattern: enrichment peaks at *moderate*
-disagreement and falls to at-or-below chance at *maximal* disagreement — the
-stratum a naive prioritization policy would target. **The current
-uncertainty-guided curriculum hypothesis does not proceed for either solver.**
-No RL protocol drafted, no harness engineering started, per the brief's own
-"only if GO" instruction. See *RL-signal preflight* below and **D-48**.
-Reminder: `agreement → correctness` (D-46, established) and `agreement → RL
-reward contrast` (this entry, NOT established) are separate findings, not
-conflated. Previously, 2026-08-21 (scope study complete, D-46):)
+**Last updated:** 2026-08-21 (**Harnessed-GRPO engineering audit + design
+FROZEN. No training run yet — engineering smoke tests only, pending.** Moving
+past D-48's NO-GO on uncertainty-guided prioritization to the simpler
+question: can plain harnessed GRPO (uniform sampling, fixed K=4, official
+reward only, no verifier, no new correction mechanism) improve Biomni-R0
+itself, and does it move the Part-I reliability/uncertainty behaviour?
+Agent Lightning + verl assessed as a good fit; the one serious blocker found
+is that full-parameter fine-tuning of the 32B model does not fit 4×96GB
+H100 (448 GB needed vs 384 GB available) — mitigated with LoRA, keeping
+Biomni-R0-32B as the primary candidate rather than downgrading model choice.
+Train/held-out split verified disjoint (200 training / 120 held-out, reusing
+already-frozen manifests, 100 never-used instances reserved and untouched).
+See *Harnessed-GRPO pre-registration* below and **D-49**. No RL training has
+occurred. Previously, 2026-08-21 (RL-signal preflight complete, D-48):)
+
+---
+
+## Harnessed-GRPO pre-registration — FROZEN, no training run (2026-08-21, D-49)
+
+**Design:** `reports/rl_harness_preregistration.md`. **Full suite: 632
+passed.** No RL training has occurred; no scientific RL result exists.
+
+**Engineering audit, verified:**
+
+* No verl/Agent Lightning/PEFT/DeepSpeed/Ray/vLLM installed anywhere yet —
+  starting from zero, nothing blocks it (network to PyPI/GitHub confirmed).
+* **Agent Lightning + verl fits this project's existing design almost exactly
+  unchanged**: its proxy sits at the same `base_url` Biomni's `A1` agent
+  already points at (`source="Custom"`) — only the URL value changes, no
+  Biomni code edit (D-01 preserved). verl's SGLang rollout backend reuses the
+  same server binary pinned throughout this project.
+* **Serious blocker found and mitigated, not worked around by downgrading the
+  model**: full-parameter GRPO fine-tuning of Biomni-R0-32B needs ≈448 GB
+  (bf16 weights + fp32 AdamW master/moments) against 384 GB total on 4×96GB
+  H100. **LoRA** keeps trainable-parameter optimizer state to a few GB and
+  keeps Biomni-R0-32B as the primary candidate.
+* Context-overflow safeguards (`budget.py` R2–R5) and the official evaluator
+  are both preserved by construction — neither requires new engineering.
+* Cost is dominated by rollout wall-time (Biomni trajectories are slow), not
+  the RL update itself: the frozen pilot config costs roughly 1.5 GPU-hours
+  of rollout time per training step.
+
+**Split, verified disjoint, no new manifest built:**
+
+| pool | n | source |
+| --- | ---: | --- |
+| training | 200 | `manifests/phase1.jsonl` ∪ `manifests/phase2b.jsonl` |
+| held-out eval | 120 | `manifests/scope_main.jsonl` (Biomni-R0's already-characterised population) |
+| reserved, untouched | 100 | never-used pool; not spent |
+
+Reusing the scope study's 120 instances as held-out means **the pre-RL half of
+every endpoint is already computed** (D-46/D-48) — only a post-RL K=4 rerun on
+the identical instances is needed.
+
+**Frozen pilot config**: LoRA GRPO, uniform sampling (no uncertainty
+guidance, per D-48), K=4, batch 16 prompts/step (64 rollouts/step), ≈25
+optimizer steps (≈1,600 total training rollouts), official binary reward
+only. **GO** requires the held-out reward-gain CI lower bound > 0 **and** the
+safety check (agreement rising with no accuracy gain, or accuracy dropping)
+not firing.
+
+**Next actions, in order:**
+
+1. Build the verl + Agent Lightning environment (new venv, `pip install verl
+   agentlightning`, resolve against `flash-attn` already in `sglang_srv`).
+2. Engineering smoke test: route one real Biomni trajectory through the
+   Agent Lightning proxy against the existing pinned SGLang server; confirm
+   trace capture, reward attachment, and R2–R5 firing unchanged.
+3. A synthetic/dummy-reward optimizer-step check (no real Biomni prompt) to
+   confirm the LoRA training loop runs on this hardware before spending any
+   real rollout.
+4. **Only then**, with those three green and separate explicit operator
+   approval, launch the frozen pilot training run.
+
+**No GPU server is currently running for this work.**
 
 ---
 

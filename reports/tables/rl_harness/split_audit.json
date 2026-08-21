@@ -1,0 +1,39 @@
+{
+  "held_out_eval_pool": {
+    "by_task": {
+      "gwas_causal_gene_gwas_catalog": 15,
+      "gwas_causal_gene_opentargets": 15,
+      "gwas_causal_gene_pharmaprojects": 15,
+      "gwas_variant_prioritization": 15,
+      "lab_bench_dbqa": 15,
+      "lab_bench_seqqa": 15,
+      "patient_gene_detection": 15,
+      "screen_gene_retrieval": 15
+    },
+    "n": 120,
+    "sources": [
+      "manifests/scope_main.jsonl"
+    ]
+  },
+  "overlap": 0,
+  "reserved_untouched_never_used": 100,
+  "train_pool": {
+    "by_task": {
+      "crispr_delivery": 10,
+      "gwas_causal_gene_gwas_catalog": 20,
+      "gwas_causal_gene_opentargets": 20,
+      "gwas_causal_gene_pharmaprojects": 20,
+      "gwas_variant_prioritization": 20,
+      "lab_bench_dbqa": 20,
+      "lab_bench_seqqa": 20,
+      "patient_gene_detection": 20,
+      "rare_disease_diagnosis": 30,
+      "screen_gene_retrieval": 20
+    },
+    "n": 200,
+    "sources": [
+      "manifests/phase1.jsonl",
+      "manifests/phase2b.jsonl"
+    ]
+  }
+}

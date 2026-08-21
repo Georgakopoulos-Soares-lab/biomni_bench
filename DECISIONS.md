@@ -2792,3 +2792,99 @@ thresholds — checked against the result, not adjusted by it, exactly as
 D-47 states. A different predictor, a non-monotonic-aware stratification
 scheme, or a different outcome definition (e.g., graded rather than binary
 mixed-reward) would be new work, subject to its own pre-registration.
+
+---
+
+## D-49 Harnessed-GRPO pre-registration frozen: engineering audit + design, no training run
+
+**Decided:** 2026-08-21. Design: `reports/rl_harness_preregistration.md`.
+No RL training has occurred. Split verified: `scripts/rl_harness_split_audit.py`,
+`reports/tables/rl_harness/split_audit.json`.
+
+**What this is.** Following D-48's NO-GO on uncertainty-guided prioritization,
+this opens the simpler question the closure licenses next: can **plain**
+harnessed GRPO (uniform sampling, fixed K, official reward only, no verifier,
+no new correction mechanism) improve Biomni-R0 itself, and does it move the
+reliability/uncertainty behaviour characterised in Part I (Phase 1, the scope
+study)? Six sub-questions, each mapped to a specific pre/post endpoint.
+
+**Engineering audit, verified rather than assumed:**
+
+* **Nothing installed yet.** `pip list` on both project environments shows no
+  verl, Agent Lightning, PEFT, DeepSpeed, Ray, or vLLM. Network egress to
+  PyPI/GitHub confirmed reachable. Nothing blocks starting from zero.
+* **Agent Lightning + verl is a good fit, conceptually.** verl supports GRPO
+  natively and an SGLang rollout backend — the same server binary already
+  pinned throughout this project. Agent Lightning's proxy sits exactly at the
+  `base_url` Biomni's `A1` agent already points at (`source="Custom"`), so
+  the **only configuration that changes is the URL** — no Biomni code change,
+  respecting D-01. Multi-turn credit assignment (Biomni averages ~14 LLM
+  calls per trajectory) uses the standard scheme: one masked training
+  sequence per rollout, one trajectory-level reward broadcast to every
+  assistant-turn span. Finer per-turn credit assignment is explicitly out of
+  scope — "no new correction mechanism" rules it out regardless.
+* **The serious blocker: full-parameter GRPO fine-tuning of the 32B model does
+  not fit in 4×96GB H100 (384 GB total)**, independent of rollout serving —
+  bf16 weights (64 GB) + fp32 AdamW master weights and two moment buffers
+  (384 GB) totals 448 GB, before activations or the rollout engine's own
+  memory. **Mitigation: LoRA, not a smaller model.** A rank-16–64 LoRA's
+  trainable-parameter optimizer state is a few GB; the frozen base weights can
+  be shared with the rollout engine's own resident copy under verl's
+  hybrid-engine design. This keeps Biomni-R0-32B as the primary candidate,
+  per the brief's own instruction, because the blocker has a standard
+  mitigation rather than requiring a smaller model.
+* **Context-overflow safeguards (`budget.py` R2–R5) are preserved by
+  construction**: they execute inside `runner.py`'s LangGraph instrumentation,
+  upstream of the HTTP call to whichever `base_url` is configured — routing
+  that call through an Agent Lightning proxy instead of directly to SGLang
+  changes nothing about when or whether they fire.
+* **Official evaluator preserved exactly** — reward is
+  `OfficialEvaluator`/`BiomniEval1._compute_reward`, computed after each
+  trajectory as always; the only new step is forwarding the scalar to the RL
+  reward channel.
+* **Cost is dominated by rollout wall-time, not the RL update.** At this
+  project's own measured per-trajectory time (≈310–374s) and established
+  concurrency (4), the frozen pilot config (64 rollouts/step) costs roughly
+  1.5 hours of rollout wall-time per step before backward/optimizer time.
+
+**Train/held-out split, verified disjoint, no new manifest built:**
+
+| pool | n | source |
+| --- | ---: | --- |
+| training | 200 | `manifests/phase1.jsonl` ∪ `manifests/phase2b.jsonl` |
+| held-out eval | 120 | `manifests/scope_main.jsonl` (Biomni-R0's already-characterised Arm A population) |
+| overlap | 0 | verified |
+| reserved, untouched | 100 | the never-used pool (D-45); not spent here |
+
+Reusing the scope study's own 120 instances as the held-out set means the
+**pre-RL half of every endpoint is already computed** (D-46/D-48: Pass@1
+0.442, plurality 0.617, Oracle@4 0.792, agreement→correctness AUROC 0.896
+[0.855, 0.930], selection-failure 0.175 [0.108, 0.25]) — only a post-RL K=4
+rerun on the identical instances is needed, using the identical frozen
+analysis code already committed.
+
+**Frozen pilot configuration**: LoRA GRPO on Biomni-R0-32B; uniform sampling
+over the 200-instance training pool (no uncertainty-guided sampling, per
+D-48); K=4 (matching Part I, not 8, to bound rollout cost); batch size 16
+prompts/step (64 rollouts/step); ≈2 epochs over the training pool (≈25
+optimizer steps, ≈1,600 total training rollouts); official binary reward
+only — no verifier, no confidence term, no adaptive K.
+
+**Primary endpoint**: Δ_reward = post-RL − pre-RL (0.4417) held-out mean
+reward, paired instance-clustered bootstrap, 10,000 replicates, seed
+`20260821`. **GO** requires the CI lower bound `> 0` **and** the safety check
+(H-RL2b: agreement rising with no accuracy gain, or accuracy dropping) not
+firing — a plain reward-CI check alone is explicitly insufficient, mirroring
+D-47's own refusal to accept a bare point estimate.
+
+**What this does not authorise.** Engineering smoke tests only — environment
+build, a dummy-reward optimizer-step check, one real trajectory routed through
+the Agent Lightning proxy to confirm trace capture and reward attachment. **No
+scientific RL training run starts without separate, explicit operator
+approval.**
+
+**Reversal condition.** None applies to the frozen split, config, or GO rule
+— checked against the result, never adjusted by it. A different LoRA rank,
+batch size, or K chosen *before* training starts and stated as such is a
+configuration decision within this pre-registration's own frozen table; chosen
+*after* seeing a training curve, it is a new experiment.
