@@ -1,19 +1,26 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-21 (**Harnessed-GRPO engineering audit + design
-FROZEN. No training run yet — engineering smoke tests only, pending.** Moving
-past D-48's NO-GO on uncertainty-guided prioritization to the simpler
-question: can plain harnessed GRPO (uniform sampling, fixed K=4, official
-reward only, no verifier, no new correction mechanism) improve Biomni-R0
-itself, and does it move the Part-I reliability/uncertainty behaviour?
-Agent Lightning + verl assessed as a good fit; the one serious blocker found
-is that full-parameter fine-tuning of the 32B model does not fit 4×96GB
-H100 (448 GB needed vs 384 GB available) — mitigated with LoRA, keeping
+**Last updated:** 2026-08-21 (**Both harnessed-GRPO engineering smoke tests
+GREEN (D-50). No training run yet — still pending explicit operator
+approval.** The LoRA GRPO dummy-reward optimizer step completed with real
+gradient updates and correct FSDP↔vLLM weight sync (root cause of an earlier
+multi-hour hang: verl 0.9.0's weight-sync path needs vLLM 0.24.0, not the
+0.27.1 pip resolved). The Agent Lightning proxy trace-capture check completed
+on a real Biomni-R0-32B trajectory (161 captured spans, full message/token
+content) and, on a second run against the budget-enabled config, confirmed
+R2–R5 actually fire through the proxy (`observations_truncated: 2`) — not
+just present in code. Moving past D-48's NO-GO on uncertainty-guided
+prioritization to the simpler question: can plain harnessed GRPO (uniform
+sampling, fixed K=4, official reward only, no verifier, no new correction
+mechanism) improve Biomni-R0 itself, and does it move the Part-I
+reliability/uncertainty behaviour? The one serious blocker found earlier is
+that full-parameter fine-tuning of the 32B model does not fit 4×96GB H100
+(448 GB needed vs 384 GB available) — mitigated with LoRA, keeping
 Biomni-R0-32B as the primary candidate rather than downgrading model choice.
 Train/held-out split verified disjoint (200 training / 120 held-out, reusing
 already-frozen manifests, 100 never-used instances reserved and untouched).
-See *Harnessed-GRPO pre-registration* below and **D-49**. No RL training has
-occurred. Previously, 2026-08-21 (RL-signal preflight complete, D-48):)
+See *Harnessed-GRPO pre-registration* below and **D-49/D-50**. No RL training
+has occurred. Previously, 2026-08-21 (RL-signal preflight complete, D-48):)
 
 ---
 
@@ -63,16 +70,21 @@ not firing.
 
 **Next actions, in order:**
 
-1. Build the verl + Agent Lightning environment (new venv, `pip install verl
-   agentlightning`, resolve against `flash-attn` already in `sglang_srv`).
-2. Engineering smoke test: route one real Biomni trajectory through the
-   Agent Lightning proxy against the existing pinned SGLang server; confirm
-   trace capture, reward attachment, and R2–R5 firing unchanged.
-3. A synthetic/dummy-reward optimizer-step check (no real Biomni prompt) to
-   confirm the LoRA training loop runs on this hardware before spending any
-   real rollout.
-4. **Only then**, with those three green and separate explicit operator
-   approval, launch the frozen pilot training run.
+1. ~~Build the verl + Agent Lightning environment~~ **DONE** (D-50):
+   `/scratch/11034/atzanakak/envs/rl_harness` — verl 0.9.0, agentlightning
+   0.3.0, vllm 0.24.0 (pinned down from 0.27.1 — see D-50 for why), flash-attn
+   2.8.3.post1.
+2. ~~Engineering smoke test: route one real Biomni trajectory through the
+   Agent Lightning proxy~~ **DONE, GREEN** (D-50): trace capture (161 spans,
+   full message/token content), reward/answer flow intact, R2–R5 confirmed
+   firing (not just present in config) on a second run against the
+   budget-enabled config.
+3. ~~A synthetic/dummy-reward optimizer-step check~~ **DONE, GREEN** (D-50):
+   LoRA GRPO on Qwen2.5-0.5B/GSM8K, 2 steps, real gradient updates, correct
+   FSDP↔vLLM weight sync (0.999 rollout/training policy correlation).
+4. **Next and only remaining prerequisite**: with all three above green,
+   launch of the frozen pilot training run (D-49 §B.2) still requires
+   **separate, explicit operator approval** — not yet given.
 
 **No GPU server is currently running for this work.**
 

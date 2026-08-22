@@ -2888,3 +2888,81 @@ approval.**
 batch size, or K chosen *before* training starts and stated as such is a
 configuration decision within this pre-registration's own frozen table; chosen
 *after* seeing a training curve, it is a new experiment.
+
+---
+
+## D-50 Both engineering smoke tests green: LoRA GRPO optimizer step and Agent Lightning proxy trace capture. No training run started.
+
+**What was built.** New venv `/scratch/11034/atzanakak/envs/rl_harness`
+(Python 3.12.11, built with `PYTHONPATH` unset to avoid ensurepip breakage):
+`verl` 0.9.0, `agentlightning` 0.3.0 (pinned `fastapi==0.136.3`; a newer
+resolver default removed an internal symbol litellm's proxy server imports),
+`vllm` 0.24.0 (see below), `flash-attn` 2.8.3.post1 (built from source; verl's
+log-prob padding path imports it unconditionally regardless of the model's
+own attention backend). Nothing was installed into `sglang_srv` — this is a
+fully separate environment; the pinned serving stack used by every prior
+phase is untouched.
+
+**The one real engineering blocker, and the fix.** The first four smoke
+attempts hung silently and indefinitely inside
+`ray::WorkerDict.actor_rollout_update_weights` — both FSDP workers at 0% GPU
+utilization, weights resident, no log growth, no traceback. `py-spy` was
+unavailable (no ptrace permission on this shared node), so diagnosis went
+through verl's own source instead of guessing: `checkpoint_engine.backend`
+defaults to `"naive"`, which calls vLLM's async `wake_up()` RPC when
+`free_cache_engine` is true (the default) — a plausible hang point, but
+setting `free_cache_engine=False` did **not** fix it; the identical hang
+recurred a second time. The actual cause, found in verl's own Docker build
+files: **verl 0.9.0's weight-sync code path is built and tested against vLLM
+0.24.0** (`docker/Dockerfile.stable.vllm`: "Apply two unmerged vLLM fixes
+required by verl weight-sync flows"), but pip had resolved vLLM 0.27.1 —
+three minor versions ahead, missing exactly those patches. Downgrading to
+`vllm==0.24.0` (which also pulled torch down to 2.11.0+cu130) fixed the hang
+outright; no workaround flags were needed once the version matched.
+
+**Smoke test 1 — dummy-reward LoRA GRPO optimizer step.** Qwen2.5-0.5B-Instruct
+on GSM8K (deliberately generic, not Biomni), 2×H100, LoRA rank 16, GRPO,
+K=2, 2 training steps. Both steps completed with real gradient updates
+(`actor/grad_norm` nonzero at step 2, `actor/pg_loss` nonzero), weight sync
+completing in ~2s/step with no hang, and `rollout_actor_probs_pearson_corr:
+0.999` confirming the vLLM-served rollout policy and the just-updated
+training policy agree almost exactly — the sync is not just fast but
+correct. Two independent, unrelated blockers were fixed en route: wandb
+requiring an API key (switched `trainer.logger` to console-only) and the
+missing `flash-attn` dependency above.
+
+**Smoke test 2 — Agent Lightning proxy trace capture.** One real Biomni-R0-32B
+trajectory (`gwas_causal_gene_opentargets`, instance 217), served by a real
+SGLang replica (TP=2, same config as every prior phase: bf16, context 65536,
+YaRN override), routed through `agentlightning.LLMProxy` instead of directly
+to SGLang — `base_url` was the only value that changed; no Biomni or
+`runner.py` edit. The trajectory completed normally (`completed: true`,
+parsed answer `VKORC1L1`, wall time 629s, in range with this project's own
+measured per-trajectory cost) and the proxy's `InMemoryLightningStore`
+captured 161 spans for the rollout, including a `litellm_request` span
+carrying `gen_ai.input.messages`, `gen_ai.output.messages`,
+`gen_ai.usage.{input,output,total}_tokens`, and `gen_ai.response.finish_reasons`
+— exactly the per-turn content Agent Lightning's standard trajectory-level
+credit assignment (A.2) needs to build a training sequence.
+
+**R2–R5 preservation, checked with a real positive control, not just by
+inspection.** `configs/smoke.yaml` (used for smoke test 2's first run) never
+enables `trajectory_budget` (`enabled: false` is the project-wide default for
+that config), so that first run was not informative about the guards either
+way. Rerun against `configs/phase2b_smoke.yaml` (`trajectory_budget.enabled:
+true`, the ablation-selected R2/R4/R5 arm) through the identical proxy setup:
+the run completed normally (parsed answer `DICER1`, confidence `0.85`) and
+`metadata.json`'s `budget_stats` shows `observations_truncated: 2`,
+`observation_tokens_dropped: 74775` — R5 actually fired, not merely present
+in config. This confirms A.4's claim (the guards execute upstream of the HTTP
+call, so proxy-routing cannot affect them) with a real firing event, not only
+code inspection.
+
+**What this does not authorise.** Both items were engineering smoke tests
+exactly as scoped in D-49 — infrastructure validation, not a scientific
+result. **No RL training has occurred. The first real training run still
+requires separate, explicit operator approval**, per D-49's own frozen gate.
+
+**Reversal condition.** None. The vLLM version pin (0.24.0) and the
+console-only logger are environment facts, not scientific choices, and do not
+touch the frozen config in D-49 §B.2.
