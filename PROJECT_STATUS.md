@@ -1,26 +1,27 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-21 (**Both harnessed-GRPO engineering smoke tests
-GREEN (D-50). No training run yet — still pending explicit operator
-approval.** The LoRA GRPO dummy-reward optimizer step completed with real
-gradient updates and correct FSDP↔vLLM weight sync (root cause of an earlier
-multi-hour hang: verl 0.9.0's weight-sync path needs vLLM 0.24.0, not the
-0.27.1 pip resolved). The Agent Lightning proxy trace-capture check completed
-on a real Biomni-R0-32B trajectory (161 captured spans, full message/token
-content) and, on a second run against the budget-enabled config, confirmed
-R2–R5 actually fire through the proxy (`observations_truncated: 2`) — not
-just present in code. Moving past D-48's NO-GO on uncertainty-guided
-prioritization to the simpler question: can plain harnessed GRPO (uniform
-sampling, fixed K=4, official reward only, no verifier, no new correction
-mechanism) improve Biomni-R0 itself, and does it move the Part-I
-reliability/uncertainty behaviour? The one serious blocker found earlier is
-that full-parameter fine-tuning of the 32B model does not fit 4×96GB H100
-(448 GB needed vs 384 GB available) — mitigated with LoRA, keeping
-Biomni-R0-32B as the primary candidate rather than downgrading model choice.
-Train/held-out split verified disjoint (200 training / 120 held-out, reusing
-already-frozen manifests, 100 never-used instances reserved and untouched).
-See *Harnessed-GRPO pre-registration* below and **D-49/D-50**. No RL training
-has occurred. Previously, 2026-08-21 (RL-signal preflight complete, D-48):)
+**Last updated:** 2026-08-21 (**Full harnessed-GRPO integration code built and
+unit-tested (D-51): Biomni harness → Agent Lightning proxy → K rollouts →
+OfficialEvaluator reward → verl GRPO → LoRA update, all new files, nothing
+frozen touched. GPU end-to-end run blocked by a precisely diagnosed
+agentlightning-0.3.0/verl-0.9.0 version gap — not a Biomni-specific
+problem.** `agentlightning`'s own copy of a verl `TaskRunner` imports
+`verl.workers.fsdp_workers.{ActorRolloutRefWorker,AsyncActorRolloutRefWorker,
+CriticWorker}`, which verl 0.9.0 no longer has (unified into
+`engine_workers.py`). A related one-line import (`create_rl_sampler`) was
+patched; this one is not a one-liner — real due diligence on downgrading verl
+instead (0.8.0: same problem; 0.6.0: has the old API but its own
+`transformers` incompatibility cascades further) showed that path reopens the
+exact multi-hour vLLM weight-sync hang D-50 already fixed, with no bound on
+where it stops. Deliberately stopped rather than hand-patching agentlightning's
+internal training-loop classes under time pressure. Environment reverted to
+D-50's known-good state. Everything upstream of agentlightning's verl glue is
+independently proven: the Biomni-via-subprocess design and reward path (D-50 +
+D-51's 14 new tests, real `OfficialEvaluator`), and LoRA GRPO training
+mechanics in isolation (D-50, verl 0.9.0 + vLLM 0.24.0 directly, no
+agentlightning). No RL training has occurred. See *Harnessed-GRPO
+pre-registration* below and **D-49/D-50/D-51**. Previously, 2026-08-21
+(RL-signal preflight complete, D-48):)
 
 ---
 
@@ -82,9 +83,18 @@ not firing.
 3. ~~A synthetic/dummy-reward optimizer-step check~~ **DONE, GREEN** (D-50):
    LoRA GRPO on Qwen2.5-0.5B/GSM8K, 2 steps, real gradient updates, correct
    FSDP↔vLLM weight sync (0.999 rollout/training policy correlation).
-4. **Next and only remaining prerequisite**: with all three above green,
-   launch of the frozen pilot training run (D-49 §B.2) still requires
-   **separate, explicit operator approval** — not yet given.
+4. ~~Wire the components into one runnable pipeline~~ **CODE DONE, GPU
+   RUN BLOCKED** (D-51): `scripts/rl_harness/` — dataset loader, `BiomniLitAgent`,
+   `rl_score_one.py`, `rl_harness_pilot_launcher.py`. 14 new tests, all
+   green. Blocked on the agentlightning/verl version gap above — see D-51
+   for the exact diagnosis and why a further verl downgrade was not pursued.
+5. **Next**: either wait for/request an agentlightning release matching
+   verl's current unified-engine layout, or scope a *separate* session to
+   reproduce agentlightning's `TaskRunner` role/resource-pool construction
+   against verl 0.9.0's `engine_workers.py` directly — real engineering work,
+   not a quick patch. Only after that: launch of the frozen pilot training
+   run (D-49 §B.2) still requires **separate, explicit operator approval** —
+   not yet given, and not yet reachable regardless.
 
 **No GPU server is currently running for this work.**
 

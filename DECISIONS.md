@@ -2966,3 +2966,122 @@ requires separate, explicit operator approval**, per D-49's own frozen gate.
 **Reversal condition.** None. The vLLM version pin (0.24.0) and the
 console-only logger are environment facts, not scientific choices, and do not
 touch the frozen config in D-49 §B.2.
+
+---
+
+## D-51 Full harnessed-GRPO pipeline built and unit-tested; GPU end-to-end run blocked by a diagnosed agentlightning/verl version gap, not by anything Biomni-specific
+
+**What was built** (`scripts/rl_harness/`, new files only, nothing frozen
+touched): the full chain `Biomni task -> real Biomni harness (subprocess in
+the unchanged biomni_unc env) -> Agent Lightning proxy -> Biomni-R0 policy ->
+K rollouts -> OfficialEvaluator reward -> verl GRPO -> LoRA update`.
+
+* `rl_harness_dataset.py` — loads the frozen 200-instance training pool
+  (`phase1.jsonl` ∪ `phase2b.jsonl`), raises `HeldOutOverlapError` if any
+  instance collides with `scope_main.jsonl` (the 120-instance held-out set).
+  Never touches the reserved 100.
+* `biomni_lit_agent.py` — `BiomniLitAgent(LitAgent)`. Every Biomni-touching
+  call is a **subprocess into the unchanged `biomni_unc` environment**
+  (`cli.py run-one`, then the new `rl_score_one.py`); this process
+  (`rl_harness` venv) never imports `biomni_uncertainty` or `biomni` — the
+  isolation boundary is the subprocess call, not a shared environment.
+  `resources["main_llm"].endpoint` (Agent-Lightning-proxy-scoped, per rollout)
+  is the only thing that changes versus every prior phase's direct-SGLang
+  `base_url`. Terminal reward is attached via `emit_reward(...)`, which
+  D-50 already proved lands correctly on the proxy-captured span sequence.
+* `rl_score_one.py` — thin CLI wrapper around the **unmodified**
+  `evaluation.OfficialEvaluator`, run inside `biomni_unc`. A context-overflow
+  or non-answer trajectory scores the same defined `0.0`
+  (`status="unparseable_answer"`) every prior phase already uses — never
+  `None`, never dropped.
+* `BiomniLitAgent._score_trajectory` — the one new judgment call this
+  integration makes: any evaluator outcome *other than* `"ok"` or
+  `"unparseable_answer"` (a genuine evaluator exception, missing ground
+  truth, a crashed/timed-out subprocess) is logged loudly and **also**
+  collapsed to the same frozen `0.0`, rather than raising or silently
+  vanishing from the GRPO group. This treats "infrastructure failed to score
+  this rollout" the same as "the trajectory produced no answer" — both are
+  already 0-reward outcomes in this project's convention
+  (`evaluation.py`: "every task already returns exactly 0.0 or 1.0").
+* `rl_harness_pilot_launcher.py` — **the single reproducible launcher**.
+  Builds the training-task list, the `BiomniRLConfig`, and verl's GRPO config
+  as a plain nested dict (`agentlightning.algorithm.verl.VERL`'s documented
+  interface), then calls `Trainer(...).fit(BiomniLitAgent(...), train_dataset=tasks)`.
+  `--dry-run` prints the resolved config/dataset without touching Ray/GPUs.
+
+**Tests** (14 new, all green): `test_rl_harness_dataset.py` (4, biomni_unc —
+real-manifest disjointness plus a synthetic-overlap-is-caught case),
+`test_rl_harness_score_one.py` (4, biomni_unc, real `BiomniEval1` — the exact
+claim the brief asked to be verified: a non-answer trajectory scores a
+defined `0.0`, not `None`), `test_rl_harness_lit_agent.py` (10, **run under
+`rl_harness`, not biomni_unc** — `pytest.importorskip("agentlightning")`
+guards it so the standard suite skips it cleanly instead of failing on a
+deliberately-absent dependency). Full suite: 632 (biomni_unc, unaffected) +
+8 new (biomni_unc) + 10 new (rl_harness) = all green. `ruff check`/`format`
+clean on every new file.
+
+**The GPU end-to-end run is blocked, and the block is diagnosed precisely.**
+`agentlightning` 0.3.0 (the latest release on PyPI) ships its own copy of a
+verl `TaskRunner` (`agentlightning/verl/entrypoint.py`) written against an
+older verl internal layout than verl 0.9.0 (the version D-50 already fixed
+the weight-sync hang against). Two distinct incompatibilities were found:
+
+1. `from verl.trainer.main_ppo import create_rl_sampler` — the function
+   moved to `verl.trainer.ppo.utils` in verl's own refactor. **Patched**:
+   installed-package `try/except ImportError` fallback, same function, same
+   signature, confirmed present in 0.9.0 — a minimal, documented environment
+   patch (not a repo file), same spirit as the fastapi pin.
+2. `from verl.workers.fsdp_workers import ActorRolloutRefWorker,
+   AsyncActorRolloutRefWorker, CriticWorker` — this module and both class
+   names no longer exist. verl 0.9.0 unified them into
+   `verl.workers.engine_workers.{ActorRolloutRefWorker, TrainingWorker}`
+   under a different worker-construction pattern (confirmed by reading
+   verl's own current `main_ppo_v0.py`, which builds workers this new way).
+   **Not patched.** A real fix here is not a one-line import swap: it is
+   reproducing agentlightning's `TaskRunner.run()` role/resource-pool
+   construction against verl's new unified-engine API — third-party
+   training-loop internals, not this project's code.
+
+**Bounded due diligence on the alternative (downgrade verl instead), then a
+deliberate stop.** verl 0.8.0 already has the new `engine_workers.py` layout
+(no `fsdp_workers.py`) — downgrading that far doesn't fix issue 2. verl 0.6.0
+has both APIs agentlightning expects (checked by inspecting the wheel
+directly, no environment changes) — but installing it (`--no-deps`, to avoid
+disturbing anything else) fails immediately on an unrelated `transformers`
+incompatibility (`AutoModelForVision2Seq` removed), meaning a 0.6.0 downgrade
+cascades into further, unbounded dependency resolution — likely including
+whatever vLLM version verl 0.6.0 was actually tested against, reopening the
+exact weight-sync hang D-50 spent hours diagnosing, with no guarantee it
+stops there. **Chasing this further risks either an open-ended version
+bisection or a hand-patched training loop that appears to run but is subtly
+wrong** (masking, advantage computation, or reward attribution silently
+broken by a shimmed class) — a materially worse outcome than a clean,
+disclosed blocker. Verl was reverted to 0.9.0 (confirmed via its own native
+import paths); the environment is back to exactly D-50's validated state.
+
+**What this means concretely.** Everything upstream of `agentlightning`'s
+verl orchestration layer is built, real, and independently proven: the
+Biomni-harness-via-subprocess design (D-50's proxy smoke test), the reward
+path (this entry's new tests, real `OfficialEvaluator`), and the LoRA GRPO
+training mechanics in isolation (D-50's Qwen/GSM8K optimizer-step check, on
+verl 0.9.0 + vLLM 0.24.0 directly, bypassing agentlightning entirely). The
+one missing link is agentlightning's own glue code catching up to verl's
+current architecture. The 8-item GPU checklist (real task through the proxy;
+K trajectories; reward attachment; verl's GRPO group; a real optimizer step;
+weight sync back to rollout; a subsequent rollout using the updated policy;
+correct provenance) is **not yet exercised end-to-end on GPU** for this
+reason — items 1-3's mechanics are each independently proven (D-50 + this
+entry's tests) but not yet chained through a single running verl step with
+Biomni-R0-32B.
+
+**What this does not authorise.** Still true from D-49: no scientific RL
+training run. Additionally: no further verl-version downgrade attempt and no
+hand-rewrite of agentlightning's `TaskRunner`/`AgentLightningTrainer` without
+a separate, explicitly scoped session — that is materially more engineering
+risk than "the smallest engineering end-to-end test necessary" and deserves
+its own review, not a rushed patch under this brief.
+
+**Reversal condition.** None on the frozen design. The verl/vLLM/flash-attn/
+agentlightning versions are environment facts, re-checked here and left in
+the last known-good (D-50) state; they do not touch D-49 §B.2's frozen
+scientific config.
