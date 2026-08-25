@@ -62,6 +62,9 @@ curl -fsS "http://127.0.0.1:$PORT/healthz" >/dev/null
     >"$LOG_DIR/agl-controller.log" 2>&1 &
 controller_pid=$!
 
+# The actor initially owns ~73 GiB on the single GH200.  vLLM's hybrid
+# sleep/offload path must bootstrap from the remaining memory, rather than
+# reserve its steady-state share before the actor is released.
 "$RL_PY" "$ROOT/scripts/rl_harness/rl_harness_v1_launcher.py" \
     --experiment-id "$RUN_ID" \
     --model-path "$MODEL" \
@@ -70,4 +73,4 @@ controller_pid=$!
     --groundtruth "$ROOT/manifests/phase2b.groundtruth.jsonl" \
     --agl-base-url "http://127.0.0.1:$PORT" --agl-key "$KEY" \
     --n-gpus 1 --tp 1 --rollout-n 2 --train-batch-size 1 --micro-batch-size 1 \
-    --lora-rank 8 --gpu-mem-util 0.82 --total-steps 1 --save-freq 1 --n-tasks 1
+    --lora-rank 8 --gpu-mem-util 0.20 --total-steps 1 --save-freq 1 --n-tasks 1
