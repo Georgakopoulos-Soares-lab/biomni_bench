@@ -1,0 +1,21 @@
+diff --git a/verl/workers/engine_workers.py b/verl/workers/engine_workers.py
+index 1111111..2222222 100644
+--- a/verl/workers/engine_workers.py
++++ b/verl/workers/engine_workers.py
+@@ -664,6 +664,16 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
+             self.actor.reset()
+             self.actor.set_loss_fn(self.loss_fn)
+             self.set_dispatch_collect(mesh_name="actor", **self.actor.get_dispatch_collect())
++
++            # In one-GPU hybrid mode vLLM must first construct its dummy model
++            # before the checkpoint manager can sleep/wake the two engines.
++            # An FSDP actor using manual parameter offload is still resident
++            # after reset, so release it explicitly at this bootstrap boundary.
++            # The standard `update_weights` path later performs the normal
++            # vLLM sleep -> actor export -> actor offload -> vLLM resume cycle.
++            if self._is_rollout and self.actor.engine.is_param_offload_enabled:
++                self.actor.engine.to("cpu", model=True, optimizer=True, grad=True)
++                aggressive_empty_cache(force_sync=True)
+ 
+         # 3. build rollout engine
+         if "rollout" in self.role:

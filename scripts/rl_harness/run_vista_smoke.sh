@@ -29,7 +29,10 @@ N_TASKS="${RL_N_TASKS:-1}"
 LORA_RANK="${RL_LORA_RANK:-8}"
 
 mkdir -p "$LOG_DIR" "$VISTA_ROOT/outputs/$RUN_ID" "$VISTA_ROOT/checkpoints/$RUN_ID" "$VISTA_ROOT/ray"
-export PYTHONPATH="$ROOT/scripts/rl_harness:${PYTHONPATH:-}"
+# Use the pinned, scratch-resident verl source so the small one-GPU bootstrap
+# offload patch is explicit and reproducible from patches/ rather than hidden
+# inside a site-packages installation.
+export PYTHONPATH="$ROOT/scripts/rl_harness:$VISTA_ROOT/upstream/verl-0.9.0:${PYTHONPATH:-}"
 export HF_HOME="$VISTA_ROOT/hf_cache"
 export RAY_TMPDIR="$VISTA_ROOT/ray"
 export BIOMNI_PATH="$VISTA_ROOT/biomni_data_root"
