@@ -1,11 +1,18 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-21 (**Full harnessed-GRPO integration code built and
-unit-tested (D-51): Biomni harness → Agent Lightning proxy → K rollouts →
-OfficialEvaluator reward → verl GRPO → LoRA update, all new files, nothing
-frozen touched. GPU end-to-end run blocked by a precisely diagnosed
-agentlightning-0.3.0/verl-0.9.0 version gap — not a Biomni-specific
-problem.** `agentlightning`'s own copy of a verl `TaskRunner` imports
+**Last updated:** 2026-08-24 (**Vista implementation in progress; no scientific
+RL run.**) The obsolete `agentlightning==0.3.0` interface remains incompatible
+with verl 0.9.0, but the current upstream source at
+`8435586d147b4cf7bff33e687d7317149e79cbb8` has a native-verl trainer and
+local proxy/controller architecture. Commit `c5d7e33` adapts the unchanged
+Biomni subprocess/evaluator boundary to that local-runner API, adds a
+reproducible three-import compatibility patch for verl 0.9.0, and provides a
+one-GH200 detached Vista smoke launcher. The Python 3.12, model, and data
+assets are building/downloading under `/scratch/11034/atzanakak/biomni_vista`;
+the GPU smoke has not yet run and must not be reported as passed until its
+artifacts show a real update and subsequent rollout.
+
+The prior blocker was precisely diagnosed: `agentlightning`'s own copy of a verl `TaskRunner` imports
 `verl.workers.fsdp_workers.{ActorRolloutRefWorker,AsyncActorRolloutRefWorker,
 CriticWorker}`, which verl 0.9.0 no longer has (unified into
 `engine_workers.py`). A related one-line import (`create_rl_sampler`) was

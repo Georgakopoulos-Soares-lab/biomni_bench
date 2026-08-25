@@ -3085,3 +3085,53 @@ its own review, not a rushed patch under this brief.
 agentlightning versions are environment facts, re-checked here and left in
 the last known-good (D-50) state; they do not touch D-49 §B.2's frozen
 scientific config.
+
+---
+
+## D-52 Current Agent Lightning local runner retained; minimal verl 0.9 compatibility patch, Vista smoke pending
+
+**Decided:** 2026-08-24. The public Agent Lightning source checked at
+`8435586d147b4cf7bff33e687d7317149e79cbb8` (v1.0.1) no longer uses the old
+`fsdp_workers` training construction: its `AgentLightningRayPPOTrainer`
+subclasses verl's current `RayPPOTrainer`, and its supported local controller
+keeps rollout identity, proxy traces, and grouped rollout submission. It does,
+however, declare `verl<0.9` and retain three moved imports in its entrypoint.
+
+**Compatibility choice.** Keep the current Agent Lightning proxy/controller
+and native-verl trainer rather than reviving the obsolete 0.3.0
+`TaskRunner`. Apply only the checked-in patch
+`scripts/rl_harness/patches/agentlightning-1.0.1-verl-0.9.0.patch`, which:
+
+1. imports `get_ppo_ray_runtime_env` from verl's current constants module and
+   passes the config required by its current signature;
+2. delegates role/resource-pool creation to verl 0.9's own retained
+   `main_ppo_v0.BaseTaskRunner`; and
+3. imports sampler/validation helpers from their current native modules.
+
+It does not replace Agent Lightning's trainer, modify GRPO math, implement a
+worker, alter loss masking/advantages, or change weight synchronisation.
+`git apply --reverse --check` was run against the patched scratch source to
+verify that the recorded patch exactly represents the applied change.
+
+**Harness boundary.** `biomni_local_agent.py` is a controller entrypoint, not
+a training loop. It starts the existing `biomni_uncertainty.cli run-one` in the
+separate Biomni environment with Agent Lightning's rollout-scoped OpenAI URL,
+then runs the unmodified `rl_score_one.py`/`OfficialEvaluator` and posts one
+terminal `reward` event. A scoreable outcome retains its official reward;
+every non-answer or infrastructure error emits the frozen `0.0` instead of
+being dropped. Agent Lightning creates K requests for one input with one
+`data_id`, preserving the GRPO group.
+
+**Vista state.** All environments, caches, model weights, data-lake files,
+logs, checkpoints, Ray state, and outputs are rooted at
+`/scratch/11034/atzanakak/biomni_vista`. `run_vista_smoke.sh` is designed for
+a single GH200, TP=1, LoRA rank 8, K=2, one update step, and starts only the
+server/controller PIDs it later cleans up. It is invoked under `setsid` so a
+lost terminal does not stop it. The model/data/environment downloads are in
+progress; **no end-to-end GPU result is claimed in this decision.**
+
+**Verification so far.** The focused frozen-pool, real evaluator, and new
+adapter tests pass (10 tests). The required remaining evidence is a detached
+GPU smoke log showing two terminal Biomni trajectories, official reward events,
+a nonzero LoRA update, the native verl weight update, and a subsequent
+rollout after that update. No scientific pilot is authorised by this work.
