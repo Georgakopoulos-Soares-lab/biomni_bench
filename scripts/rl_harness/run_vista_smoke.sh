@@ -48,6 +48,11 @@ export BIOMNI_RL_TIMEOUT_SECONDS="3720"
 export BIOMNI_RL_MAX_TOKENS="2048"
 export BIOMNI_RL_TEMPERATURE="0.7"
 export BIOMNI_RL_MODEL="$MODEL"
+# The GH200's unified host memory accounts the checkpoint's transient file
+# cache against Ray's node threshold while FSDP is constructing the actor.
+# Keep Ray's OOM monitor enabled, but leave the kernel enough room to reclaim
+# that cache instead of killing the worker at Ray's generic 95% default.
+export RAY_memory_usage_threshold="${RAY_MEMORY_USAGE_THRESHOLD:-0.99}"
 
 server_pid=""
 controller_pid=""
