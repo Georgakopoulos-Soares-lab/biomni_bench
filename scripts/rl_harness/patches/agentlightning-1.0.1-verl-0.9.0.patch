@@ -1,0 +1,45 @@
+diff --git a/agentlightning/verl/entrypoint.py b/agentlightning/verl/entrypoint.py
+index c68c34e..73be381 100644
+--- a/agentlightning/verl/entrypoint.py
++++ b/agentlightning/verl/entrypoint.py
+@@ -36,13 +36,13 @@ def run_ppo(
+ 
+     Datasets must be passed as non-empty in-memory sequences.
+     """
+-    from verl.trainer.main_ppo import get_ppo_ray_runtime_env
++    from verl.trainer.constants_ppo import get_ppo_ray_runtime_env
+ 
+     assert train_dataset is not None and len(train_dataset) > 0, "train_dataset must be non-empty"
+     assert val_dataset is not None and len(val_dataset) > 0, "val_dataset must be non-empty"
+ 
+     if not ray.is_initialized():
+-        default_runtime_env = cast(dict[str, Any], get_ppo_ray_runtime_env())
++        default_runtime_env = cast(dict[str, Any], get_ppo_ray_runtime_env(config))
+         ray_init_config = OmegaConf.to_container(config.ray_kwargs.get("ray_init", OmegaConf.create({})), resolve=True)
+         ray_init_kwargs: dict[str, Any] = (
+             {str(key): value for key, value in ray_init_config.items()} if isinstance(ray_init_config, dict) else {}
+@@ -74,20 +74,16 @@ class _AglTaskRunner:
+     """TaskRunner that extends verl's TaskRunner with pre-loaded dataset support."""
+ 
+     def __init__(self):
+-        from verl.trainer.main_ppo import TaskRunner
++        from verl.trainer.main_ppo_v0 import BaseTaskRunner
+ 
+-        self._delegate = TaskRunner()
++        self._delegate = BaseTaskRunner()
+ 
+     def run(self, config, train_dataset, val_dataset):
+         from pprint import pprint
+ 
+         from omegaconf import OmegaConf
+-        from verl.trainer.main_ppo import (
+-            create_rl_sampler,
+-            need_critic,
+-            need_reference_policy,
+-            validate_config,
+-        )
++        from verl.trainer.ppo.utils import create_rl_sampler, need_critic, need_reference_policy
++        from verl.utils.config import validate_config
+         from verl.utils.dataset.rl_dataset import collate_fn
+         from verl.utils.fs import copy_to_local
+         from verl.utils.tokenizer import hf_processor, hf_tokenizer
