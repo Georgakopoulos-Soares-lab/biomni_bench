@@ -65,6 +65,9 @@ def build_config(args: argparse.Namespace) -> Any:
             "rollout": {
                 "name": "vllm",
                 "mode": "async",
+                # vLLM's explicit default is BF16, but make it part of the
+                # launcher contract so model and rollout weights agree.
+                "dtype": "bfloat16",
                 "tensor_model_parallel_size": args.tp,
                 "n": args.rollout_n,
                 "gpu_memory_utilization": args.gpu_mem_util,
@@ -77,11 +80,18 @@ def build_config(args: argparse.Namespace) -> Any:
                 "use_dynamic_bsz": False,
                 "optim": {"lr": args.lr},
                 "use_kl_loss": False,
-                "fsdp_config": {"param_offload": True, "optimizer_offload": True},
+                # verl 0.9 defaults the FSDP model load itself to FP32.  The
+                # 32B Biomni checkpoint cannot initialize that way on one
+                # 96-GB GH200; keep the trainable LoRA run in BF16 instead.
+                "fsdp_config": {
+                    "model_dtype": "bf16",
+                    "param_offload": True,
+                    "optimizer_offload": True,
+                },
             },
             "ref": {
                 "log_prob_micro_batch_size_per_gpu": args.micro_batch_size,
-                "fsdp_config": {"param_offload": True},
+                "fsdp_config": {"model_dtype": "bf16", "param_offload": True},
             },
         },
         "trainer": {
