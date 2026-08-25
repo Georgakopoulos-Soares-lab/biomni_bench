@@ -1,0 +1,35 @@
+task_id,domain,difficulty,eligibility_status,exclusion_or_gate
+chipseq-001,chip-seq,basic,deferred_external_data,public ENCODE inputs must be downloaded and frozen
+chipseq-002,chip-seq,intermediate,candidate_offline,requires local generator and environment preflight
+chipseq-003,chip-seq,intermediate,deferred_external_data,public GENCODE input must be downloaded and frozen
+chipseq-004,chip-seq,intermediate,candidate_offline,requires local generator and environment preflight
+chipseq-005,chip-seq,advanced,deferred_external_data,public ENCODE/GENCODE/blacklist inputs must be downloaded and frozen
+crispr-001,crispr-screens,basic,candidate_offline,requires local generator and environment preflight
+crispr-002,crispr-screens,basic,candidate_offline,requires local generator and environment preflight
+crispr-003,crispr-screens,intermediate,candidate_offline,requires local generator and environment preflight
+assembly-001,genome-assembly,basic,candidate_offline,selected for K=4 smoke
+assembly-002,genome-assembly,intermediate,candidate_offline,requires local generator and environment preflight
+assembly-003,genome-assembly,intermediate,candidate_offline,requires local generator and environment preflight
+lrs-001,long-read-sequencing,basic,candidate_offline,requires local generator and environment preflight
+lrs-002,long-read-sequencing,basic,candidate_offline,requires local generator and environment preflight
+lrs-003,long-read-sequencing,intermediate,candidate_offline,requires local generator and environment preflight
+metab-001,metabolomics,basic,candidate_offline,requires local generator and environment preflight
+metab-002,metabolomics,basic,candidate_offline,requires local generator and environment preflight
+metab-003,metabolomics,intermediate,candidate_offline,requires local generator and environment preflight
+meth-001,methylation-analysis,basic,candidate_offline,requires local generator and environment preflight
+meth-002,methylation-analysis,basic,candidate_offline,requires local generator and environment preflight
+meth-003,methylation-analysis,intermediate,candidate_offline,requires local generator and environment preflight
+moi-001,multi-omics-integration,basic,candidate_offline,requires local generator and environment preflight
+moi-002,multi-omics-integration,intermediate,candidate_offline,requires local generator and environment preflight
+moi-003,multi-omics-integration,intermediate,candidate_offline,requires local generator and environment preflight
+popgen-001,population-genetics,basic,candidate_offline,selected for K=4 smoke
+popgen-002,population-genetics,basic,candidate_offline,requires local generator and environment preflight
+popgen-003,population-genetics,intermediate,candidate_offline,requires local generator and environment preflight
+popgen-004,population-genetics,intermediate,candidate_offline,requires local generator and environment preflight
+prot-001,proteomics,basic,candidate_offline,requires local generator and environment preflight
+prot-002,proteomics,basic,candidate_offline,requires local generator and environment preflight
+prot-003,proteomics,intermediate,candidate_offline,requires local generator and environment preflight
+stx-001,spatial-transcriptomics,basic,candidate_offline,requires local generator and environment preflight
+stx-002,spatial-transcriptomics,intermediate,candidate_offline,requires local generator and environment preflight
+stx-003,spatial-transcriptomics,basic,candidate_offline,requires local generator and environment preflight
+stx-004,spatial-transcriptomics,intermediate,candidate_offline,requires local generator and environment preflight
