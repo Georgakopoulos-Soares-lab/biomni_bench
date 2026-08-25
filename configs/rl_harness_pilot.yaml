@@ -1,0 +1,86 @@
+# Frozen plain harnessed-GRPO pilot rollout configuration (D-49 B.2).
+# It preserves the validated R1/R2/R4/R5 Biomni harness safeguards and changes
+# no task, reward, or controller behaviour from the engineering configuration.
+experiment:
+  name: rl_harness_pilot
+  seed: 20260821
+  output_root: ${BIOMNI_UNC_OUTPUT_ROOT:-./runs}
+
+benchmark:
+  dataset: biomni/Eval1
+  parquet_uri: hf://datasets/biomni/Eval1/biomni_eval1_dataset.parquet
+  local_parquet: ${BIOMNI_UNC_EVAL1_PARQUET:-}
+  target_total_instances: 200
+  per_task_target: 200
+  preferred_split: val
+  manifest_seed: 20260821
+  exclude_tasks: []
+  max_prompt_chars: null
+
+model:
+  identifier: biomni/Biomni-R0-32B-Preview
+  revision: 71432eb3d5e583bee757e0f9437a17e711e8e3d1
+  source: Custom
+  temperature: 0.7
+  max_tokens: 2048
+  request_timeout_seconds: 1800
+  context_length: 65536
+  dtype: bfloat16
+  json_model_override_args: '{"rope_scaling":{"rope_type":"yarn","factor":1.0,"original_max_position_embeddings":32768}, "max_position_embeddings": 131072}'
+  request_seed_enabled: true
+
+confidence:
+  mode: final_only
+  open_delimiter: "<BIOMNI_CONFIDENCE>"
+  close_delimiter: "</BIOMNI_CONFIDENCE>"
+  epsilon: 0.001
+
+trajectories:
+  instrumented_k: 4
+  standard_k: 0
+  seed_base: 9000
+
+controller:
+  enabled: false
+  policy: mandatory_k2
+  min_trajectories: 2
+  max_trajectories: 4
+  abstain_on_no_agreement: true
+  failure_override: true
+  generate_shadows: false
+
+execution:
+  max_concurrency: 4
+  run_timeout_seconds: 3600
+  tool_timeout_seconds: 600
+  scratch_root: ${BIOMNI_UNC_SCRATCH:-/tmp/biomni_unc_scratch}
+  data_path: ${BIOMNI_PATH:-./biomni_data_root}
+  use_tool_retriever: true
+  retry_policy:
+    max_attempts: 1
+    retryable_failure_classes: []
+    backoff_seconds: 10.0
+
+logging:
+  stdout_limit: 4000
+  stderr_limit: 4000
+  max_event_payload_chars: 20000
+
+trajectory_budget:
+  enabled: true
+  soft_input_tokens: 0
+  hard_input_tokens: 0
+  runaway_keep_tokens: 512
+  max_consecutive_runaway: 3
+  max_observation_tokens: 4000
+  retrieval_max_tools: 40
+  retrieval_max_data_lake: 20
+  retrieval_max_libraries: 20
+
+analysis:
+  bootstrap_replicates: 200
+  bootstrap_seed: 20260821
+  calibration_bins: 3
+  primary_length_field: total_output_tokens
+  binary_reward_threshold: 0.5
+  srlm_epsilon: 0.001

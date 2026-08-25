@@ -6,7 +6,7 @@ set -euo pipefail
 # Vista's login environment exposes NVIDIA HPC SDK's nvc as ``cc``.  Triton
 # builds a tiny CUDA helper at import time and passes a GCC-only flag, so use
 # the site GCC/CUDA 13 toolchain that matches Torch 2.11 explicitly.
-module load gcc/14.2.0 cuda/13.0
+module load gcc/14.2.0 cuda/13.0 python3/3.11.8
 export CC="$(command -v gcc)"
 export CXX="$(command -v g++)"
 export CUDA_HOME="${TACC_CUDA_DIR:?cuda/13.0 module did not set TACC_CUDA_DIR}"
@@ -19,6 +19,14 @@ PORT="${AGL_SERVER_PORT:-8181}"
 KEY="${AGL_KEY:-biomni-vista}"
 RUN_ID="${RUN_ID:-rl_harness_vista_smoke}"
 LOG_DIR="$VISTA_ROOT/logs/$RUN_ID"
+HARNESS_CONFIG="${BIOMNI_RL_CONFIG_PATH:-$ROOT/configs/rl_harness_smoke.yaml}"
+ROLLOUT_N="${RL_ROLLOUT_N:-2}"
+MAX_NUM_SEQS="${RL_MAX_NUM_SEQS:-2}"
+TRAIN_BATCH_SIZE="${RL_TRAIN_BATCH_SIZE:-1}"
+TOTAL_STEPS="${RL_TOTAL_STEPS:-1}"
+SAVE_FREQ="${RL_SAVE_FREQ:-1}"
+N_TASKS="${RL_N_TASKS:-1}"
+LORA_RANK="${RL_LORA_RANK:-8}"
 
 mkdir -p "$LOG_DIR" "$VISTA_ROOT/outputs/$RUN_ID" "$VISTA_ROOT/checkpoints/$RUN_ID" "$VISTA_ROOT/ray"
 export PYTHONPATH="$ROOT/scripts/rl_harness:${PYTHONPATH:-}"
@@ -29,7 +37,7 @@ export BIOMNI_UNC_OUTPUT_ROOT="$VISTA_ROOT/outputs"
 export BIOMNI_UNC_SCRATCH="$VISTA_ROOT/tmp"
 export BIOMNI_RL_PROJECT_ROOT="$ROOT"
 export BIOMNI_RL_PYTHON="$VISTA_ROOT/envs/biomni_unc/bin/python"
-export BIOMNI_RL_CONFIG_PATH="$ROOT/configs/rl_harness_smoke.yaml"
+export BIOMNI_RL_CONFIG_PATH="$HARNESS_CONFIG"
 export BIOMNI_RL_OUTPUT_ROOT="$VISTA_ROOT/outputs"
 export BIOMNI_RL_EXPERIMENT_ID="$RUN_ID"
 export BIOMNI_RL_PROVENANCE_LOG="$VISTA_ROOT/outputs/$RUN_ID/provenance.jsonl"
@@ -58,7 +66,7 @@ curl -fsS "http://127.0.0.1:$PORT/healthz" >/dev/null
 
 "$RL_PY" -m agentlightning.controller \
     runner_type=local "agl_server.url=http://127.0.0.1:$PORT" "agl_server.key=$KEY" \
-    local_runner.maximum_size=2 local_runner.poll_interval=1 \
+    "local_runner.maximum_size=$MAX_NUM_SEQS" local_runner.poll_interval=1 \
     >"$LOG_DIR/agl-controller.log" 2>&1 &
 controller_pid=$!
 
@@ -72,5 +80,7 @@ controller_pid=$!
     --groundtruth "$ROOT/manifests/phase1.groundtruth.jsonl" \
     --groundtruth "$ROOT/manifests/phase2b.groundtruth.jsonl" \
     --agl-base-url "http://127.0.0.1:$PORT" --agl-key "$KEY" \
-    --n-gpus 1 --tp 1 --rollout-n 2 --train-batch-size 1 --micro-batch-size 1 \
-    --lora-rank 8 --gpu-mem-util 0.20 --total-steps 1 --save-freq 1 --n-tasks 1
+    --n-gpus 1 --tp 1 --rollout-n "$ROLLOUT_N" --max-num-seqs "$MAX_NUM_SEQS" \
+    --train-batch-size "$TRAIN_BATCH_SIZE" --micro-batch-size 1 \
+    --lora-rank "$LORA_RANK" --gpu-mem-util 0.20 --total-steps "$TOTAL_STEPS" \
+    --save-freq "$SAVE_FREQ" --n-tasks "$N_TASKS"
