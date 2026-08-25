@@ -88,9 +88,18 @@ def build_config(args: argparse.Namespace) -> Any:
                 # 32B Biomni checkpoint cannot initialize that way on one
                 # 96-GB GH200; keep the trainable LoRA run in BF16 instead.
                 "fsdp_config": {
+                    # FSDP1 cannot place the actor parameters on CPU during
+                    # construction.  On one GH200 that leaves no room for
+                    # vLLM to instantiate its (initially dummy) model.  The
+                    # supported FSDP2 CPU-offload policy keeps the actor
+                    # sharded state on host memory until an actual train/log-
+                    # prob operation, which is the placement required by
+                    # verl's one-GPU hybrid vLLM mode.
+                    "strategy": "fsdp2",
                     "model_dtype": "bf16",
-                    "param_offload": True,
-                    "optimizer_offload": True,
+                    "offload_policy": True,
+                    "param_offload": False,
+                    "optimizer_offload": False,
                 },
             },
             "ref": {
