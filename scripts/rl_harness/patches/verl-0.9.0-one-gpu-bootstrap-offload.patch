@@ -13,7 +13,7 @@ index 1111111..2222222 100644
 +            # after reset, so release it explicitly at this bootstrap boundary.
 +            # The standard `update_weights` path later performs the normal
 +            # vLLM sleep -> actor export -> actor offload -> vLLM resume cycle.
-+            if self._is_rollout and self.actor.engine.is_param_offload_enabled:
++            if self._is_rollout:
 +                self.actor.engine.to("cpu", model=True, optimizer=True, grad=True)
 +                aggressive_empty_cache(force_sync=True)
  
