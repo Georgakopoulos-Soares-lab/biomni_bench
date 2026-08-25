@@ -52,6 +52,9 @@ def build_config(args: argparse.Namespace) -> Any:
             "train_batch_size": args.train_batch_size,
             "max_prompt_length": args.max_prompt_length,
             "max_response_length": args.max_response_length,
+            "shuffle": True,
+            "seed": args.data_seed,
+            "dataloader_num_workers": 0,
         },
         "actor_rollout_ref": {
             "model": {
@@ -70,6 +73,7 @@ def build_config(args: argparse.Namespace) -> Any:
                 "dtype": "bfloat16",
                 "tensor_model_parallel_size": args.tp,
                 "n": args.rollout_n,
+                "max_num_seqs": args.max_num_seqs,
                 "gpu_memory_utilization": args.gpu_mem_util,
                 "log_prob_micro_batch_size_per_gpu": args.micro_batch_size,
                 "checkpoint_engine": {"update_weights_bucket_megabytes": 2048},
@@ -108,6 +112,8 @@ def build_config(args: argparse.Namespace) -> Any:
             "default_local_dir": args.checkpoint_dir,
             "resume_mode": "auto",
         },
+        "ray_kwargs": {"ray_init": {"object_store_memory": 8 * 1024**3}},
+        "reward": {"num_workers": 1},
         "agentlightning": {
             "agl_base_url": args.agl_base_url,
             "agl_key": args.agl_key,
@@ -141,6 +147,7 @@ def main() -> int:
     parser.add_argument("--tp", type=int, default=1)
     parser.add_argument("--lora-rank", type=int, default=8)
     parser.add_argument("--rollout-n", type=int, default=2)
+    parser.add_argument("--max-num-seqs", type=int, default=2)
     parser.add_argument("--train-batch-size", type=int, default=1)
     parser.add_argument("--micro-batch-size", type=int, default=1)
     parser.add_argument("--max-prompt-length", type=int, default=65536)
@@ -150,6 +157,7 @@ def main() -> int:
     parser.add_argument("--total-steps", type=int, default=1)
     parser.add_argument("--save-freq", type=int, default=1)
     parser.add_argument("--n-tasks", type=int, default=1)
+    parser.add_argument("--data-seed", type=int, default=20260825)
     parser.add_argument("--rollout-timeout-seconds", type=int, default=3720)
     args = parser.parse_args()
 
