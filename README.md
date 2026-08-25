@@ -3,6 +3,14 @@
 **Do biomedical agents know when they are wrong?**
 Phase 1: intrinsic uncertainty signals in Biomni trajectories.
 
+## Reliability Suite v1
+
+The reusable, agent-agnostic reliability layer is frozen in
+[reports/reliability_suite_v1.md](reports/reliability_suite_v1.md). Its core
+evaluator is `biomni_uncertainty.reliability`; adapters retain native scoring,
+canonicalization, execution, and provenance. Candidate readiness and the
+strict no-large-run gate are in [reports/candidate_agent_audit.md](reports/candidate_agent_audit.md).
+
 ---
 
 ## Scientific objective

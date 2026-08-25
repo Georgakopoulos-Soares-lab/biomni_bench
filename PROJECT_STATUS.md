@@ -1,5 +1,19 @@
 # PROJECT_STATUS
 
+## Reliability benchmark branch — specification and CPU implementation ready (2026-08-25)
+
+`reports/reliability_suite_v1.md` freezes the K=4 reliability protocol,
+metrics, failure taxonomy, bootstrap rule, and JSON report contract before a
+new multi-agent outcome. `src/biomni_uncertainty/reliability.py` provides the
+agent-agnostic evaluator and its focused tests cover plurality, oracle,
+taxonomy, and explicit scorer-failure handling. The candidate audit and gated
+three-agent recommendation are in `reports/candidate_agent_audit.md`.
+
+No live agent smoke was attempted in this session: `nvidia-smi` cannot reach a
+driver on the current host. Biomni remains the only immediately
+admission-ready implementation; CellVoyager and BioMaster require the stated
+native-scorer/credential gates. No large benchmark run has been launched.
+
 **Last updated:** 2026-08-25 (**Vista compatibility implementation is ready,
 but the required end-to-end smoke is hardware-blocked; no scientific RL
 run.**) The obsolete `agentlightning==0.3.0` interface remains incompatible

@@ -3180,3 +3180,28 @@ architecture across rollout and update phases, outside the existing native
 verl hybrid mechanism and requiring separate review. All failed worktree
 outputs were moved to named scratch archives; source changes made solely for
 the unsuccessful CPU-offload diagnostic were reverted.
+
+---
+
+## D-54 Reliability Suite v1 is frozen before a multi-agent campaign
+
+**Decided:** 2026-08-25. The project adopts
+`reports/reliability_suite_v1.md` as the reusable reliability evaluation
+contract. The default is K=4 repeated requested runs and instance-level
+bootstrap CIs. The required outcomes are Pass@1, plurality accuracy, Oracle@K,
+plurality agreement, agreement-to-correctness AUROC, confidence discrimination
+and calibration when available, risk–coverage, selection failure, all-wrong,
+execution failures, and the four predeclared stability/recoverability states.
+
+**Boundary.** An agent/benchmark adapter executes the agent, canonicalizes
+without labels, and invokes its native scorer. The shared core does not use an
+LLM judge or reimplement a benchmark reward. Scorer failures remain explicit
+in the report rather than becoming incorrect answers. This makes agreement,
+generation failure, execution failure, and correctness separately auditable.
+
+**Admission decision.** Biomni is ready for a CPU/output smoke once an
+available GPU allocation is restored. CellVoyager and BioMaster are the
+structurally diverse candidate panel but are conditional on their respective
+scorer/credential and public native-benchmark gates. BioMedArena is a useful
+comparison and future adapter reference, not a v1 shared execution harness.
+No full evaluation has been launched or authorized.
