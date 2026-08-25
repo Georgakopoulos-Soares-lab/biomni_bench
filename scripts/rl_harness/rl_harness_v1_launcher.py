@@ -68,7 +68,7 @@ def build_config(args: argparse.Namespace) -> Any:
                 "tensor_model_parallel_size": args.tp,
                 "n": args.rollout_n,
                 "gpu_memory_utilization": args.gpu_mem_util,
-                "log_prob_micro_batch_size": args.micro_batch_size,
+                "log_prob_micro_batch_size_per_gpu": args.micro_batch_size,
                 "checkpoint_engine": {"update_weights_bucket_megabytes": 2048},
             },
             "actor": {
