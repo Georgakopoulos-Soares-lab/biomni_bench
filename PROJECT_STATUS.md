@@ -9,7 +9,11 @@ Biomni subprocess/evaluator boundary to that local-runner API, adds a
 reproducible three-import compatibility patch for verl 0.9.0, and provides a
 one-GH200 detached Vista smoke launcher. The Python 3.12, model, and data
 assets are building/downloading under `/scratch/11034/atzanakak/biomni_vista`;
-the GPU smoke has not yet run and must not be reported as passed until its
+the first GPU smoke reached Agent Lightning's native-verl remote trainer but
+stopped before any rollout when Triton inherited Vista's NVIDIA-HPC-SDK `nvc`
+compiler, which rejects a GCC-only flag. The launcher now explicitly loads
+GCC 14.2 + CUDA 13.0 (matching Torch 2.11 CUDA 13), rebuilds FlashAttention,
+and queues a clean detached rerun. It must not be reported as passed until its
 artifacts show a real update and subsequent rollout.
 
 The prior blocker was precisely diagnosed: `agentlightning`'s own copy of a verl `TaskRunner` imports

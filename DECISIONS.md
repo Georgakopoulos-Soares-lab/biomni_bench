@@ -3135,3 +3135,12 @@ adapter tests pass (10 tests). The required remaining evidence is a detached
 GPU smoke log showing two terminal Biomni trajectories, official reward events,
 a nonzero LoRA update, the native verl weight update, and a subsequent
 rollout after that update. No scientific pilot is authorised by this work.
+
+**First runtime observation.** The initial detached smoke reached the
+`_AglTaskRunner` and current verl validation, then stopped before creating a
+rollout because Triton's helper compilation selected Vista's NVIDIA-HPC-SDK
+`nvc`; `nvc` rejects the GCC flag `-Wno-psabi`. This is an environment
+compiler selection failure, not a data/reward/GRPO result. The launcher now
+loads `gcc/14.2.0` and `cuda/13.0`, exports GCC as `CC`/`CXX`, rebuilds
+FlashAttention against Torch 2.11's CUDA 13.0, and queues a clean detached
+rerun. The failed attempt contributes no scientific or engineering-pass claim.

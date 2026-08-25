@@ -3,6 +3,14 @@
 # owns only the Agent Lightning server/controller child PIDs it starts.
 set -euo pipefail
 
+# Vista's login environment exposes NVIDIA HPC SDK's nvc as ``cc``.  Triton
+# builds a tiny CUDA helper at import time and passes a GCC-only flag, so use
+# the site GCC/CUDA 13 toolchain that matches Torch 2.11 explicitly.
+module load gcc/14.2.0 cuda/13.0
+export CC="$(command -v gcc)"
+export CXX="$(command -v g++)"
+export CUDA_HOME="${TACC_CUDA_DIR:?cuda/13.0 module did not set TACC_CUDA_DIR}"
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 VISTA_ROOT="${VISTA_ROOT:-/scratch/11034/atzanakak/biomni_vista}"
 RL_PY="${RL_PY:-$VISTA_ROOT/envs/rl_harness312/bin/python}"
