@@ -3144,3 +3144,39 @@ compiler selection failure, not a data/reward/GRPO result. The launcher now
 loads `gcc/14.2.0` and `cuda/13.0`, exports GCC as `CC`/`CXX`, rebuilds
 FlashAttention against Torch 2.11's CUDA 13.0, and queues a clean detached
 rerun. The failed attempt contributes no scientific or engineering-pass claim.
+
+---
+
+## D-53 One-GH200 native-verl hybrid bootstrap is capacity-blocked; require two visible GPUs for the genuine smoke
+
+**Observed:** 2026-08-25. The current Vista allocation exposes one GPU with
+95.6 GiB usable memory. The detached, current-stack K=2 smoke progresses
+through Agent Lightning's patched native-verl trainer, loads all 707
+Biomni-R0 checkpoint shards, and constructs the BF16 LoRA FSDP actor. At the
+vLLM handoff, the actor has 61.15 GiB allocated / 68.41 GiB reserved
+(71.8 GiB device use).
+
+vLLM's hybrid server then starts with `--load-format dummy` so native verl can
+perform its official weight synchronization. That dummy bootstrap needs a
+second full BF16 Biomni-R0 model (about 65 GiB) before a vLLM sleep/offload
+state exists. It fails in `cumem_allocator.cpp` with CUDA OOM while only about
+21 GiB remains. Ray independently observes the GH200 unified host allocation
+at 210.94/212.75 GiB in the first attempt.
+
+**CPU-offload check.** A second detached run passed vLLM
+`--cpu-offload-gb 55.0` (and a 0.05 GPU-memory-utilization limit) exactly as
+configured. It still reached the same dummy-bootstrap CUDA OOM before an
+engine could report offloaded parameters; Ray then stopped the workers at
+211.90/212.75 GiB despite its monitor being retained at 99.5%. Thus the
+feature is not rejected or miswired: it cannot reduce the initial full-model
+allocation in this hybrid dummy-load path.
+
+**Decision.** Do not claim a GPU smoke pass and do not launch the frozen
+scientific pilot. The smallest supported resolution is an allocation exposing
+at least two GH200 GPUs to the job (TP=2 rollout, with the actor and rollout
+bootstrap no longer requiring two full models on one 95.6-GiB device). A
+one-GPU solution would require a new sequential deallocate/reload training
+architecture across rollout and update phases, outside the existing native
+verl hybrid mechanism and requiring separate review. All failed worktree
+outputs were moved to named scratch archives; source changes made solely for
+the unsuccessful CPU-offload diagnostic were reverted.

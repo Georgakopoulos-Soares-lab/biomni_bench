@@ -1,19 +1,26 @@
 # PROJECT_STATUS
 
-**Last updated:** 2026-08-24 (**Vista implementation in progress; no scientific
-RL run.**) The obsolete `agentlightning==0.3.0` interface remains incompatible
+**Last updated:** 2026-08-25 (**Vista compatibility implementation is ready,
+but the required end-to-end smoke is hardware-blocked; no scientific RL
+run.**) The obsolete `agentlightning==0.3.0` interface remains incompatible
 with verl 0.9.0, but the current upstream source at
 `8435586d147b4cf7bff33e687d7317149e79cbb8` has a native-verl trainer and
 local proxy/controller architecture. Commit `c5d7e33` adapts the unchanged
 Biomni subprocess/evaluator boundary to that local-runner API, adds a
 reproducible three-import compatibility patch for verl 0.9.0, and provides a
 one-GH200 detached Vista smoke launcher. The Python 3.12, model, and data
-assets are building/downloading under `/scratch/11034/atzanakak/biomni_vista`;
-the first GPU smoke reached Agent Lightning's native-verl remote trainer but
-stopped before any rollout when Triton inherited Vista's NVIDIA-HPC-SDK `nvc`
-compiler, which rejects a GCC-only flag. The launcher now explicitly loads
-GCC 14.2 + CUDA 13.0 (matching Torch 2.11 CUDA 13), rebuilds FlashAttention,
-and queues a clean detached rerun. It must not be reported as passed until its
+assets are rooted under `/scratch/11034/atzanakak/biomni_vista`; the GCC 14.2
+and CUDA 13.0 toolchain issue is resolved and the current native-verl trainer
+reaches actor/FSDP initialization. The allocated Vista job exposes exactly one
+95.6-GiB GH200. Its BF16 FSDP actor occupies 71.8 GiB, while vLLM must create a
+second full BF16 dummy model (about 65 GiB) before its hybrid sleep/offload
+mechanism can run. Two detached K=2 smoke attempts consequently stopped at
+that bootstrap (both CUDA OOM; Ray host memory reached 210.94/212.75 GiB and
+211.90/212.75 GiB). vLLM CPU offload of 45/55 GiB is accepted on the command
+line but cannot help this initial dummy allocation. A current-stack,
+one-GPU end-to-end smoke therefore has no supported path; it requires at
+least two visible GH200 GPUs, or a separately reviewed sequential
+deallocate/reload trainer design. It must not be reported as passed until its
 artifacts show a real update and subsequent rollout.
 
 The prior blocker was precisely diagnosed: `agentlightning`'s own copy of a verl `TaskRunner` imports
