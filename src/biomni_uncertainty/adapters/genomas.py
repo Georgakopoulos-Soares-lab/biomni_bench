@@ -11,6 +11,8 @@ still comes from the unchanged native evaluator.
 from __future__ import annotations
 
 import json
+import resource
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +31,26 @@ def normalize_condition_arg(value: str | None) -> str | None:
     if value is None or value.strip().lower() == "none":
         return None
     return value
+
+
+def memory_rlimit_preexec_fn(max_bytes: int) -> Callable[[], None]:
+    """Build a ``subprocess.run(preexec_fn=...)`` capping the child's address space.
+
+    A single GenoMAS trajectory has been observed to grow to >110 GiB resident
+    within one long-running Python process (per-cohort clinical/genetic
+    matrices accumulating across GEO/TCGA steps with no evidence of a Slurm or
+    cgroup limit involved -- the node's own memory was genuinely exhausted;
+    see reports/genomas_fresh_admission_ladder_20260826.md). Left unbounded,
+    the kernel OOM killer's victim selection is global and indiscriminate: on
+    a shared node it can just as easily pick the vLLM server as the runaway
+    trajectory. This bounds only the child agent subprocess's own virtual
+    address space (``RLIMIT_AS``) so a runaway trajectory hits its own clean,
+    local `MemoryError`/allocation failure well before threatening anything
+    else on the node. It never touches GenoMAS's own algorithm or code.
+    """
+    def _apply() -> None:
+        resource.setrlimit(resource.RLIMIT_AS, (max_bytes, max_bytes))
+    return _apply
 
 
 def validate_cohort_info_contract(path: Path | str) -> dict[str, Any]:

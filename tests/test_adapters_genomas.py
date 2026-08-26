@@ -1,6 +1,12 @@
 import json
+import subprocess
+import sys
 
-from biomni_uncertainty.adapters.genomas import normalize_condition_arg, validate_cohort_info_contract
+from biomni_uncertainty.adapters.genomas import (
+    memory_rlimit_preexec_fn,
+    normalize_condition_arg,
+    validate_cohort_info_contract,
+)
 
 # Exact shape written by the successful K1 admission run's cohort_info.json.
 K1_VALID_SHAPE = {
@@ -65,6 +71,30 @@ def test_normalize_condition_arg_passes_through_real_conditions():
     assert normalize_condition_arg("Age") == "Age"
     assert normalize_condition_arg("Gender") == "Gender"
     assert normalize_condition_arg("Hypertension") == "Hypertension"
+
+
+def test_memory_rlimit_preexec_fn_actually_bounds_the_child_address_space():
+    # Regression for the rung-5 K=2 OOM (see
+    # reports/genomas_fresh_admission_ladder_20260826.md): a runaway GenoMAS
+    # trajectory grew to >110 GiB resident with no cgroup/Slurm limit in play,
+    # and Linux's OOM killer victim selection is global, not scoped to the
+    # offending process. Confirm the RLIMIT_AS this helper installs actually
+    # takes effect in the child, and a child that exceeds it fails locally
+    # (MemoryError) rather than being silently unbounded.
+    cap_bytes = 256 * 1024 * 1024  # 256 MiB
+    proc = subprocess.run(
+        [sys.executable, "-c", "import resource; print(resource.getrlimit(resource.RLIMIT_AS))"],
+        preexec_fn=memory_rlimit_preexec_fn(cap_bytes), capture_output=True, text=True, timeout=10,
+    )
+    assert proc.returncode == 0
+    assert proc.stdout.strip() == f"({cap_bytes}, {cap_bytes})"
+
+    over_cap = subprocess.run(
+        [sys.executable, "-c", "bytearray(2 * 1024 * 1024 * 1024)"],  # 2 GiB, over the 256 MiB cap
+        preexec_fn=memory_rlimit_preexec_fn(cap_bytes), capture_output=True, text=True, timeout=10,
+    )
+    assert over_cap.returncode != 0
+    assert "MemoryError" in over_cap.stderr
 
 
 def test_empty_mapping_is_a_valid_legitimate_no_match_state(tmp_path):

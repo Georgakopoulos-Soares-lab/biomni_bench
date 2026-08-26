@@ -1,3 +1,5 @@
+import pytest
+
 from biomni_uncertainty.adapters.biomni import normalize_biomni_table
 from biomni_uncertainty.reliability import evaluate_reliability
 
@@ -93,6 +95,52 @@ def test_incomplete_trajectory_reward_never_counts_as_a_real_outcome():
     assert out["metrics"]["oracle_at_k"]["estimate"] == 0.0
     assert out["metrics"]["pass_at_1"]["n"] == 1
     assert out["failure_accounting"]["failure_layers"] == {"execution_failure": 1, "scored": 1}
+    # One real trajectory trivially agrees with itself -- this is a stable
+    # wrong answer, not "instability", since there was never a second real
+    # trajectory to disagree with.
+    assert out["failure_taxonomy"] == {"stable_wrong": 1}
+
+
+def test_execution_failures_cannot_win_or_contest_the_primary_plurality():
+    # Two independent execution failures happen to leave behind the same
+    # coincidental partial-answer key ("{}"), which would out-vote the single
+    # real completed trajectory (1 vote) under the old all-runs consensus.
+    # The primary plurality must be computed from completed trajectories only,
+    # so the real trajectory's own key trivially wins with fraction 1.0.
+    rows = [
+        {"task_id": "a", "run_index": 0, "answer_cluster_key": "real_answer", "official_reward": 1,
+         "completed": True, "agent_execution_success": True},
+        {"task_id": "a", "run_index": 1, "answer_cluster_key": "{}", "official_reward": None,
+         "completed": False, "agent_execution_success": False, "failure_class": "agent_control_failure"},
+        {"task_id": "a", "run_index": 2, "answer_cluster_key": "{}", "official_reward": None,
+         "completed": False, "agent_execution_success": False, "failure_class": "agent_control_failure"},
+    ]
+    out = evaluate_reliability(rows, k=3, n_bootstrap=10)
+    inst = out["instances"][0]
+    assert inst["n_completed_runs"] == 1
+    assert inst["plurality_key"] == "real_answer"
+    assert inst["plurality_fraction"] == 1.0
+    assert inst["plurality_correct"] == 1
+    # The legacy/all-runs view is preserved exactly as the old behaviour would
+    # have computed it: the two failures out-vote the one real trajectory.
+    assert inst["plurality_key_legacy_all_runs"] == "{}"
+    assert inst["plurality_fraction_legacy_all_runs"] == pytest.approx(2 / 3)
+    assert inst["plurality_correct_legacy_all_runs"] is None  # the "winning" row was never evaluable
+    assert out["metrics"]["plurality_accuracy"]["estimate"] == 1.0
+    assert out["metrics"]["plurality_accuracy_legacy_all_runs"]["n"] == 0
+
+
+def test_primary_and_legacy_agree_when_every_trajectory_completed():
+    rows = [
+        {"task_id": "a", "run_index": i, "answer_cluster_key": key, "official_reward": reward, "completed": True}
+        for i, (key, reward) in enumerate((("x", 1), ("y", 0), ("y", 0), ("z", 0)))
+    ]
+    out = evaluate_reliability(rows, n_bootstrap=10)
+    inst = out["instances"][0]
+    assert inst["plurality_key"] == inst["plurality_key_legacy_all_runs"]
+    assert inst["plurality_fraction"] == inst["plurality_fraction_legacy_all_runs"]
+    assert out["metrics"]["plurality_accuracy"] == out["metrics"]["plurality_accuracy_legacy_all_runs"]
+    assert out["metrics"]["agreement_plurality_fraction"] == out["metrics"]["agreement_plurality_fraction_legacy_all_runs"]
 
 
 def test_biomni_adapter_normalizes_native_table(tmp_path):

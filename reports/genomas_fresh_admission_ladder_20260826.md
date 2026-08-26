@@ -114,12 +114,26 @@ bookkeeping fix holds under the fresh ladder.
   `official_reward=0.0` for it — but this is *not* a real completed
   trajectory outcome (see next section).
 
-Rungs 1 vs. 3 and 2 vs. 4 vs. rung-5-`k4_00` show the same trait sampled
-independently swinging between 0% and 100% filtering/selection accuracy
-(AMD unconditioned 0% vs. AMD::Gender 100%; AML::unconditioned 0%/0% across
-two independent trajectories vs. AML::Age 100%) — exactly the kind of
-trajectory-to-trajectory variance this project studies, now backed by real
-native scores instead of artifact-contract noise.
+**Correction:** an earlier version of this report described the unconditioned
+vs. conditioned score differences (AML unconditioned 0.0 vs. AML::Age 1.0;
+AMD unconditioned 0.0 vs. AMD::Gender 1.0) as "trajectory-to-trajectory
+variance." That was wrong. Unconditioned and conditioned tasks are **different
+benchmark instances** — each is its own `(trait, condition)` pair with its own
+question, cohort-selection target, and reference answer. A trait scoring
+differently unconditioned vs. conditioned is exactly what "different tasks
+have different difficulty" looks like; it says nothing about stochastic
+sampling variance and is not a reliability signal in the self-consistency
+sense this project studies.
+
+The only genuine same-task repeated-trajectory data point in this ladder is
+`Acute_Myeloid_Leukemia` unconditioned, independently sampled twice as a
+completed trajectory (rung 1's `k4_00` and rung 5's `k4_00` — rung 5's
+`k4_01` never completed, see below). **Both scored 0.0**, with the same
+false-positive/false-negative pattern each time. That is a `stable_wrong`
+result: no variance observed across the two real samples this ladder
+happened to draw of that task. Two samples is far too few to conclude the
+task is deterministically wrong rather than merely low-agreement; it only
+means this ladder did not happen to observe disagreement on it.
 
 ## Failure found: an OOM-killed trajectory's reward is not a real outcome
 
@@ -131,43 +145,128 @@ before it reached `TCGA` or logged its final token/duration summary. The
 controller correctly recorded `agent_execution_success=false`,
 `failure_class="agent_control_failure"`, `failure_reason="runner_exit_-9"`.
 
-Auditing how this propagated into `evaluate_reliability` found a real,
-previously-untested gap: `correct` (and therefore `pass_at_1`, `oracle_at_k`,
-`plurality_accuracy`, and the failure taxonomy) was computed from
-`official_reward` alone. Because `k4_01`'s truncated-but-valid artifact still
-produced a defined `official_reward=0.0` from the unchanged native scorer,
-it was being silently counted as a genuine "wrong answer" trajectory —
-exactly the "missing score vs. score zero" conflation this project's own
-scientific-integrity rules forbid, just in a subtler form (a *defined but
-illegitimate* score, not a missing one). Fixed in
-`src/biomni_uncertainty/reliability.py` (commit `34ef562`): `correct` is now
-gated on `completed` too, so an incomplete trajectory's reward — real or
-not — never enters correctness/taxonomy computation, only
-`failure_accounting`/`failure_layers`. Regression test added
-(`test_incomplete_trajectory_reward_never_counts_as_a_real_outcome`).
+Auditing how this propagated into `evaluate_reliability` found two related,
+previously-untested gaps, both now fixed in
+`src/biomni_uncertainty/reliability.py`:
+
+1. **Correctness was computed from `official_reward` alone** (commit
+   `34ef562`), so `k4_01`'s truncated-but-valid artifact, which still
+   produced a defined `official_reward=0.0` from the unchanged native
+   scorer, was silently counted as a genuine "wrong answer" trajectory in
+   `pass_at_1`/`oracle_at_k`/`plurality_accuracy` — the "missing score vs.
+   score zero" conflation this project's scientific-integrity rules forbid,
+   in a subtler form (a *defined but illegitimate* score, not a missing
+   one). Fixed by gating `correct` on `completed` as well.
+2. **The primary plurality/consensus vote, and the failure-taxonomy
+   agreement check, still counted every requested trajectory**, including
+   execution failures. A `k4_01`-like trajectory could therefore still
+   *contest or even win* the plurality vote on a coincidentally-shared
+   partial-answer key, and the taxonomy's "did every trajectory land on the
+   same answer" check still saw an execution failure as a second,
+   disagreeing "answer" — mislabeling this instance `unstable_unrecoverable`
+   (implying genuine sampling disagreement) when there was only ever one
+   real trajectory to disagree with.
+
+Both are fixed by restricting the *primary* `plurality_fraction`,
+`plurality_key`, `plurality_accuracy`, `agreement_plurality_fraction`,
+`selection_failure_rate`, and the taxonomy's agreement check to completed,
+evaluable trajectories only. The pre-existing all-runs behavior (needed for
+compatibility with anything that already consumes it, e.g. historical Biomni
+tables re-run through this evaluator via `scripts/import_biomni_reliability.py`)
+is preserved verbatim under explicit `*_legacy_all_runs` names
+(`plurality_fraction_legacy_all_runs`, `plurality_key_legacy_all_runs`,
+`plurality_tie_legacy_all_runs`, `plurality_correct_legacy_all_runs`,
+`plurality_accuracy_legacy_all_runs`,
+`agreement_plurality_fraction_legacy_all_runs`,
+`selection_failure_rate_legacy_all_runs`) — never silently repurposed. A new
+`n_completed_runs` field on each instance makes the denominator explicit.
+Regression tests added:
+`test_incomplete_trajectory_reward_never_counts_as_a_real_outcome`,
+`test_execution_failures_cannot_win_or_contest_the_primary_plurality`,
+`test_primary_and_legacy_agree_when_every_trajectory_completed` (the last
+confirms primary and legacy are identical whenever nothing failed, so no
+existing all-completed dataset's numbers change under the new code).
+
 `reliability_report_corrected.json` was regenerated for rung 5 under the
 fixed code and placed alongside the original (uncorrected)
 `reliability_report.json`, which is left as-is per this project's
-never-retroactively-edit convention; `pass_at_1`/`oracle_at_k` now correctly
-show `n=1` (one real evaluable trajectory) instead of `n=2`.
+never-retroactively-edit convention. Under the fix: `pass_at_1`/`oracle_at_k`
+show `n=1` (one real evaluable trajectory, not two); `plurality_fraction=1.0`
+(the one completed trajectory trivially wins its own vote, `k4_01` cannot
+contest it); and the taxonomy correctly reports **`stable_wrong`**, not
+`unstable_unrecoverable`.
 
-One secondary, smaller nuance was *not* changed: the failure taxonomy still
-labels this instance `unstable_unrecoverable` rather than a plainer
-"1 real trajectory, 1 execution failure" state, because the agreement/`keys`
-computation (used for `agreement_plurality_fraction` and consensus) still
-includes execution-failed trajectories' answer-cluster-keys by design —
-that's the pre-existing, extensively pre-registered self-consistency
-measurement used across Biomni Phase 1/2, and changing what it measures is
-out of scope for this pass. Flagging it rather than silently patching it.
+### OOM root-cause diagnosis
+
+Three candidate causes were named to distinguish: a Slurm/cgroup memory
+limit, competing memory use (e.g. vLLM), or GenoMAS's own per-cohort memory
+growth. The `dmesg` OOM record settles it:
+
+```
+oom-kill:constraint=CONSTRAINT_NONE,nodemask=(null),cpuset=user.slice,
+  mems_allowed=0-1,global_oom,task_memcg=/user.slice/user-904628.slice/session-1233.scope,
+  task=python,pid=3150535,uid=904628
+Out of memory: Killed process 3150535 (python) total-vm:249489152kB,
+  anon-rss:116204928kB, file-rss:18432kB, shmem-rss:0kB, pgtables:17728kB
+```
+
+- **Not a Slurm/cgroup limit.** `scontrol show job 937512` /
+  `sacct -j 937512 --format=ReqMem` show `ReqMem=1M` — a nominal placeholder,
+  not an enforced ceiling — and the kernel's own record says
+  `constraint=CONSTRAINT_NONE` / `global_oom`: this was a whole-node OOM, not
+  a per-cgroup quota being hit.
+- **Not competing memory use.** The full kernel task-state dump at the OOM
+  moment (`dmesg`, "Tasks state (memory values in pages)", 64 KiB pages on
+  this GH200 node) shows every other process on the node was negligible:
+  vLLM's API-server process 148 MB resident, `VLLM::EngineCore` 144 MB, this
+  controller's own Python process 18 MB. Nothing else was competing for host
+  RAM in any meaningful way.
+- **GenoMAS's own per-cohort memory growth, confirmed.** The single killed
+  process (`python`, pid 3150535 — the `genomas_smoke_runner.py` agent
+  subprocess for `k4_01`) had grown to **110.8 GiB resident** (of 212 GiB
+  total node RAM) and **237.9 GiB virtual**, with **20.4 GiB already pushed
+  into swap** (`free -h` confirmed "Free swap = 0kB" at the OOM instant — swap
+  was also fully exhausted). GenoMAS processes all of a trajectory's cohorts
+  sequentially inside one long-lived Python process; this is consistent with
+  per-cohort clinical/genetic DataFrame state (or generated-code artifacts)
+  accumulating across cohort iterations rather than being released between
+  them. GenoMAS's own `output/memory_tracking/*.json` was checked for a
+  finer-grained growth curve, but it tracks generated-*code* reuse (an
+  action-unit cache), not process RSS, and — being written only at the end of
+  a run — never got flushed for the killed trajectory anyway.
+
+Per instruction, **GenoMAS's algorithmic behavior was not modified** to
+suppress this. Instead, a narrow, controller-side mitigation was added:
+`biomni_uncertainty.adapters.genomas.memory_rlimit_preexec_fn` sets
+`RLIMIT_AS` on each agent subprocess (`scripts/run_genomas_k4_reliability.py`,
+new `--max-memory-gb` flag, default 150 GiB, recorded in the campaign
+manifest's `protocol.max_memory_gb_per_trajectory`). This does not fix or
+even touch GenoMAS's memory usage — it only ensures that if a trajectory
+runs away again, it hits its own local, clean `MemoryError` well below the
+point of threatening the rest of the node, rather than triggering another
+indiscriminate global OOM that could just as easily have picked the shared
+vLLM server as its victim. Tested in
+`test_memory_rlimit_preexec_fn_actually_bounds_the_child_address_space`
+(confirms the limit is visible in the child via `resource.getrlimit`, and
+that exceeding it raises `MemoryError` locally).
 
 ## Code changes (this pass, beyond the artifact-contract repair)
 
 - `scripts/genomas_fetch_reference.py` (new): attested fetch of held-out
   `cohort_info.json`/`code/*.py` references for new traits.
-- `src/biomni_uncertainty/reliability.py`: gate `correct` on `completed`.
-- `tests/test_reliability.py`: regression test for the OOM-trajectory case.
+- `src/biomni_uncertainty/reliability.py`: gate `correct` on `completed`;
+  primary plurality/consensus/taxonomy restricted to completed trajectories,
+  with `*_legacy_all_runs` fields/metrics preserving the old all-runs
+  behavior explicitly.
+- `src/biomni_uncertainty/adapters/genomas.py`: `memory_rlimit_preexec_fn`.
+- `scripts/run_genomas_k4_reliability.py`: `--max-memory-gb` (default 150),
+  applied via `preexec_fn` to the agent subprocess; recorded in the campaign
+  manifest.
+- `tests/test_reliability.py`, `tests/test_adapters_genomas.py`: regression
+  tests for all of the above.
 - Commits: `c2db221` (pre-ladder repair, already reported in
-  `genomas_artifact_contract_diagnosis.md`), `34ef562` (this pass).
+  `genomas_artifact_contract_diagnosis.md`), plus this pass's commits (see
+  `git log`).
 
 ## Provenance
 

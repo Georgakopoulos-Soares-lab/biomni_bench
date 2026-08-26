@@ -19,7 +19,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from biomni_uncertainty.adapters.genomas import normalize_condition_arg, validate_cohort_info_contract  # noqa: E402
+from biomni_uncertainty.adapters.genomas import (  # noqa: E402
+    memory_rlimit_preexec_fn,
+    normalize_condition_arg,
+    validate_cohort_info_contract,
+)
 from biomni_uncertainty.reliability import evaluate_reliability  # noqa: E402
 
 
@@ -71,6 +75,11 @@ def main() -> None:
                     help="Condition name (e.g. Age, Gender). Omit, or pass 'None', for the unconditioned task.")
     p.add_argument("--k", type=int, default=4)
     p.add_argument("--max-time", type=float, default=420)
+    p.add_argument("--max-memory-gb", type=float, default=150.0,
+                    help="RLIMIT_AS cap on each agent subprocess, so a runaway trajectory "
+                         "fails cleanly and locally instead of risking a whole-node OOM "
+                         "that could kill the shared vLLM server instead. See "
+                         "reports/genomas_fresh_admission_ladder_20260826.md.")
     p.add_argument("--source-commit", required=True)
     p.add_argument("--benchmark-revision", required=True)
     args = p.parse_args()
@@ -84,7 +93,8 @@ def main() -> None:
     manifest = {
         "schema_version": "genomas-reliability-campaign-v1",
         "created_at": now(), "protocol": {"k": args.k, "n_bootstrap": 2000,
-        "bootstrap_seed": 20260825, "quick_test": True, "max_time_seconds": args.max_time},
+        "bootstrap_seed": 20260825, "quick_test": True, "max_time_seconds": args.max_time,
+        "max_memory_gb_per_trajectory": args.max_memory_gb},
         "task_panel": [{"task_id": args.trait if args.condition is None else f"{args.trait}::{args.condition}",
                         "trait": args.trait, "condition": args.condition}],
         "source": {"path": str(args.source), "commit": args.source_commit},
@@ -113,7 +123,8 @@ def main() -> None:
                    *condition_flag, "--endpoint", args.endpoint, "--model", args.model,
                    "--data-root", args.data_root, "--version", run_id, "--max-time", str(args.max_time)]
         with log.open("w", encoding="utf-8") as handle:
-            proc = subprocess.run(command, stdout=handle, stderr=subprocess.STDOUT, text=True)
+            proc = subprocess.run(command, stdout=handle, stderr=subprocess.STDOUT, text=True,
+                                   preexec_fn=memory_rlimit_preexec_fn(int(args.max_memory_gb * (1024 ** 3))))
         run_log = log.read_text(encoding="utf-8", errors="replace")
         # GenoMAS's own logger (utils/logger.py) writes token/runtime accounting to
         # this file inside the worktree, never to the subprocess stdout/stderr this

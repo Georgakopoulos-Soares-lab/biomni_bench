@@ -104,25 +104,41 @@ def evaluate_reliability(records: list[dict[str, Any]] | pd.DataFrame, *, k: int
     df["correct"] = pd.to_numeric(df["official_reward"], errors="coerce").ge(1.0).where(evaluable)
     df["key"] = [cluster_key_for(r) for r in df.to_dict("records")]
     per_instance, first, plurality, oracle, selection_failure, all_wrong = [], [], [], [], [], []
+    plurality_legacy, selection_failure_legacy = [], []
     taxonomy = Counter()
     for task_id, g in df.groupby("task_id", sort=True):
         g = g.sort_values("run_index")
         keys, order = g.key.tolist(), g.run_index.astype(int).tolist()
-        con = consensus(keys, order)
+        # Legacy/all-runs consensus: every requested trajectory votes, including
+        # execution/artifact-contract/scorer failures. This is the pre-existing
+        # behaviour, kept under an explicit name for compatibility with anything
+        # that already consumes it (e.g. historical Biomni tables re-run through
+        # this evaluator) -- never the primary signal going forward.
+        con_legacy = consensus(keys, order)
+        winner_legacy_correct = g[g.key == con_legacy.plurality_key].iloc[0].correct
+        # Primary consensus: only completed, evaluable trajectories vote. A
+        # trajectory that never finished (execution/artifact-contract/scorer
+        # failure) has no real answer to contribute and must never win, or even
+        # contest, the plurality -- it stays visible only in failure accounting.
+        gc = g[g.completed.astype(bool)]
+        con = consensus(gc.key.tolist(), gc.run_index.astype(int).tolist()) if len(gc) else None
+        winner_correct = gc[gc.key == con.plurality_key].iloc[0].correct if con is not None else np.nan
         valid = g[g.correct.notna()]
         correct = valid.correct.astype(int).tolist()
-        winner = g[g.key == con.plurality_key].iloc[0]
-        winner_correct = winner.correct
         any_correct = bool(any(correct))
         all_wrong_i = bool(correct) and not any_correct
         # Scorer outages are neither stable failures nor unstable reasoning.
         # Keep them in failure accounting, but do not manufacture a taxonomy
-        # label when this instance has no evaluable trajectory.
+        # label when this instance has no evaluable trajectory. "Agreement"
+        # for this label means completed trajectories agreeing with each
+        # other -- an execution failure sitting next to one real trajectory
+        # is not instability, there was never a second real answer to disagree.
+        completed_keys = gc.key.tolist()
         if not correct:
             state = None
-        elif len(set(keys)) == 1 and all(correct):
+        elif len(set(completed_keys)) == 1 and all(correct):
             state = "stable_correct"
-        elif len(set(keys)) == 1 and not any(correct):
+        elif len(set(completed_keys)) == 1 and not any(correct):
             state = "stable_wrong"
         elif any_correct:
             state = "unstable_recoverable"
@@ -132,20 +148,34 @@ def evaluate_reliability(records: list[dict[str, Any]] | pd.DataFrame, *, k: int
             taxonomy[state] += 1
         first.append(float(g.iloc[0].correct) if pd.notna(g.iloc[0].correct) else np.nan)
         plurality.append(float(winner_correct) if pd.notna(winner_correct) else np.nan)
+        plurality_legacy.append(float(winner_legacy_correct) if pd.notna(winner_legacy_correct) else np.nan)
         oracle.append(float(any_correct) if correct else np.nan)
         selection_failure.append(float(any_correct and winner_correct == 0) if pd.notna(winner_correct) else np.nan)
+        selection_failure_legacy.append(
+            float(any_correct and winner_legacy_correct == 0) if pd.notna(winner_legacy_correct) else np.nan)
         all_wrong.append(float(all_wrong_i) if correct else np.nan)
-        per_instance.append({"task_id": task_id, "n_requested": len(g), "k_expected": k,
-            "plurality_fraction": con.plurality_fraction, "plurality_key": con.plurality_key,
-            "plurality_tie": con.is_tie, "plurality_correct": None if pd.isna(winner_correct) else int(winner_correct),
+        per_instance.append({"task_id": task_id, "n_requested": len(g), "k_expected": k, "n_completed_runs": len(gc),
+            "plurality_fraction": np.nan if con is None else con.plurality_fraction,
+            "plurality_key": None if con is None else con.plurality_key,
+            "plurality_tie": None if con is None else con.is_tie,
+            "plurality_correct": None if pd.isna(winner_correct) else int(winner_correct),
+            "plurality_fraction_legacy_all_runs": con_legacy.plurality_fraction,
+            "plurality_key_legacy_all_runs": con_legacy.plurality_key,
+            "plurality_tie_legacy_all_runs": con_legacy.is_tie,
+            "plurality_correct_legacy_all_runs": None if pd.isna(winner_legacy_correct) else int(winner_legacy_correct),
             "oracle_at_k": None if not correct else int(any_correct), "state": state,
             "n_evaluable_runs": len(correct), "n_correct_runs": int(sum(correct))})
     def valid(xs: list[float]) -> list[float]:
         return [x for x in xs if not np.isnan(x)]
     rng = np.random.default_rng(bootstrap_seed)
     metrics = {"pass_at_1": _ci(valid(first), rng, n_bootstrap), "plurality_accuracy": _ci(valid(plurality), rng, n_bootstrap),
-               "oracle_at_k": _ci(valid(oracle), rng, n_bootstrap), "agreement_plurality_fraction": _ci([x["plurality_fraction"] for x in per_instance], rng, n_bootstrap),
-               "selection_failure_rate": _ci(valid(selection_failure), rng, n_bootstrap), "all_wrong_rate": _ci(valid(all_wrong), rng, n_bootstrap)}
+               "plurality_accuracy_legacy_all_runs": _ci(valid(plurality_legacy), rng, n_bootstrap),
+               "oracle_at_k": _ci(valid(oracle), rng, n_bootstrap),
+               "agreement_plurality_fraction": _ci(valid([x["plurality_fraction"] for x in per_instance]), rng, n_bootstrap),
+               "agreement_plurality_fraction_legacy_all_runs": _ci([x["plurality_fraction_legacy_all_runs"] for x in per_instance], rng, n_bootstrap),
+               "selection_failure_rate": _ci(valid(selection_failure), rng, n_bootstrap),
+               "selection_failure_rate_legacy_all_runs": _ci(valid(selection_failure_legacy), rng, n_bootstrap),
+               "all_wrong_rate": _ci(valid(all_wrong), rng, n_bootstrap)}
     inst = pd.DataFrame(per_instance)
     metrics["agreement_to_correctness_auroc"] = _auc(inst.plurality_fraction.to_numpy(), inst.plurality_correct.to_numpy(float))
     metrics["agreement_to_correctness_auprc"] = _auprc(inst.plurality_fraction.to_numpy(), inst.plurality_correct.to_numpy(float))
