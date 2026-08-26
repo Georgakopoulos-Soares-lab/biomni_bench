@@ -1,0 +1,40 @@
+# Frozen admission manifest.  This is a plan, not authorization for a campaign.
+schema_version: reliability-suite-manifest-v1.0
+protocol:
+  k: 4
+  bootstrap_unit: task
+  bootstrap_seed: 20260825
+  n_bootstrap: 2000
+  no_paid_model_apis: true
+agents:
+  - agent: biomni
+    benchmark: BiomniEval1
+    status: imported_historic_results
+    model: biomni/Biomni-R0-32B-Preview
+    model_revision: 71432eb3d5e583bee757e0f9437a17e711e8e3d1
+    scorer: biomni.eval.biomni_eval1.BiomniEval1._compute_reward
+  - agent: genomas
+    source: /work/11034/atzanakak/biomni_bench/external_agents/GenoMAS
+    source_commit: d6365a700794587b53958db3bf22bb1fb80c3451
+    benchmark: GenoTEX
+    status: blocked_pending_input_data_and_local_model_service
+    model: Qwen2.5-Coder-32B-Instruct
+    serving_backend: Ollama-compatible local endpoint
+    scorer: GenoMAS/eval.py
+    required_assets: GenoTEX input bundle (~42 GB; obtain separately and checksum before use)
+  - agent: openbiollm
+    source: /work/11034/atzanakak/biomni_bench/external_agents/OpenBioLLM
+    source_commit: 77877d8274486cb8a85757be95eda0d1fa4fbb55
+    benchmark: GeneTuring + GeneHop
+    status: blocked_pending_local_model_service_and_external_service_cache_plan
+    model: Qwen2.5-Coder-32B-Instruct
+    scorer: OpenBioLLM/openbiollm/evaluate.py
+    scorer_caveat: Three task families instantiate a local Ollama LLM judge; do not pool them with deterministic scores.
+  - agent: autoba
+    source: /work/11034/atzanakak/biomni_bench/external_agents/AutoBA
+    source_commit: a9f8f1244faf8b33cf1154150d612acf5026a4d9
+    benchmark: Bio-Task Bench
+    status: blocked_pending_adapter_and_clean_isolated_tool_environment
+    model: Qwen2.5-Coder-32B-Instruct
+    serving_backend: AutoBA Ollama path
+    scorer: bioTaskBench/harness/grader.py
