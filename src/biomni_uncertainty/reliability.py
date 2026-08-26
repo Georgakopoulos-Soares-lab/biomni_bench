@@ -96,7 +96,12 @@ def evaluate_reliability(records: list[dict[str, Any]] | pd.DataFrame, *, k: int
         df["failure_reason"] = None
     if "confidence" not in df:
         df["confidence"] = np.nan
-    df["correct"] = pd.to_numeric(df["official_reward"], errors="coerce").ge(1.0).where(df["official_reward"].notna())
+    # A trajectory an adapter marks incomplete (execution/artifact-contract/scorer
+    # failure) never counts as an evaluable outcome, even if its aborted or
+    # truncated artifact happened to still yield a defined reward -- that reward
+    # describes an answer the agent never actually settled on, not a real one.
+    evaluable = df["official_reward"].notna() & df["completed"].astype(bool)
+    df["correct"] = pd.to_numeric(df["official_reward"], errors="coerce").ge(1.0).where(evaluable)
     df["key"] = [cluster_key_for(r) for r in df.to_dict("records")]
     per_instance, first, plurality, oracle, selection_failure, all_wrong = [], [], [], [], [], []
     taxonomy = Counter()
