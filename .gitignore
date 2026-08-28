@@ -44,3 +44,6 @@ configs/cluster.yaml
 # Stray caches written by biomedical tool libraries
 .pybiomart.sqlite
 *.sqlite
+
+# Handoff/working prompts -- not project source
+prompts/
