@@ -1,12 +1,71 @@
-# AutoBA K=4 pilot v1 — preregistration (NOT LAUNCHED)
+# AutoBA K=4 pilot v1 — preregistration (LAUNCHED, one task substitution)
 
-Status: **`PREREGISTERED_NOT_LAUNCHED`**. No confirmatory K=4 trajectory has
-been started. This document, plus the machine-readable manifest at
+## Amendment (2026-08-29, after launch, before any valid trajectory)
+
+The campaign was launched from this preregistration, then **stopped after
+~9.5 hours** when the first four tasks' results were inspected: every one of
+the 16 trajectories run so far had `completed=false`, `official_reward=0.0`,
+`failure_class=timeout`, with **zero attempted artifacts**. Root cause: this
+preregistration's audit (`reports/autoba_tool_provisioning.md`) checked
+whether each task's *grading* criteria required an unavailable tool, but
+never checked whether each task's **data-generation step**
+(`tests/<domain>/<test_id>/data/generate_data.py`) does — and none of the 12
+frozen tasks except the already-admitted `assembly-001` had ever had their
+`generate_data.py` run, so 11 of 12 task workspaces had no input data at all.
+This was an engineering oversight in preparing the launch, not a scientific
+result about AutoBA; the 16 affected trajectories carry no information about
+AutoBA's reliability and are excluded from the campaign, archived (not
+deleted) at
+`/scratch/11034/atzanakak/genomas_admission/autoba_admission/autoba_k4_pilot_v1_20260829_INVALID_missing_data_20260829/`
+for the record. The original manifest is left untouched (its SHA-256 above
+still verifies); this correction is recorded in a separate amendment
+manifest,
+`/scratch/11034/atzanakak/genomas_admission/autoba_admission/autoba_k4_pilot_v1_20260829_amendment_01.json`
+(SHA-256 `97b400c98c9ad8ebf31e53e5fb8b557950d1ac1fdd89adcb159dc1468d6a52cd`),
+never by editing the frozen artifact in place.
+
+Auditing all 34 tasks' `generate_data.py` scripts (not just the 12 selected)
+found exactly one genuinely infeasible task in the frozen panel:
+**`chip-seq/chipseq-001`**, whose generator requires `samtools`, `bedtools`,
+and `HOMER` (none installed, no conda/mamba path — same gap already
+documented in `reports/autoba_tool_provisioning.md` for the *grading* axis,
+now also true for *data generation*) to build a multi-caller ENCODE-derived
+ground truth. Internet access itself works from this node and `curl` is
+present, so a task needing only a network download (`chip-seq/chipseq-003`,
+GENCODE annotations, "Python only") is not blocked by this gap. No other
+task among the 34 needs network access or an external binary at data-
+generation time — confirmed by inspecting every `generate_data.py`'s
+docstring/requirements and grepping for download/subprocess calls, not
+inferred.
+
+**Correction, applying the original selection rule mechanically to the
+corrected eligible set** (`{assembly-001, chipseq-001}` excluded instead of
+just `{assembly-001}`): chip-seq's first-pass pick (no basic-tier task
+remains after excluding chipseq-001, same fallback already used for
+genome-assembly) becomes `chipseq-002` (was previously the domain's
+second-pass pick); chip-seq's second-pass pick becomes `chipseq-003` (next
+alphabetically eligible non-basic task after `chipseq-002`). No other
+domain's pick changes. The corrected panel is reflected in the task table
+and manifest below; `scripts/run_autoba_k4_pilot_v1.sh` was updated to match
+before relaunch. See `DECISIONS.md` D-56 for the full record, per this
+project's standing rule that a post-freeze correction is documented as a
+change, never edited away silently.
+
+`generate_data.py` was then run once for all 12 corrected-panel tasks
+(deterministic setup, not a source or scorer change — the same category of
+action already taken for `assembly-001` during admission), verified against
+each task's declared `context.data_files`, before relaunching.
+
+---
+
+Status: **`LAUNCHED_20260829_AMENDED`**. Explicit operator approval to launch
+was given 2026-08-29 (referencing commit `8f0fc9b` and the manifest SHA-256
+below). This document, plus the machine-readable manifest at
 `/scratch/11034/atzanakak/genomas_admission/autoba_admission/autoba_k4_pilot_v1_20260829_preregistration_manifest.json`
 (SHA-256 `6709a7762512820e3073cfe0002c0be9f56596acddd79b5f4eecf29caeb38579`),
-freezes every protocol parameter before any confirmatory-campaign execution,
-per instruction. Do not launch from this preregistration without explicit
-operator approval.
+froze every protocol parameter before any confirmatory-campaign execution,
+per instruction. One task substitution was made post-launch, before any
+valid trajectory ran — see the Amendment section immediately below.
 
 ## Why this pilot exists
 
@@ -115,7 +174,7 @@ run — see the manifest's `task_selection_rule` for the exact wording):
 
 | # | Task ID | Difficulty | Diversity axis |
 | - | --- | --- | --- |
-| 1 | `chip-seq/chipseq-001` | basic | alignment/mapping; real tool (MACS3) |
+| 1 | `chip-seq/chipseq-002`\* | intermediate | alignment/mapping; de novo motif discovery, distinct output structure |
 | 2 | `crispr-screens/crispr-001` | basic | sequence processing |
 | 3 | `genome-assembly/assembly-002` | intermediate | genome assembly |
 | 4 | `long-read-sequencing/lrs-001` | basic | sequence processing; real tool (NanoStat) |
@@ -125,8 +184,12 @@ run — see the manifest's `task_selection_rule` for the exact wording):
 | 8 | `population-genetics/popgen-001` | basic | variant/genomic analysis; real tool (scikit-allel) |
 | 9 | `proteomics/prot-001` | basic | tabular/statistical bioinformatics |
 | 10 | `spatial-transcriptomics/stx-001` | basic | real tool (Scanpy); distinct output structure |
-| 11 | `chip-seq/chipseq-002` | intermediate | alignment/mapping; de novo motif discovery, distinct output structure |
+| 11 | `chip-seq/chipseq-003`\* | intermediate | alignment/mapping; peak-to-gene annotation, distinct output structure |
 | 12 | `crispr-screens/crispr-003` | intermediate | sequence processing |
+
+\* Slots 1 and 11 were originally `chipseq-001`/`chipseq-002`; see the
+Amendment above for why and how they changed. Every other slot is unchanged
+from the original freeze.
 
 ## Frozen protocol
 
@@ -197,7 +260,7 @@ calibrated model — actual cost depends heavily on how often trajectories
 converge before the external timeout, which is exactly what
 early-completion is intended to reduce but cannot guarantee.
 
-## Exact launch commands (NOT EXECUTED)
+## Launch commands (executed via `scripts/run_autoba_k4_pilot_v1.sh`)
 
 **1. Endpoint** — reuse the already-running vLLM server from admission
 (`http://127.0.0.1:8000`, `Qwen3-Coder-30B-A3B-Instruct`) if the same Slurm
@@ -205,15 +268,21 @@ allocation is still live; otherwise relaunch fresh on a new allocation using
 the exact procedure in `reports/autoba_admission.md` (same `CC=nvc++` +
 `libcudart.so` shim this node's `nvidia/24.7` module requires).
 
-**2. One campaign per task** (12 invocations; example shown for task #1 —
-substitute `--domain`/`--test-id` per the table above):
+**2. Data generation** — for each of the 12 (corrected) tasks, run its own
+`tests/<domain>/<test_id>/data/generate_data.py` once (deterministic setup,
+not a source/scorer change) before launching. See the Amendment above.
+
+**3. One campaign per task** (12 invocations, sequenced by
+`scripts/run_autoba_k4_pilot_v1.sh`; example shown for task #1 as amended —
+substitute `--domain`/`--test-id` per the table above for a manual re-run of
+a single task):
 
 ```bash
 /scratch/11034/atzanakak/biomni_vista/envs/biotaskbench/bin/python3 \
   scripts/run_autoba_k4_reliability.py \
-  --campaign-root /scratch/11034/atzanakak/genomas_admission/autoba_admission/autoba_k4_pilot_v1_20260829/01_chipseq-001_k4 \
+  --campaign-root /scratch/11034/atzanakak/genomas_admission/autoba_admission/autoba_k4_pilot_v1_20260829/01_chipseq-002_k4 \
   --biotaskbench-root /work/11034/atzanakak/biomni_bench/external_agents/bioTaskBench \
-  --domain chip-seq --test-id chipseq-001 \
+  --domain chip-seq --test-id chipseq-002 \
   --endpoint http://127.0.0.1:8000 --model Qwen3-Coder-30B-A3B-Instruct \
   --k 4 --timeout-seconds 1800 --done-stable-seconds 60 --poll-seconds 10 \
   --source-commit a9f8f1244faf8b33cf1154150d612acf5026a4d9 \
@@ -226,9 +295,9 @@ Repeat for the remaining 11 tasks. Each invocation writes its own
 combined Step 5 report (not built by this script, which is intentionally
 single-task like `run_genomas_k4_reliability.py`).
 
-**Not executed. Requires explicit operator approval before any trajectory
-starts** — this preregistration is Steps 1-3 of `prompts/autoba_reliability.md`
-only; launching the campaign (Step 4) is a separate, explicit next action.
+**Launched 2026-08-29 with explicit operator approval** (Step 4 of
+`prompts/autoba_reliability.md`); the one task substitution above was made
+before any valid trajectory ran.
 
 ## Provenance
 
@@ -242,5 +311,12 @@ only; launching the campaign (Step 4) is a separate, explicit next action.
 - Tool audit: `reports/autoba_tool_provisioning.md`.
 - Verification smoke evidence:
   `/scratch/11034/atzanakak/genomas_admission/autoba_admission/verify_reliability_v1_smoke_20260828_221823_v7/`.
+- Invalid pre-amendment trajectories (16, all `failure_class=timeout` due to
+  the missing-data-generation bug, excluded from the campaign): archived at
+  `/scratch/11034/atzanakak/genomas_admission/autoba_admission/autoba_k4_pilot_v1_20260829_INVALID_missing_data_20260829/`.
+- Orchestration: `scripts/run_autoba_k4_pilot_v1.sh` (sequences the 12
+  amended-panel invocations), `scripts/aggregate_autoba_k4_pilot_v1.py`
+  (Step 5 combined report).
 - This preregistration does not modify, and was not informed by, any frozen
-  admission or prior campaign artifact.
+  admission or prior campaign artifact. The one post-launch amendment above
+  was made before any valid trajectory ran, per DECISIONS.md D-56.

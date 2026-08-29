@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-## AutoBA K=4 pilot v1 preregistered, not launched (2026-08-29, D-55)
+## AutoBA K=4 pilot v1 — launched, in progress (2026-08-29, D-55/D-56)
 
 **Completed.** AutoBA (admitted 2026-08-28 as the project's third distinct
 biomedical agent, `reports/autoba_admission.md`: clean K=1 score 1.000 + tiny
@@ -44,25 +44,42 @@ established for `assembly-001`, which listed QUAST yet was solved in pure
 pandas), so an unavailable tool means a Python-native substitute is needed,
 not that the task is unexecutable.
 
-A 12-task x K=4 (48-trajectory) confirmatory panel is frozen via a
+A 12-task x K=4 (48-trajectory) confirmatory panel was frozen via a
 mechanical, pre-outcome selection rule spanning genome assembly, sequence
 processing, alignment/mapping, variant/genomic analysis, tabular/statistical
 bioinformatics, and tasks exercising a confirmed-installed real tool —
-`reports/autoba_k4_pilot_v1_preregistration.md`, manifest SHA-256
+`reports/autoba_k4_pilot_v1_preregistration.md`, original manifest SHA-256
 `6709a7762512820e3073cfe0002c0be9f56596acddd79b5f4eecf29caeb38579`. A
 post-fix K=1 verification smoke re-running the already-admitted
-`assembly-001` task validated the full pipeline end-to-end (token counts
-non-null, early-completion correctly did not fire on a non-converged
-trajectory, `evaluate_reliability()` produced a well-formed report) — this
-reuses spent admission ground, not new scientific evidence.
+`assembly-001` task validated the full pipeline end-to-end before launch.
 
-**Current blockers.** None for the engineering; the confirmatory campaign
-itself (Step 4 of `prompts/autoba_reliability.md`) has **not been launched**
-and requires separate, explicit operator approval before the first of 48
-trajectories starts, per this project's standing practice for every
-preregistered campaign (GenoMAS's K=4 pilot, the RL harness pilot). Estimated
-cost: roughly 24-36 sequential GPU-hours (planning order-of-magnitude, not
-calibrated — see the preregistration's Runtime/cost estimate section).
+**Launched** 2026-08-29 with explicit operator approval (referencing commit
+`8f0fc9b` and the manifest SHA-256 above). **One post-launch amendment,
+before any valid trajectory ran (D-56):** the campaign was stopped ~9.5
+hours in when the first four tasks' results showed 16/16 trajectories
+failing with `failure_class=timeout` and zero attempted artifacts — root
+cause was an engineering oversight, not AutoBA performance: 11 of the 12
+frozen tasks (all but the already-admitted `assembly-001`) had never had
+their `generate_data.py` setup step run, so their workspaces had no input
+data. Fixed by running `generate_data.py` for all 12 corrected-panel tasks;
+while auditing all 34 tasks' generators for this fix, `chip-seq/chipseq-001`
+was found to also require `samtools`/`bedtools`/`HOMER` (unavailable) at
+data-generation time and was replaced with `chip-seq/chipseq-003` via the
+same mechanical selection rule (`chipseq-002` moves into slot 1). The 16
+invalid trajectories are excluded from the campaign and archived (not
+deleted) at
+`autoba_k4_pilot_v1_20260829_INVALID_missing_data_20260829/`. Recorded as a
+separate amendment manifest
+(`autoba_k4_pilot_v1_20260829_amendment_01.json`, SHA-256
+`97b400c98c9ad8ebf31e53e5fb8b557950d1ac1fdd89adcb159dc1468d6a52cd`), not by
+editing the original frozen manifest. The corrected campaign was relaunched
+2026-08-29T13:41Z via `scripts/run_autoba_k4_pilot_v1.sh` and is currently
+**in progress**.
+
+**Current blockers.** None for the engineering. The campaign is running;
+Slurm allocation (job `950393`) has walltime until `2026-08-30T20:43:08`,
+comfortably inside the ~24-36 GPU-hour estimate but worth watching if the
+run trends toward the high end.
 
 **Tests run:** `pytest -q` in a freshly-built `.venv` (Python 3.11.8) —
 full suite green except two modules requiring optional dependencies not in
@@ -73,18 +90,19 @@ environments' dependencies per README, not a regression) and
 also per README). `ruff check`/`ruff format --check` clean on all changed
 files.
 
-**Active experiment IDs:** `autoba_k4_pilot_v1_20260829` (preregistered, not
-launched).
+**Active experiment IDs:** `autoba_k4_pilot_v1_20260829` (launched, in
+progress, one amendment applied before any valid trajectory).
 
-**Known failures:** none outstanding — the two early-completion bugs found
-this session are fixed, not open.
+**Known failures:** the 16 pre-amendment trajectories are a known,
+diagnosed, and fixed engineering failure (D-56) — not an open issue, and
+excluded from the campaign's scientific accounting.
 
-**Next actions:** obtain explicit approval, then launch the frozen 12-task
-x K=4 campaign (Step 4 of `prompts/autoba_reliability.md`), compute the
-common Reliability Suite v1 report (Step 5), and compare descriptively
+**Next actions:** let the corrected 12-task x K=4 campaign run to
+completion, then compute the common Reliability Suite v1 report via
+`scripts/aggregate_autoba_k4_pilot_v1.py` (Step 5) and compare descriptively
 against Biomni and GenoMAS (Step 6). Per the prompt's own stop rule: after
-that campaign and analysis, stop for operator review before expanding
-AutoBA/GenoMAS further, starting a fourth agent, or resuming RL work.
+that analysis, stop for operator review before expanding AutoBA/GenoMAS
+further, starting a fourth agent, or resuming RL work.
 
 ---
 

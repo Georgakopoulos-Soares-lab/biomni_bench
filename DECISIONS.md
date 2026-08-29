@@ -3247,3 +3247,47 @@ over presence; exact declared targets over loose globs) rather than
 rediscovering them — bioTaskBench's own `harness/runner.py::_run_agent_command`
 `done_check` branch (used elsewhere in that codebase) only checks bare
 presence and would reproduce failure mode 1 if reused as-is.
+
+---
+
+## D-56 AutoBA K=4 pilot v1: missing data-generation step invalidated 16 trajectories; chipseq-001 replaced
+
+**Observed:** 2026-08-29, ~9.5 hours into the launched confirmatory campaign
+(`reports/autoba_k4_pilot_v1_preregistration.md`, launched with explicit
+operator approval referencing commit `8f0fc9b`). The first four tasks'
+results were inspected before continuing: all 16 trajectories had
+`completed=false`, `official_reward=0.0`, `failure_class=timeout`, zero
+attempted artifacts. Root cause: `reports/autoba_tool_provisioning.md`'s
+environment audit checked whether each frozen task's *grading* criteria
+required an unavailable tool, but never checked whether each task's own
+`tests/<domain>/<test_id>/data/generate_data.py` setup step does — and
+`generate_data.py` had only ever been run for the already-admitted
+`assembly-001` (during admission), never for the other 11 frozen tasks. Every
+one of their workspaces had no input data at all.
+
+**Decision.** Stopped the running campaign immediately rather than let it
+continue producing more invalid trajectories on the remaining 8 tasks. The
+16 affected trajectories are excluded from the campaign (not counted toward
+the 48) and archived, not deleted, at
+`autoba_k4_pilot_v1_20260829_INVALID_missing_data_20260829/`. Auditing all 34
+bioTaskBench tasks' `generate_data.py` scripts (not just the 12 selected)
+while diagnosing this found exactly one genuinely infeasible task in the
+frozen panel: `chip-seq/chipseq-001`, whose generator requires
+`samtools`/`bedtools`/`HOMER` (none installed, no conda/mamba path) to build
+an ENCODE-derived multi-caller ground truth. It is replaced by re-applying
+the original mechanical selection rule to the corrected eligible set
+(`chipseq-002` moves into slot 1, `chipseq-003` becomes the domain's new
+second pick) — recorded as a separate amendment manifest
+(`autoba_k4_pilot_v1_20260829_amendment_01.json`), never by editing the
+original frozen manifest in place. `generate_data.py` was then run once for
+all 12 corrected tasks (deterministic setup, the same category of action
+already taken for `assembly-001`) and verified against each task's declared
+`context.data_files` before relaunching.
+
+**Generalization.** A future tool-provisioning audit for any agent/benchmark
+pair must check data-generation-time dependencies (network access, external
+binaries) separately from grading-time dependencies — the two can differ
+per task, and only auditing one silently misses the other. A launch
+checklist item is added implicitly by this entry: before launching any
+multi-task campaign, confirm every task's input data actually exists on
+disk, not just that its scorer/tool requirements were audited.

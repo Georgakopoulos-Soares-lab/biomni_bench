@@ -3,7 +3,10 @@
 # one scripts/run_autoba_k4_reliability.py invocation per task, sequential
 # (single GH200), exactly matching the parameters frozen in
 # reports/autoba_k4_pilot_v1_preregistration.md and its manifest (SHA-256
-# 6709a7762512820e3073cfe0002c0be9f56596acddd79b5f4eecf29caeb38579).
+# 6709a7762512820e3073cfe0002c0be9f56596acddd79b5f4eecf29caeb38579), AS
+# AMENDED 2026-08-29 -- see that report's "Amendment" section and
+# DECISIONS.md D-56 for the one task substitution (chipseq-001 ->
+# chipseq-003) made before any valid trajectory ran.
 #
 # Not a scored artifact itself -- an orchestration wrapper around the already
 #-frozen per-task runner, so the 12 invocations don't have to be typed by
@@ -25,9 +28,15 @@ LOG="$PREFIX.driver.log"
 mkdir -p "$(dirname "$PREFIX")"
 : > "$LOG"
 
-# Order and numbering exactly as in the preregistration's task table.
+# Order and numbering per the preregistration's task table, AS AMENDED
+# 2026-08-29 (see reports/autoba_k4_pilot_v1_preregistration.md, "Amendment"
+# section, and DECISIONS.md D-56): chipseq-001 was discovered infeasible
+# (its generate_data.py requires samtools/bedtools/HOMER, none installed on
+# this node) and is replaced by chipseq-003 following the same mechanical
+# selection rule; chipseq-002 moves from slot 11 into chipseq-001's original
+# slot 1 position, keeping the rest of the panel unchanged.
 TASKS=(
-  "01:chip-seq:chipseq-001"
+  "01:chip-seq:chipseq-002"
   "02:crispr-screens:crispr-001"
   "03:genome-assembly:assembly-002"
   "04:long-read-sequencing:lrs-001"
@@ -37,7 +46,7 @@ TASKS=(
   "08:population-genetics:popgen-001"
   "09:proteomics:prot-001"
   "10:spatial-transcriptomics:stx-001"
-  "11:chip-seq:chipseq-002"
+  "11:chip-seq:chipseq-003"
   "12:crispr-screens:crispr-003"
 )
 
