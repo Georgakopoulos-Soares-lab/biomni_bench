@@ -34,14 +34,22 @@ agents:
     source: /work/11034/atzanakak/biomni_bench/external_agents/AutoBA
     source_commit: a9f8f1244faf8b33cf1154150d612acf5026a4d9
     benchmark: Bio-Task Bench
-    status: k1_k4_admission_smoke_passed_pending_campaign_authorization
+    status: k4_pilot_v1_preregistered_not_launched_pending_campaign_authorization
     model: Qwen3-Coder-30B-A3B-Instruct
     serving_backend: vLLM local OpenAI-compatible (AutoBA's own OpenAI-path
       transport repointed at the local endpoint; native Ollama path unused)
     scorer: bioTaskBench/harness/grader.py
     admission_record: reports/autoba_admission.md
     admission_evidence: /scratch/11034/atzanakak/genomas_admission/autoba_admission/
-    known_gaps: no token/cost instrumentation; no early-completion detection
-      (trajectories run to the external timeout even after finishing);
-      no Reliability Suite v1 importer yet; tasks requiring a real
-      bioinformatics binary (vs. pure Python) untested
+    tool_provisioning_record: reports/autoba_tool_provisioning.md
+    k4_pilot_v1_preregistration: reports/autoba_k4_pilot_v1_preregistration.md
+    engineering_prerequisites_done: token accounting (per-call response.usage,
+      never fabricated when unavailable); early-completion detection
+      (content-fingerprint-based, ground-truth-free, two real bugs found and
+      fixed against a live trajectory); Reliability Suite v1 schema mapping
+      (src/biomni_uncertainty/adapters/autoba.py + scripts/run_autoba_k4_reliability.py)
+    known_gaps: no confirmatory campaign trajectory has run yet; R and
+      several named binaries (HOMER, MEME suite, bedtools/samtools/VCFtools
+      as standalone binaries, PLINK) remain unavailable on this node --
+      see reports/autoba_tool_provisioning.md for why no task is excluded
+      on that basis

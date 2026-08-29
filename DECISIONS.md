@@ -3205,3 +3205,45 @@ structurally diverse candidate panel but are conditional on their respective
 scorer/credential and public native-benchmark gates. BioMedArena is a useful
 comparison and future adapter reference, not a v1 shared execution harness.
 No full evaluation has been launched or authorized.
+
+---
+
+## D-55 AutoBA early-completion must key on content stability, not bare presence, and must prefer exact target files over loose glob patterns
+
+**Observed:** 2026-08-29, building the early-completion mechanism
+(`biomni_uncertainty.adapters.autoba.run_with_early_completion` +
+`workspace_fingerprint`) flagged as a prerequisite in `reports/autoba_admission.md`.
+Two failure modes were found by actually running it against a live AutoBA
+trajectory on `assembly-001`, not caught by unit tests written before that
+run:
+
+1. Using bioTaskBench's own `grader.detect_attempted` (bare file existence)
+   as the "done" signal fired after only 60s: the agent had written a
+   placeholder at the expected path, which satisfies `detect_attempted`
+   immediately, and was still going to overwrite it with the real answer
+   several rounds later. The trajectory was killed mid-flight and scored
+   0.1 on a run that would otherwise have converged.
+2. After switching to a stability check (a snapshot must be identical
+   across consecutive polls), a second run still terminated early at score
+   0.1: the task's generic `file_check` criterion (`target_pattern: "*.tsv"`)
+   matched an incidental stray file that never changed again, while the
+   *actual* scored deliverable (referenced by an exact `target_file` on a
+   different, substantive criterion) had not been created yet.
+
+**Decision.** `workspace_fingerprint` fingerprints only the task's exact
+`target_file` entries when any criterion declares one (falling back to glob
+`target_pattern` matching only when no task criterion has an exact target),
+and requires *every* declared target to exist simultaneously
+(all-or-nothing) before considering the workspace non-empty. Combined with
+requiring two consecutive identical, non-empty snapshots before starting the
+`done_stable_seconds` clock, this makes "done" mean "every substantively
+scored output file exists and has stopped changing," not "some file exists."
+Both fixes are covered by regression tests reproducing the exact failure
+shape with real subprocesses (`tests/test_adapters_autoba.py`), not mocks.
+
+**Generalization.** Any future early-completion mechanism built for another
+agent/benchmark pair should default to the same two properties (stability
+over presence; exact declared targets over loose globs) rather than
+rediscovering them — bioTaskBench's own `harness/runner.py::_run_agent_command`
+`done_check` branch (used elsewhere in that codebase) only checks bare
+presence and would reproduce failure mode 1 if reused as-is.

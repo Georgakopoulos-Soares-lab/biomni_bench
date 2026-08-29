@@ -1,5 +1,93 @@
 # PROJECT_STATUS
 
+## AutoBA K=4 pilot v1 preregistered, not launched (2026-08-29, D-55)
+
+**Completed.** AutoBA (admitted 2026-08-28 as the project's third distinct
+biomedical agent, `reports/autoba_admission.md`: clean K=1 score 1.000 + tiny
+K=4 smoke 4/4 correct/agreeing on bioTaskBench `assembly-001`) now has all
+three engineering prerequisites its admission report flagged as missing
+before a scientific campaign:
+
+- **Reliability Suite v1 schema mapping** —
+  `src/biomni_uncertainty/adapters/autoba.py` (`autoba_row`,
+  `answer_cluster_key`, `classify_autoba_failure`) plus the campaign runner
+  `scripts/run_autoba_k4_reliability.py`, mirroring GenoMAS's
+  runner-script pattern. `reliability.py`'s metric definitions unchanged.
+- **Token accounting** — `scripts/autoba_biotaskbench_agent.py` wraps the
+  local vLLM client to record `response.usage` per call (never fabricated
+  when unavailable), flushed on both normal completion and SIGTERM.
+- **Early-completion detection** —
+  `adapters/autoba.py::run_with_early_completion` + `workspace_fingerprint`,
+  a content-fingerprint poll/terminate loop run from the campaign script
+  (bioTaskBench's own `harness/runner.py` ships the same poll/`done_check`
+  mechanism but never wires it up for its own `--agent-cmd` path). **Two
+  real bugs were found and fixed against a live trajectory**, not left as
+  known gaps: bare file existence is not a safe "done" signal (a live run
+  terminated on an unfinished placeholder); a loose glob criterion can lock
+  onto a stray file while the real named deliverable is still missing (a
+  live run terminated at score 0.1 with the scored file never created).
+  Both are covered by regression tests reproducing the exact failure shape
+  with real subprocesses (`tests/test_adapters_autoba.py`, 31 new tests, all
+  green; full existing suite still green in a freshly-built `.venv`).
+
+Seven pip-only bioinformatics packages (pysam, scikit-allel, MACS3, QUAST,
+NanoStat, Scanpy, Squidpy) were installed and independently verified into
+the execution venv (`/scratch/11034/atzanakak/genomas_admission/venv`) —
+`reports/autoba_tool_provisioning.md`. This node has no `conda`/`mamba`/`R`
+and no bioinformatics domain modules; R-only tools (HOMER, MEME suite,
+DESeq2/edgeR/limma/methylKit/ChIPseeker) and several standalone C/C++
+binaries (bedtools, samtools, VCFtools, PLINK — the last is additionally
+aarch64-incompatible) remain unavailable. No task is excluded from the
+candidate pool on that basis: every task's grading criteria score output
+files' structure/values, never tool provenance (the same property already
+established for `assembly-001`, which listed QUAST yet was solved in pure
+pandas), so an unavailable tool means a Python-native substitute is needed,
+not that the task is unexecutable.
+
+A 12-task x K=4 (48-trajectory) confirmatory panel is frozen via a
+mechanical, pre-outcome selection rule spanning genome assembly, sequence
+processing, alignment/mapping, variant/genomic analysis, tabular/statistical
+bioinformatics, and tasks exercising a confirmed-installed real tool —
+`reports/autoba_k4_pilot_v1_preregistration.md`, manifest SHA-256
+`6709a7762512820e3073cfe0002c0be9f56596acddd79b5f4eecf29caeb38579`. A
+post-fix K=1 verification smoke re-running the already-admitted
+`assembly-001` task validated the full pipeline end-to-end (token counts
+non-null, early-completion correctly did not fire on a non-converged
+trajectory, `evaluate_reliability()` produced a well-formed report) — this
+reuses spent admission ground, not new scientific evidence.
+
+**Current blockers.** None for the engineering; the confirmatory campaign
+itself (Step 4 of `prompts/autoba_reliability.md`) has **not been launched**
+and requires separate, explicit operator approval before the first of 48
+trajectories starts, per this project's standing practice for every
+preregistered campaign (GenoMAS's K=4 pilot, the RL harness pilot). Estimated
+cost: roughly 24-36 sequential GPU-hours (planning order-of-magnitude, not
+calibrated — see the preregistration's Runtime/cost estimate section).
+
+**Tests run:** `pytest -q` in a freshly-built `.venv` (Python 3.11.8) —
+full suite green except two modules requiring optional dependencies not in
+this project's own `pyproject.toml` (`test_budget.py` needs `langchain_core`,
+`test_rl_harness_local_agent.py` needs `httpx`; both are separate
+environments' dependencies per README, not a regression) and
+`test_mock_end_to_end.py` (needs the separately-cloned `biomni` package,
+also per README). `ruff check`/`ruff format --check` clean on all changed
+files.
+
+**Active experiment IDs:** `autoba_k4_pilot_v1_20260829` (preregistered, not
+launched).
+
+**Known failures:** none outstanding — the two early-completion bugs found
+this session are fixed, not open.
+
+**Next actions:** obtain explicit approval, then launch the frozen 12-task
+x K=4 campaign (Step 4 of `prompts/autoba_reliability.md`), compute the
+common Reliability Suite v1 report (Step 5), and compare descriptively
+against Biomni and GenoMAS (Step 6). Per the prompt's own stop rule: after
+that campaign and analysis, stop for operator review before expanding
+AutoBA/GenoMAS further, starting a fourth agent, or resuming RL work.
+
+---
+
 ## Reliability benchmark branch — specification and CPU implementation ready (2026-08-25)
 
 `reports/reliability_suite_v1.md` freezes the K=4 reliability protocol,

@@ -50,6 +50,15 @@ already-constructed objects/imported names -- no AutoBA file is edited:
    paths. We use neither (``rag=False``, and only the OpenAI/vLLM transport
    branch is ever reached), so these are stubbed in ``sys.modules`` before
    import rather than installed -- nothing stubbed is ever called.
+4. Token accounting: AutoBA's own ``get_single_response`` discards
+   ``response.usage`` from every call (no native token logging, unlike
+   GenoMAS's ``utils/logger.py`` -- see reports/autoba_admission.md Sec 4).
+   The client ``local_vllm_client`` constructs is wrapped, post-construction,
+   to record each call's ``usage`` before returning it unchanged; the
+   aggregate is flushed to ``<workspace>/token_usage.json`` when the
+   trajectory ends, including on early termination by a campaign's
+   early-completion poller (SIGTERM), via a handler installed in ``main()``.
+   Nothing about which requests are sent or how responses are used changes.
 
 Preserves: AutoBA's own prompts, agent/executor logic, tool flow, retries,
 and task semantics. Nothing about AutoBA's reasoning or code generation is
@@ -57,12 +66,17 @@ changed -- only where its LLM calls and generated-code execution actually go.
 """
 from __future__ import annotations
 
+import functools
 import json
 import os
+import signal
 import sys
 import types
 from pathlib import Path
 from unittest.mock import MagicMock
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from biomni_uncertainty.adapters.autoba import aggregate_token_usage  # noqa: E402
 
 AUTOBA_ROOT = Path("/work/11034/atzanakak/biomni_bench/external_agents/AutoBA")
 VLLM_ENDPOINT = os.environ.get("AUTOBA_VLLM_ENDPOINT", "http://127.0.0.1:8000")
@@ -71,6 +85,50 @@ EXEC_ENV_PREFIX = [
     "export LD_LIBRARY_PATH=/opt/apps/gcc14/cuda12/python3/3.11.8/lib:$LD_LIBRARY_PATH",
     "source /scratch/11034/atzanakak/genomas_admission/venv/bin/activate",
 ]
+
+# Per-call token usage, recorded by the wrapper `_wrap_client_with_token_accounting`
+# installs below. AutoBA itself discards `response.usage` entirely (see module
+# docstring, "Token accounting" in reports/autoba_admission.md Sec 4) -- this is
+# the only place that ever sees it, so it must be captured here, not reconstructed
+# after the fact from logs.
+_TOKEN_CALLS: list[dict[str, int | None] | None] = []
+
+
+def _wrap_client_with_token_accounting(client):  # noqa: ANN001, ANN201
+    """Record every call's `response.usage` without changing its behavior.
+
+    Wraps the already-constructed client's bound `chat.completions.create`
+    method (an instance attribute override, the same monkeypatch style as
+    every other adaptation in this file) so AutoBA's own call sites and
+    control flow are completely unaffected. A call whose `usage` is absent
+    (some serving configs omit it) is recorded as `None`, never fabricated
+    as zero -- see `aggregate_token_usage`.
+    """
+    original_create = client.chat.completions.create
+
+    @functools.wraps(original_create)
+    def create_and_record(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
+        response = original_create(*args, **kwargs)
+        usage = getattr(response, "usage", None)
+        _TOKEN_CALLS.append(
+            None
+            if usage is None
+            else {
+                "input_tokens": getattr(usage, "prompt_tokens", None),
+                "output_tokens": getattr(usage, "completion_tokens", None),
+                "total_tokens": getattr(usage, "total_tokens", None),
+            }
+        )
+        return response
+
+    client.chat.completions.create = create_and_record
+    return client
+
+
+def _write_token_usage(workspace: Path) -> None:
+    (workspace / "token_usage.json").write_text(
+        json.dumps(aggregate_token_usage(_TOKEN_CALLS), indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def _stub_unused_heavy_imports() -> None:
@@ -167,10 +225,22 @@ def main() -> None:
     from openai import OpenAI as RealOpenAI
 
     def local_vllm_client(api_key: str = "unused") -> RealOpenAI:  # noqa: ARG001
-        return RealOpenAI(api_key="EMPTY", base_url=VLLM_ENDPOINT.rstrip("/") + "/v1")
+        client = RealOpenAI(api_key="EMPTY", base_url=VLLM_ENDPOINT.rstrip("/") + "/v1")
+        return _wrap_client_with_token_accounting(client)  # token-accounting patch, see module docstring.
 
     autoba_agent_mod.OpenAI = local_vllm_client  # transport patch #1, see module docstring.
     autoba_executor_mod.CodeExecutor.execute = _execute_without_interactive_tty  # transport patch #2b.
+
+    # A campaign's early-completion poller (see
+    # biomni_uncertainty.adapters.autoba.run_with_early_completion) terminates
+    # this process with SIGTERM once the scored artifact is stable. SIGTERM's
+    # default action skips Python's `finally` blocks, which would silently
+    # drop every token count observed so far -- flush them here first.
+    def _flush_and_exit(signum, frame):  # noqa: ANN001, ARG001
+        _write_token_usage(workspace)
+        sys.exit(0)
+
+    signal.signal(signal.SIGTERM, _flush_and_exit)
 
     agent = autoba_agent_mod.Agent(
         initial_data_list=data_list,
@@ -188,7 +258,10 @@ def main() -> None:
     agent.gpt_model_engines = [*agent.gpt_model_engines, SERVED_MODEL]
     agent.code_executor.code_prefix = list(EXEC_ENV_PREFIX)  # transport patch #2, see module docstring.
 
-    agent.run()
+    try:
+        agent.run()
+    finally:
+        _write_token_usage(workspace)
 
 
 if __name__ == "__main__":
