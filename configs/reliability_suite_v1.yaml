@@ -34,7 +34,14 @@ agents:
     source: /work/11034/atzanakak/biomni_bench/external_agents/AutoBA
     source_commit: a9f8f1244faf8b33cf1154150d612acf5026a4d9
     benchmark: Bio-Task Bench
-    status: blocked_pending_adapter_and_clean_isolated_tool_environment
-    model: Qwen2.5-Coder-32B-Instruct
-    serving_backend: AutoBA Ollama path
+    status: k1_k4_admission_smoke_passed_pending_campaign_authorization
+    model: Qwen3-Coder-30B-A3B-Instruct
+    serving_backend: vLLM local OpenAI-compatible (AutoBA's own OpenAI-path
+      transport repointed at the local endpoint; native Ollama path unused)
     scorer: bioTaskBench/harness/grader.py
+    admission_record: reports/autoba_admission.md
+    admission_evidence: /scratch/11034/atzanakak/genomas_admission/autoba_admission/
+    known_gaps: no token/cost instrumentation; no early-completion detection
+      (trajectories run to the external timeout even after finishing);
+      no Reliability Suite v1 importer yet; tasks requiring a real
+      bioinformatics binary (vs. pure Python) untested
