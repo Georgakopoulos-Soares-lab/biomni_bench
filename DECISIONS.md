@@ -3291,3 +3291,49 @@ per task, and only auditing one silently misses the other. A launch
 checklist item is added implicitly by this entry: before launching any
 multi-task campaign, confirm every task's input data actually exists on
 disk, not just that its scorer/tool requirements were audited.
+
+---
+
+## D-57 AutoBA K=4 pilot v1 complete: reliability profile matches GenoMAS, not Biomni
+
+**Result:** 2026-08-30. The amended 12-task x K=4 confirmatory campaign
+(D-55, D-56) ran to completion: 40/48 trajectories completed, 8 failed and
+correctly classified (4 `timeout` on `chipseq-002`, de novo motif discovery
+— the model's own generated code assumed an unavailable conda/MEME-Suite
+environment; 4 `execution_failure` on `chipseq-003` — a genuine native
+AutoBA crash inside the pinned `a9f8f1244f...` source's
+`src/prompt.py::format_ai_response`, `TypeError: string indices must be
+integers, not 'str'`, reproduced across all 4 independent trajectories, not
+an adapter bug). Full results: `reports/autoba_k4_pilot_v1_results.md`.
+
+**Pooled reliability (n=10 evaluable tasks, unchanged Reliability Suite v1
+definitions):** Pass@1 0.400, plurality accuracy 0.400, Oracle@4 0.500,
+agreement→correctness AUROC 0.542, AUPRC 0.422. One confirmed selection
+failure (`prot-001`: exact 2/2 tie, a correct answer existed among the K=4
+samples but the deterministic tie-break did not select it).
+
+**Cross-agent comparison, descriptive only (native benchmarks differ; raw
+accuracy is not comparable as if task difficulty were equal):**
+
+| | Biomni-R0 | GenoMAS | AutoBA |
+| --- | ---: | ---: | ---: |
+| Pass@1 | 0.442 | 0.300 | 0.400 |
+| Plurality accuracy | 0.617 | 0.417 | 0.400 |
+| Oracle@4 | 0.792 | 0.500 | 0.500 |
+| Agreement→correctness AUROC | 0.896 | 0.529 | 0.542 |
+
+**Decision.** AutoBA does not reveal a third reliability regime on this
+evidence — its agreement→correctness AUROC (0.542) sits at the same
+near-chance level as GenoMAS (0.529), both far below Biomni-R0's strong
+0.896, despite AutoBA and GenoMAS being structurally distinct agents with
+different failure modes (an environment-mismatch and a native crash here,
+vs. artifact-contract and agent-control failures for GenoMAS). This is now
+two independent agents showing a near-chance self-consistency signal
+against one showing a strong one — worth taking seriously as a hypothesis
+for a future purpose-built follow-up, but two 10-12-task pilots do not
+license generalizing beyond that. No reliability metric definition was
+changed because of this outcome.
+
+**Stop rule applied**, per `prompts/autoba_reliability.md`: no further
+AutoBA expansion, no GenoMAS expansion, no fourth agent, no RL work started
+or resumed. Returned for operator review.

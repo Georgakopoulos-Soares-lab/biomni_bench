@@ -1,6 +1,6 @@
 # PROJECT_STATUS
 
-## AutoBA K=4 pilot v1 — launched, in progress (2026-08-29, D-55/D-56)
+## AutoBA K=4 pilot v1 — COMPLETE (2026-08-29/30, D-55/D-56)
 
 **Completed.** AutoBA (admitted 2026-08-28 as the project's third distinct
 biomedical agent, `reports/autoba_admission.md`: clean K=1 score 1.000 + tiny
@@ -73,13 +73,30 @@ separate amendment manifest
 (`autoba_k4_pilot_v1_20260829_amendment_01.json`, SHA-256
 `97b400c98c9ad8ebf31e53e5fb8b557950d1ac1fdd89adcb159dc1468d6a52cd`), not by
 editing the original frozen manifest. The corrected campaign was relaunched
-2026-08-29T13:41Z via `scripts/run_autoba_k4_pilot_v1.sh` and is currently
-**in progress**.
+2026-08-29T13:50:25Z via `scripts/run_autoba_k4_pilot_v1.sh` and ran to
+completion at 2026-08-30T07:13:13Z (17h23m, within the 24-36h estimate).
 
-**Current blockers.** None for the engineering. The campaign is running;
-Slurm allocation (job `950393`) has walltime until `2026-08-30T20:43:08`,
-comfortably inside the ~24-36 GPU-hour estimate but worth watching if the
-run trends toward the high end.
+**Results (`reports/autoba_k4_pilot_v1_results.md`):** 40/48 trajectories
+completed, 8 failed and correctly classified (4 `timeout` on
+`chipseq-002`'s de novo motif discovery — the model's plan assumed an
+unavailable conda/MEME-Suite environment; 4 `execution_failure` on
+`chipseq-003` — a genuine native AutoBA crash,
+`TypeError: string indices must be integers, not 'str'` in
+`AutoBA/src/prompt.py::format_ai_response`, reproduced across all 4
+independent trajectories). Pooled reliability (n=10 evaluable tasks):
+Pass@1 0.400, plurality accuracy 0.400, Oracle@4 0.500,
+agreement→correctness AUROC **0.542** (near chance). One selection failure
+found (`prot-001`, exact 2/2 tie, correct answer existed but was not
+selected). Descriptive cross-agent comparison:
+**AutoBA's reliability profile matches GenoMAS's (near-chance AUROC 0.529
+vs. 0.542) far more than Biomni-R0's (strong AUROC 0.896)** — this project
+now has two independently-built agents (GenoMAS, AutoBA) showing a
+near-chance self-consistency signal against one (Biomni-R0) showing a
+strong one, a pattern worth a future purpose-built follow-up but not
+something this small a pair of pilots can generalize from on its own.
+
+**Current blockers.** None. The pilot is complete and the prompt's own stop
+rule applies (see Next actions).
 
 **Tests run:** `pytest -q` in a freshly-built `.venv` (Python 3.11.8) —
 full suite green except two modules requiring optional dependencies not in
@@ -90,19 +107,20 @@ environments' dependencies per README, not a regression) and
 also per README). `ruff check`/`ruff format --check` clean on all changed
 files.
 
-**Active experiment IDs:** `autoba_k4_pilot_v1_20260829` (launched, in
-progress, one amendment applied before any valid trajectory).
+**Active experiment IDs:** `autoba_k4_pilot_v1_20260829` (COMPLETE, one
+amendment applied before any valid trajectory).
 
 **Known failures:** the 16 pre-amendment trajectories are a known,
-diagnosed, and fixed engineering failure (D-56) — not an open issue, and
-excluded from the campaign's scientific accounting.
+diagnosed, and fixed engineering failure (D-56), excluded from the
+campaign's scientific accounting. The 8 in-campaign failures (4 `timeout`,
+4 `execution_failure`) are genuine AutoBA/environment findings, documented
+in `reports/autoba_k4_pilot_v1_results.md`, not open issues to fix.
 
-**Next actions:** let the corrected 12-task x K=4 campaign run to
-completion, then compute the common Reliability Suite v1 report via
-`scripts/aggregate_autoba_k4_pilot_v1.py` (Step 5) and compare descriptively
-against Biomni and GenoMAS (Step 6). Per the prompt's own stop rule: after
-that analysis, stop for operator review before expanding AutoBA/GenoMAS
-further, starting a fourth agent, or resuming RL work.
+**Next actions:** per `prompts/autoba_reliability.md`'s own stop rule,
+**none within AutoBA/GenoMAS/RL scope right now.** Do not expand AutoBA
+further, do not expand GenoMAS, do not start OpenBioLLM/BioMaster/a fourth
+agent, do not start or resume RL work, and do not change the reliability
+suite based on these outcomes. Returned for operator review.
 
 ---
 
