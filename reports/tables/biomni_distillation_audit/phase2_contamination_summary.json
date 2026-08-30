@@ -1,0 +1,7 @@
+{
+  "manifests_audited": 7,
+  "total_unique_task_instances_across_all_manifests": 325,
+  "held_out_120_overlap_with_training_pool": 0,
+  "contamination_pairs_found": 0,
+  "contamination_detail": []
+}

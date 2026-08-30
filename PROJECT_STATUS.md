@@ -1,5 +1,290 @@
 # PROJECT_STATUS
 
+## `close_out.md` Phase B complete: SFT stack built and smoke-tested; one open gap before launch (2026-08-30, fifth update same day)
+
+Minimal LoRA SFT stack built (`scripts/build_distillation_manifest.py`,
+`scripts/train_distillation_sft.py`), manifests frozen
+(`manifests/distillation_pilot_v1/`), pre-registered
+(`reports/biomni_distillation_pilot_preregistration.md`). **Training was
+NOT launched**, per the stop condition.
+
+**Trajectory representation (B1/B2), decided from evidence, not
+convenience**: traced Biomni's own agent source
+(`biomni/agent/a1.py`) rather than trusting `stdout.log` formatting -
+tool-execution observations are injected as synthetic `AIMessage`s
+(`<observation>...</observation>`), verified mechanically distinguishable
+from real generations across 12 real trajectories / 6 task families. System
+prompt is rebuilt fresh per call from RAG retrieval and never persisted
+verbatim - not reliably reconstructable, so a documented placeholder is used
+instead of a silent approximation. Chose Option 2 (assistant trajectory with
+tool context), not full-native reconstruction.
+
+**Manifests (B3/B4)**: control (vanilla SFT) 192 examples, treatment
+(reward-positive ensemble) 126 examples, held-out-overlap assertion passes
+(hard-fails otherwise). **Exposure matched (B5) on total assistant-loss
+tokens** (control 1.50M vs. treatment 0.76M - a real ~2x gap that a
+naive equal-epoch comparison would have confounded), not epochs/steps. One
+168,118-token outlier excluded (not truncated, to avoid corrupting the
+`<solution>` tag).
+
+**Dev split (B8)**: 162 train / 30 dev of the 192 eligible instances,
+deterministic, stratified by task family, zero `scope_main` overlap
+(asserted, passed).
+
+**Smoke test (B7), real, on the real model, this session's GH200**: model
+loads (33.03B total params), LoRA attaches (268.4M trainable, 0.81%),
+forward/backward succeeds with finite decreasing loss, checkpoint
+saves and reloads correctly - full engineering pipeline validated.
+**Also found a genuine, unresolved risk, not smoothed over**: a first
+attempt OOM'd on a 9,535-token example (below this corpus's own 13-15K
+median) under `grad-accum=2` without `expandable_segments`; a retry
+succeeded only after changing **two things at once** (much shorter
+examples + `expandable_segments`), so **single-GPU sufficiency at this
+corpus's real median/p90 lengths (13K-31K tokens) is unverified, not
+demonstrated.** This blocks an actual launch until resolved (representative-length
+throughput/memory test, multi-GPU plan, or reduced footprint) - explicitly
+flagged in the preregistration rather than assumed away.
+
+**Compute (B11)**: deliberately did **not** extrapolate a GPU-hours/arm
+number from the smoke test's tiny-example throughput - would repeat the
+exact "estimate from adjacent numbers" mistake this stage exists to correct.
+Real per-arm cost remains unknown to better than an order of magnitude until
+the §7 gap closes.
+
+**Next actions**: resolve the memory-margin question (three options given in
+the preregistration §7); only then launch the two frozen arms; evaluate on
+untouched `scope_main` per the preregistration's §8 design.
+
+---
+
+## `close_out.md` Phase A complete: held-out AUROC harmonized, verdict STRONG (2026-08-30, fourth update same day)
+
+`scope_main_a`'s small-file data transferred (same procedure, `du` confirmed
+0% `artifacts/` this time — different profile from `phase1`/`phase2b`, no
+concern) and recomputed for real. **Legacy AUROC reproduced bit-exactly**
+(0.89556, CI matches D-46 to 4 decimals — same population, not a different
+sample). **Canonical v1 instance-level AUROC: 0.8508** (n=116/120). Full
+detail and the resolved cross-agent table:
+`reports/auroc_definition_methods_note.md` addendum.
+
+**Decision Gate A: STRONG.** Biomni (0.851) remains clearly separated from
+GenoMAS (0.529)/AutoBA (0.542) under the harmonized metric — the
+metric-mixing correction moves Biomni's own number down by only 0.045
+(0.896→0.851), nowhere near enough to close a ~0.31-point gap. D-57's
+qualitative conclusion survives unchanged; no `DECISIONS.md`/`PROJECT_STATUS.md`
+claim needs retraction beyond citing the corrected decimal going forward.
+`DECISIONS.md` not edited (correction lives in the addendum, per the
+no-silent-modification rule).
+
+**Interesting secondary finding**: the legacy/v1 gap is population-dependent,
+not fixed — it's driven by how many `stable_wrong` instances exist (few for
+`scope_main`, 3/116; many more for `phase1`), so `phase1`'s much larger gap
+(0.874→0.621) does not imply `scope_main`'s would be similar. It wasn't.
+
+**Both Phase A gates now closed. Proceeding to Phase B (minimal SFT stack)
+per `close_out.md`'s own sequencing** — not done yet as of this entry;
+see the next entry for progress once real.
+
+---
+
+## Biomni trajectory-distillation data audit — CONDITIONAL GO, both scientific gates closed; only the SFT stack remains (2026-08-30, third update same day)
+
+**Per `prompts/clean_up_next_phase.md`: housekeeping done, both remaining
+scientific gates from the entry below are now closed. The SFT stack was
+explicitly NOT built or launched this session (stop point honored).**
+
+**Housekeeping:** removed the four corrupted/orphaned files from the OOM'd
+first transfer attempt (verified via `zstd -t` before deleting; canonical
+data and valid archives untouched). Added `scripts/sync_biomni_corpus.sh`,
+tested end-to-end (including a deliberate-corruption abort test) — found and
+fixed a real `tar -C`-ordering bug while testing it.
+
+**AUROC discrepancy — resolved**, full detail in
+`reports/auroc_definition_methods_note.md`. Not a bug: legacy
+`agreement_fraction` AUROC is trajectory-level (n=200 for `phase1`); v1's
+`agreement_to_correctness_auroc` is instance-level (n=50). **v1 is now
+canonical** (matches the stated task-level estimand, is the only one that
+honors this project's "resampling unit is the instance" rule at the
+point-estimate level, is already what GenoMAS/AutoBA use). **Bigger finding:
+the held-out set's own published 0.8956 (the number this whole project's
+premise cites) used the legacy definition, while GenoMAS's 0.529 and
+AutoBA's 0.542 use v1 — `DECISIONS.md` D-57's cross-agent table mixes
+estimands.** Not fixed (needs `scope_main`'s raw data, deliberately not
+transferred since it's held-out; `DECISIONS.md` not edited per the
+no-silent-modification rule) — flagged as an explicit open decision.
+
+**`phase2b`'s non-uniform K — resolved, rule frozen.** Verified directly in
+`scripts/phase2b_run.py::drive_instance` (not just the observed data
+pattern): trajectories 0 and 1 generate unconditionally, before the
+controller's continuation decision exists. Frozen:
+`phase2b_primary` = trajectory_index ∈ {0,1}, all 150 instances, K_train=2;
+`phase2b_adaptive_extra` = indices {2,3}, retained but excluded from the
+primary objective. Real unbiased numbers: Oracle@2 0.662, Pass@1 0.611,
+headroom **5.1pp** (much smaller than `phase1_pooled`'s 16pp — genuinely
+less ensemble headroom per instance at K=2, not a data problem).
+
+**Recomputed training-eligible corpus, frozen composition:**
+`phase1_pooled` (50, K=4) + `phase2b_primary` (150, K=2) = **200 unique
+instances**, 433 completed trajectories of 500 requested, 250 reward-positive,
+126/200 instances (63%) support the decided objective, ≈4.0M output /
+≈70.5M total tokens.
+
+**Decided primary objective (one arm, not six):** reward-positive
+ensemble-to-single SFT — lowest-`trajectory_index` correct trajectory per
+instance with ≥1 correct, vs. a vanilla-SFT control on the same pool.
+Continuous uncertainty weighting explicitly deferred to a second arm.
+
+**Verdict: CONDITIONAL GO, one remaining gate** — no SFT training stack
+exists anywhere in this repository. Per the stop point, next session's work
+is building and validating that minimal stack and freezing the actual pilot
+manifest — **not done this session.**
+
+---
+
+## Biomni trajectory-distillation data audit — CONDITIONAL GO, data transferred and real numbers computed (2026-08-30, second update same day)
+
+**Update to the entry below, same day:** the data-access gate described
+below is now **closed**. `phase1`/`phase1_5`/`phase2b`'s raw trajectory
+content (small-file subset: `events.jsonl`, `config.json`, `run_spec.json`,
+`metadata.json`, `stdout.log`, `stderr.log`, `final_response.txt`,
+`parsed_answer.json`, completion markers — `artifacts/` deliberately
+excluded, confirmed via `du` to be 99–100% of the raw size and not needed:
+the model-visible content lives in `stdout.log`/`events.jsonl`, verified
+directly) was transferred Stampede3 scratch → shared `/work2` →
+this host's local `/scratch/11034/atzanakak/biomni_unc_runs`, `sha256`-
+verified, and unpacked. The Reliability Suite v1 taxonomy — never run on
+any Biomni corpus before today — has now been computed for real, for the
+first time, on `phase1`, `phase1_pooled`, and `phase2b`.
+
+**Real numbers** (full detail in `reports/biomni_trajectory_distillation_audit.md`
+§§3, 6–8, revised in place):
+
+* `phase1_pooled` (50 instances, uniform K=4): Oracle@4 0.640, Pass@1
+  0.522, 16.0pp headroom. Taxonomy: `stable_correct` 14 (28.0%),
+  `stable_wrong` 6 (12.0%), `unstable_recoverable` 18 (36.0%),
+  `unstable_unrecoverable` 12 (24.0%). Reproduced `phase1_report.md`'s and
+  `phase1_repaired_report.md`'s historical numbers bit-for-bit as a
+  correctness check before trusting anything new.
+* `phase2b` (150 instances): **not a uniform K=4 corpus** — a new,
+  load-bearing finding. `run_present` by `trajectory_index` is
+  100%/100%/56.7%/32.7%: the online sequential controller generated exactly
+  2 trajectories per instance by default and a 3rd/4th only when its policy
+  judged the first two hadn't resolved. 65 instances stopped at K=2
+  (Pass@1 0.88 among them — easy), 49 were pushed to K=4 (Pass@1 0.21 among
+  them — hard). Pooling `phase2b` into a training corpus without
+  stratifying by actual-K would inherit this selection bias directly, and
+  is now flagged as a required pre-declared decision before any training
+  manifest is built, not something to discover after training.
+* A genuine, unresolved discrepancy: Reliability Suite v1's own
+  `agreement_to_correctness_auroc` (0.621–0.743 across pools) reads well
+  below the legacy pipeline's `agreement_fraction` AUROC (0.874–0.815) on
+  the *same* `phase1` data — different unit of analysis (instance- vs.
+  trajectory-level), not a bug in either, but needs resolving explicitly
+  before either number anchors a future claim.
+
+**Remaining gates for the pilot (both closable without new trajectories):**
+(1) no SFT training stack exists anywhere in this repository (unaffected by
+the transfer — still a from-scratch build); (2) the `phase2b`
+K-stratification rule above must be pre-declared before the training
+manifest is built.
+
+**Data-transfer mechanics worth keeping**: the first compression attempt
+(`zstd -T0` on the Stampede3 login node, full `artifacts/`-inclusive tree)
+OOM'd twice (39G and 124G source trees) — login nodes cannot sustain
+one-context-per-core compression at that memory footprint. Recovered by
+measuring first (`du` showed `artifacts/` was 99–100% of the size and
+unneeded) and compressing only the small files, which reduced the transfer
+to ~24MB total. A second, smaller gap: the first small-file list omitted
+`final_response.txt`/`parsed_answer.json`, which `sampling.py`'s
+`is_valid_complete()` requires — caught because
+`scripts/pool_and_analyze_phase1_5.py` silently reported 0 of the documented
+42 rescues instead of erroring, and that was investigated rather than
+accepted. No script yet exists to make this repeatable
+(`scripts/sync_biomni_corpus.sh` or similar, checked in) — worth adding
+before the next person needs to do this transfer.
+
+Staged transfer archives remain at
+`/work2/11034/atzanakak/biomni_bench/_distillation_transfer/` (small, ~24MB,
+harmless to leave) and stale corrupted debris from the failed first attempt
+(`phase1.tar.zst`, `phase2b.tar.zst`, ~1.5G, and two bogus
+`*.tar.*.sha256` files) remains on Stampede3 at
+`/scratch/11034/atzanakak/biomni_unc_runs/` — safe to `rm`, not yet cleaned
+up.
+
+---
+
+## Biomni trajectory-distillation data audit — CONDITIONAL GO, blocked on data access + missing SFT stack (2026-08-30, first pass)
+
+**Completed** (Phases 1–2 fully; Phases 3–6 partially, blocked — see below).
+Full report: `reports/biomni_trajectory_distillation_audit.md`. Driver:
+new `scripts/audit_biomni_distillation_corpus.py` (stdlib-only, read-only),
+tested by `tests/test_audit_biomni_distillation_corpus.py`. Tables:
+`reports/tables/biomni_distillation_audit/`.
+
+**Dominant finding: this session ran on Vista
+(`c610-142.vista.tacc.utexas.edu`), a different cluster from Stampede3,
+where every Biomni-R0 K=4 campaign (`phase1`, `phase1_5`, `scope_main`,
+`phase2b`) wrote its raw trajectory data
+(`/scratch/11034/atzanakak/biomni_unc_runs`, gitignored by design).** That
+path does not exist on Vista. Only `ablation`'s aggregated tables and 8
+stub (`agent_start`-only, i.e. failed/incomplete) `phase2b` trajectory
+directories survive locally. No cross-cluster data-transfer procedure is
+documented anywhere in this repo yet. Phases 3–6 of the audit (K=4 group
+reconstruction, Reliability-Suite-v1 taxonomy, supervision-content
+quantification, dataset sizing) could not be freshly computed as a result;
+where a prior session had already published the needed number
+(`phase1_pooled`'s Oracle@4/plurality/AUROC, `reports/phase1_repaired_report.md`)
+it is cited, not recomputed; where none exists (**all of `phase2b`, 150 of
+the 200 training-eligible instances — the majority — has never been
+reliability-characterized under any taxonomy**), that gap is reported, not
+estimated.
+
+**What IS established, independently reconfirmed by direct set
+intersection (not cited from prose):** the candidate training pool
+(`phase1` ∪ `phase2b`, 200 instances, already frozen by
+`reports/rl_harness_preregistration.md` §A.7) has **zero overlap** with the
+canonical 120-task held-out set (`manifests/scope_main.jsonl`) that the
+prompt's own headline numbers (Pass@1 0.442, Oracle@4 0.792, AUROC 0.896)
+come from. `ablation`'s 24 instances are confirmed to be a stratified
+*subset* of `phase1`'s own 50 (re-run under 3 non-frozen, off-protocol
+generation configs), not a fresh pool — excluded from any clean training
+corpus for that reason. `scope_gate`'s 24 instances are confirmed to be
+Solver-B (Mistral, not Biomni-R0) capability-gate reuse of already-consumed
+instances — irrelevant to this question entirely.
+
+**Second finding: no SFT training stack exists anywhere in this repository.**
+The only existing training-stack investment
+(`reports/rl_harness_preregistration.md`, `scripts/rl_harness/`) targets
+online GRPO via Agent Lightning + verl, a different paradigm from offline
+SFT on saved trajectories. This independently triggers the audit prompt's
+own stop condition 5 ("existing training harness cannot consume the
+available trajectory representation without substantial redesign").
+
+**Secondary environment correction:** the project `.venv` is **not broken**
+— it needs `module load gcc/14.2.0 python3/3.11.8` on Vista before
+`.venv/bin/python3` will run (undocumented anywhere in the repo before now).
+Once loaded, the full suite is 369/369 green and `ruff` is clean on this
+host, same as reported from the prior (Stampede3) session.
+
+**Verdict: CONDITIONAL GO**, gated on three items, none of which requires
+generating more trajectories: (1) data access — read the real `phase1`/
+`phase1_5`/`phase2b` tables from wherever they're reachable (Stampede3, or
+transfer them); (2) run the existing, frozen Reliability Suite v1 taxonomy
+on `phase1` and `phase2b` for the first time (CPU-only, no new data
+needed); (3) build an SFT dataset formatter + trainer (does not exist).
+Candidate objectives (vanilla SFT control; B1 reward-positive
+representative; B2 plurality-derived; B3 all-reward-positive with 1/n
+weighting; C uncertainty-aware, gated on (2)) are precisely, deterministically
+specified in the report §5, ready to run once (1)–(3) close.
+
+**No training was launched. No scientific data was modified or overwritten.**
+
+**Next actions:** resolve gate (1) first (cheapest, unblocks (2) and real
+sizing for (3)); do not generate additional Biomni-R0 trajectories before
+that, per the report's §10. Returned for operator review.
+
+---
+
 ## AutoBA K=4 pilot v1 — COMPLETE (2026-08-29/30, D-55/D-56)
 
 **Completed.** AutoBA (admitted 2026-08-28 as the project's third distinct

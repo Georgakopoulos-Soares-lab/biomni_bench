@@ -1,0 +1,6 @@
+manifest_a,manifest_b,overlap_by_task_key,overlap_by_global_instance_id,key_gid_agree,involves_held_out_vs_training_pool
+manifests/phase1.jsonl,manifests/phase2b_smoke.jsonl,1,1,True,False
+manifests/phase1.jsonl,manifests/ablation.jsonl,24,24,True,False
+manifests/phase1.jsonl,manifests/smoke.jsonl,2,2,True,False
+manifests/phase2b.jsonl,manifests/scope_gate.jsonl,24,24,True,False
+manifests/ablation.jsonl,manifests/smoke.jsonl,1,1,True,False

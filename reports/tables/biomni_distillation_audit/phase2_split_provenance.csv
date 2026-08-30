@@ -1,0 +1,377 @@
+task_id,global_instance_id,source_manifest,split,experiments_containing_this_instance,training_eligible
+crispr_delivery/14,280,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+crispr_delivery/20,277,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+crispr_delivery/22,274,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+crispr_delivery/28,281,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+crispr_delivery/49,276,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_causal_gene_gwas_catalog/27,412,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_causal_gene_gwas_catalog/159,388,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_causal_gene_gwas_catalog/217,402,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_causal_gene_gwas_catalog/406,406,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_causal_gene_gwas_catalog/520,426,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_causal_gene_opentargets/32,376,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_causal_gene_opentargets/217,364,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1;smoke,yes
+gwas_causal_gene_opentargets/556,338,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+gwas_causal_gene_opentargets/683,370,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_causal_gene_opentargets/817,380,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+gwas_causal_gene_pharmaprojects/877,226,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_causal_gene_pharmaprojects/956,222,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_causal_gene_pharmaprojects/1403,217,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_causal_gene_pharmaprojects/1475,193,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_causal_gene_pharmaprojects/1554,212,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_variant_prioritization/1,22,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+gwas_variant_prioritization/71,37,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+gwas_variant_prioritization/149,24,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_variant_prioritization/179,41,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+gwas_variant_prioritization/197,2,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+lab_bench_dbqa/190,298,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+lab_bench_dbqa/212,284,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+lab_bench_dbqa/309,299,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+lab_bench_dbqa/389,303,manifests/phase1.jsonl,training / development (candidate),phase1;smoke,yes
+lab_bench_dbqa/511,288,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+lab_bench_seqqa/134,116,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+lab_bench_seqqa/230,120,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+lab_bench_seqqa/292,106,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+lab_bench_seqqa/417,112,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+lab_bench_seqqa/547,100,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+patient_gene_detection/1,163,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+patient_gene_detection/80,168,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+patient_gene_detection/161,153,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+patient_gene_detection/350,150,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+patient_gene_detection/488,147,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+rare_disease_diagnosis/21,247,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+rare_disease_diagnosis/59,252,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+rare_disease_diagnosis/99,261,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+rare_disease_diagnosis/103,260,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+rare_disease_diagnosis/106,269,manifests/phase1.jsonl,training / development (candidate),phase1;phase2b_smoke,yes
+screen_gene_retrieval/1,60,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+screen_gene_retrieval/53,59,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+screen_gene_retrieval/54,79,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+screen_gene_retrieval/243,78,manifests/phase1.jsonl,training / development (candidate),phase1,yes
+screen_gene_retrieval/306,76,manifests/phase1.jsonl,training / development (candidate),ablation (abl_arm1/2/3);phase1,yes
+crispr_delivery/7,278,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+crispr_delivery/10,273,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+crispr_delivery/18,275,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+crispr_delivery/38,282,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+crispr_delivery/42,279,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_gwas_catalog/64,427,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_gwas_catalog/85,386,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_gwas_catalog/128,424,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+gwas_causal_gene_gwas_catalog/134,411,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_gwas_catalog/138,421,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+gwas_causal_gene_gwas_catalog/156,429,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_gwas_catalog/170,390,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_gwas_catalog/230,414,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_gwas_catalog/379,432,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_gwas_catalog/418,418,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_gwas_catalog/492,431,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_gwas_catalog/541,385,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+gwas_causal_gene_gwas_catalog/568,404,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_gwas_catalog/601,393,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_gwas_catalog/630,383,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/4,365,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/47,375,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/240,354,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/392,361,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/397,362,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/460,357,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+gwas_causal_gene_opentargets/540,346,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/546,369,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+gwas_causal_gene_opentargets/563,353,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/573,372,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/574,355,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/612,368,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/690,356,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/721,363,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/745,359,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+gwas_causal_gene_pharmaprojects/53,238,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_pharmaprojects/207,242,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_pharmaprojects/509,230,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_pharmaprojects/821,224,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+gwas_causal_gene_pharmaprojects/1158,216,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+gwas_causal_gene_pharmaprojects/1250,232,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+gwas_causal_gene_pharmaprojects/1300,218,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_pharmaprojects/1435,209,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_pharmaprojects/1463,225,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_pharmaprojects/1549,229,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_pharmaprojects/1572,236,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_pharmaprojects/1588,195,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_pharmaprojects/1612,233,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_pharmaprojects/1640,241,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_pharmaprojects/1645,203,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_variant_prioritization/37,19,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_variant_prioritization/48,11,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_variant_prioritization/50,6,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+gwas_variant_prioritization/63,3,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_variant_prioritization/87,30,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_variant_prioritization/102,42,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_variant_prioritization/106,38,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_variant_prioritization/107,5,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_variant_prioritization/121,33,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+gwas_variant_prioritization/130,25,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+gwas_variant_prioritization/174,7,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_variant_prioritization/178,1,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_variant_prioritization/203,21,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_variant_prioritization/207,16,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_variant_prioritization/211,8,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_dbqa/80,309,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_dbqa/88,326,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_dbqa/91,317,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_dbqa/105,301,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+lab_bench_dbqa/241,323,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_dbqa/269,292,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_dbqa/273,328,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+lab_bench_dbqa/315,325,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_dbqa/345,321,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_dbqa/350,291,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_dbqa/401,297,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+lab_bench_dbqa/419,308,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_dbqa/430,312,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_dbqa/460,305,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_dbqa/493,315,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_seqqa/14,135,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_seqqa/27,117,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+lab_bench_seqqa/40,137,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_seqqa/128,131,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_seqqa/171,104,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+lab_bench_seqqa/378,123,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+lab_bench_seqqa/379,139,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_seqqa/391,126,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_seqqa/406,109,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_seqqa/430,96,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_seqqa/448,99,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_seqqa/492,138,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_seqqa/498,127,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_seqqa/520,133,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+lab_bench_seqqa/533,95,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+patient_gene_detection/34,170,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+patient_gene_detection/49,166,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+patient_gene_detection/88,183,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+patient_gene_detection/134,189,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+patient_gene_detection/205,169,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+patient_gene_detection/251,146,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+patient_gene_detection/259,159,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+patient_gene_detection/264,179,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+patient_gene_detection/306,190,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+patient_gene_detection/319,192,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+patient_gene_detection/339,175,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+patient_gene_detection/401,156,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+patient_gene_detection/419,167,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+patient_gene_detection/441,164,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+patient_gene_detection/482,165,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/1,257,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/14,270,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/20,267,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/32,250,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/37,255,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/48,244,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/52,258,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/57,248,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/63,253,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/71,268,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/74,264,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/75,249,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/87,263,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/88,245,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/90,243,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/92,271,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/102,272,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/107,246,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/116,262,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/121,265,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/130,259,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/132,254,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/136,256,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/140,251,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+rare_disease_diagnosis/145,266,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+screen_gene_retrieval/13,70,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+screen_gene_retrieval/34,64,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+screen_gene_retrieval/48,87,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+screen_gene_retrieval/91,66,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+screen_gene_retrieval/160,92,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+screen_gene_retrieval/166,73,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+screen_gene_retrieval/169,85,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+screen_gene_retrieval/189,82,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+screen_gene_retrieval/251,48,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+screen_gene_retrieval/252,89,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+screen_gene_retrieval/259,57,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+screen_gene_retrieval/317,47,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+screen_gene_retrieval/318,50,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+screen_gene_retrieval/339,49,manifests/phase2b.jsonl,training / development (candidate),phase2b;scope_gate (scope_gate_b1),yes
+screen_gene_retrieval/346,83,manifests/phase2b.jsonl,training / development (candidate),phase2b,yes
+gwas_causal_gene_opentargets/230,381,manifests/phase2b_smoke.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b_smoke,excluded (not training pool)
+lab_bench_dbqa/303,290,manifests/phase2b_smoke.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b_smoke,excluded (not training pool)
+lab_bench_seqqa/256,93,manifests/phase2b_smoke.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b_smoke,excluded (not training pool)
+patient_gene_detection/212,143,manifests/phase2b_smoke.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b_smoke,excluded (not training pool)
+rare_disease_diagnosis/106,269,manifests/phase2b_smoke.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase1;phase2b_smoke,excluded (not training pool)
+screen_gene_retrieval/302,43,manifests/phase2b_smoke.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b_smoke,excluded (not training pool)
+patient_gene_detection/161,153,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+crispr_delivery/20,277,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+rare_disease_diagnosis/103,260,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+crispr_delivery/28,281,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+rare_disease_diagnosis/21,247,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+rare_disease_diagnosis/99,261,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+crispr_delivery/14,280,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+patient_gene_detection/80,168,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+patient_gene_detection/1,163,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+crispr_delivery/22,274,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+rare_disease_diagnosis/59,252,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+patient_gene_detection/488,147,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+screen_gene_retrieval/306,76,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+lab_bench_dbqa/511,288,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+lab_bench_dbqa/212,284,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+lab_bench_dbqa/190,298,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+lab_bench_dbqa/309,299,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+screen_gene_retrieval/53,59,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+gwas_causal_gene_opentargets/817,380,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+gwas_variant_prioritization/71,37,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+gwas_variant_prioritization/197,2,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+gwas_causal_gene_opentargets/556,338,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+gwas_variant_prioritization/1,22,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1,excluded (not training pool)
+gwas_causal_gene_opentargets/217,364,manifests/ablation.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1;smoke,excluded (not training pool)
+gwas_causal_gene_gwas_catalog/128,424,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+gwas_causal_gene_gwas_catalog/138,421,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+gwas_causal_gene_gwas_catalog/541,385,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+gwas_causal_gene_opentargets/460,357,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+gwas_causal_gene_opentargets/546,369,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+gwas_causal_gene_opentargets/745,359,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+gwas_causal_gene_pharmaprojects/821,224,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+gwas_causal_gene_pharmaprojects/1158,216,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+gwas_causal_gene_pharmaprojects/1250,232,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+gwas_variant_prioritization/50,6,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+gwas_variant_prioritization/121,33,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+gwas_variant_prioritization/130,25,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+lab_bench_dbqa/105,301,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+lab_bench_dbqa/273,328,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+lab_bench_dbqa/401,297,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+lab_bench_seqqa/27,117,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+lab_bench_seqqa/171,104,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+lab_bench_seqqa/378,123,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+patient_gene_detection/49,166,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+patient_gene_detection/88,183,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+patient_gene_detection/339,175,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+screen_gene_retrieval/160,92,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+screen_gene_retrieval/189,82,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+screen_gene_retrieval/339,49,manifests/scope_gate.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase2b;scope_gate (scope_gate_b1),excluded (not training pool)
+gwas_causal_gene_gwas_catalog/14,428,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/32,409,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/47,408,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/95,394,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/200,410,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/240,395,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/242,387,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/391,419,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/392,399,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/460,396,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/489,415,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/535,392,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/543,391,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/559,413,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_gwas_catalog/591,384,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/35,345,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/85,341,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/98,371,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/159,343,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/242,342,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/524,344,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/619,334,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/642,366,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/654,348,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/720,350,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/755,337,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/760,335,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/761,367,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/767,333,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/801,351,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/37,205,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/103,234,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/151,239,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/152,228,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/229,204,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/437,202,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/639,213,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/913,227,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/959,194,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/1045,207,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/1218,215,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/1378,198,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/1453,214,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/1538,219,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_pharmaprojects/1662,210,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/14,39,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/21,13,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/52,23,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/54,4,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/74,32,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/88,12,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/99,28,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/116,29,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/129,18,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/151,26,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/157,20,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/160,15,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/169,9,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/188,36,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_variant_prioritization/202,31,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/1,304,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/49,307,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/52,320,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/161,294,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/166,329,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/205,310,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/251,287,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/259,300,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/295,285,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/339,318,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/366,316,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/387,327,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/427,314,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/477,289,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_dbqa/495,319,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/32,111,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/61,108,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/62,129,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/64,134,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/98,105,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/156,136,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/200,115,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/213,102,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/215,107,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/260,122,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/267,113,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/327,114,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/471,130,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/505,119,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+lab_bench_seqqa/583,132,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/53,161,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/91,174,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/166,186,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/201,152,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/263,171,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/295,144,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/303,149,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/309,158,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/328,187,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/345,178,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/389,162,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/457,145,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/480,191,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/486,148,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+patient_gene_detection/492,188,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/21,90,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/58,86,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/105,58,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/174,81,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/187,84,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/190,56,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/201,52,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/207,45,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/235,88,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/241,69,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/263,65,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/264,68,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/269,51,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/313,91,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+screen_gene_retrieval/342,74,manifests/scope_main.jsonl,held-out evaluation,"scope_main (Arm A = Biomni-R0, Arm B = Mistral)",no
+gwas_causal_gene_opentargets/217,364,manifests/smoke.jsonl,other (diagnostic / capability-gate / smoke) - excluded,ablation (abl_arm1/2/3);phase1;smoke,excluded (not training pool)
+lab_bench_dbqa/389,303,manifests/smoke.jsonl,other (diagnostic / capability-gate / smoke) - excluded,phase1;smoke,excluded (not training pool)
