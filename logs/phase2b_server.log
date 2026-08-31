@@ -1,7 +1,0 @@
-[launch_node_servers] host=c561-007 gpus=2 min_gpu_mem=93GB layout=tp2
-[launch_node_servers] starting 1 replica(s) with tp=2
-[launch_node_servers] replica 0: gpus=0,1 port=30000 pid=1764800 label=c561-007_r0
-[launch_node_servers] published /scratch/11034/atzanakak/biomni_unc_runs/_phase2b_endpoints/node_c561-007.json
-[launch_sglang_server] label=c561-007_r0 gpus=0,1 tp=2 port=30000 dtype=bfloat16 ctx=65536
-[launch_sglang_server] log=logs/sglang_c561-007_r0.log
-[launch_sglang_server] cmd: /scratch/11034/atzanakak/envs/sglang_srv/bin/python -m sglang.launch_server --model-path /scratch/11034/atzanakak/hf_cache/hub/models--biomni--Biomni-R0-32B-Preview/snapshots/71432eb3d5e583bee757e0f9437a17e711e8e3d1 --host 0.0.0.0 --port 30000 --tp 2 --dtype bfloat16 --mem-fraction-static 0.85 --context-length 65536 --trust-remote-code --json-model-override-args {"rope_scaling":{"rope_type":"yarn","factor":1.0,"original_max_position_embeddings":32768}, "max_position_embeddings": 131072}

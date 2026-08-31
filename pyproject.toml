@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "biomni-uncertainty"
 version = "0.1.0"
-description = "Phase 1: intrinsic uncertainty signals in Biomni biomedical agent trajectories"
+description = "Evaluating and improving the reliability of autonomous biomedical AI agents through uncertainty benchmarks and trajectory-ensemble distillation"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

@@ -47,3 +47,5 @@ configs/cluster.yaml
 
 # Handoff/working prompts -- not project source
 prompts/
+/bioagents_suite_prompt.md
+reports/close_out.md

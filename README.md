@@ -1,260 +1,231 @@
 # biomni-uncertainty
 
-**Do biomedical agents know when they are wrong?**
-Phase 1: intrinsic uncertainty signals in Biomni trajectories.
+Evaluating and improving the reliability of autonomous biomedical AI agents
+through uncertainty benchmarks and trajectory-ensemble distillation.
 
-## Reliability Suite v1
+Biomedical agents such as [Biomni](https://github.com/snap-stanford/Biomni)
+plan analyses, retrieve resources, call tools, execute code, and produce
+scientific conclusions — but repeated runs on the same task can follow
+different workflows and reach different answers. This project measures how
+reliable that process actually is, standardizes the metrics for comparing
+reliability across independently developed agents, and tests whether
+reliability can be improved by distilling repeated successful trajectories
+back into the agent.
 
-The reusable, agent-agnostic reliability layer is frozen in
-[reports/reliability_suite_v1.md](reports/reliability_suite_v1.md). Its core
-evaluator is `biomni_uncertainty.reliability`; adapters retain native scoring,
-canonicalization, execution, and provenance. Candidate readiness and the
-strict no-large-run gate are in [reports/candidate_agent_audit.md](reports/candidate_agent_audit.md).
+## Status snapshot
 
----
+```text
+3 biomedical agents evaluated (Biomni, GenoMAS, AutoBA)
+Reliability Suite v1 implemented and frozen
+200 Biomni training-eligible task instances audited
+433 completed Biomni trajectories in the candidate training corpus
+250 reward-positive trajectories
+~4.0M output tokens / ~70.5M total input+output tokens
+120-task held-out set kept disjoint from training
+Trajectory-ensemble distillation: SFT stack built and smoke-tested,
+  training run not yet launched
+```
 
-## Scientific objective
+Numbers current as of 2026-08-30; verified against
+[reports/biomni_trajectory_distillation_audit.md](reports/biomni_trajectory_distillation_audit.md)
+and [PROJECT_STATUS.md](PROJECT_STATUS.md).
 
-Biomedical agents such as [Biomni](https://github.com/snap-stanford/Biomni) plan
-analyses, retrieve resources, call biomedical tools, execute code and produce
-scientific conclusions. Repeated runs on the same task follow different
-workflows and reach different answers. The long-term goal is an agent that
-recognises unreliable analyses, reconsiders weak workflows, spends more
-computation where it helps, and abstains when it should.
+## Motivation
 
-Before building any such controller, one empirical question has to be answered:
+An agent that silently reaches a wrong conclusion is more dangerous in a
+biomedical setting than one that visibly fails. Before building any
+mechanism that asks an agent to reconsider a weak workflow, spend more
+computation where it helps, or abstain when it should, one question has to
+be answered empirically: do cheap, observable signals from an agent's own
+behavior — repeated-run agreement, stated confidence, trajectory effort —
+actually predict whether its answer is correct? This project answers that
+question directly rather than assuming it.
 
-> Can inexpensive intrinsic signals from multiple Biomni trajectories identify
-> which biomedical-agent outputs are reliable?
+## What this project does
 
-## What Phase 1 tests
+- **Cross-agent reliability benchmarking** — the same reliability protocol
+  run against three independently developed biomedical agents.
+- **Reliability Suite v1** — a frozen, agent-agnostic evaluation layer:
+  Pass@1, plurality accuracy, Oracle@K, agreement→correctness AUROC,
+  confidence calibration, and a four-way failure taxonomy, computed from
+  each agent's own official scorer.
+- **Repeated-trajectory analysis** — K=4 (or K=2, in the online-controller
+  condition) independent runs per task instance, so that reliability can be
+  measured rather than assumed from a single run.
+- **Stable-wrong / recoverability characterization** — every task instance
+  is classified as stable-correct, stable-wrong, unstable-recoverable, or
+  unstable-unrecoverable, so "the agent disagreed with itself" and "the
+  agent was confidently wrong" are never conflated.
+- **Trajectory-ensemble distillation** — testing whether a single-run model
+  can be improved by fine-tuning on the correct trajectory from an ensemble
+  of repeated runs, against a vanilla-SFT control matched on training
+  exposure.
 
-| RQ | Question |
+## Current status
+
+| Stage | Outcome |
 | --- | --- |
-| RQ1 | **Oracle headroom.** When the first trajectory is wrong, how often is at least one of K=4 correct? |
-| RQ2 | **Self-consistency.** Does agreement predict correctness? Does plurality voting beat a single run? |
-| RQ3 | **Verbalized confidence.** Is stated confidence associated with correctness? Is it calibrated? |
-| RQ4 | **Behavioural uncertainty.** Are tokens, steps, tool calls, retries, failures and runtime associated with correctness? |
-| RQ5 | **Trajectory selection.** Can simple selectors beat first / random / plurality? |
-| RQ6 | **Task dependence.** Do the relationships differ across biomedical task types? |
-| RQ7 | **Prompt perturbation.** Does the confidence request change underlying task performance? |
+| Phase 1 — single-agent Biomni pilot | Complete — established baseline self-consistency, confidence, and behavioral reliability signals |
+| Phase 1.5 — context-overflow forensics and repair | Complete |
+| Phase 2A — offline replay of first-run (K=1) selection signals | Complete — K=1 signals alone do not reliably identify correctness |
+| Phase 2B — prospective online reliability controller (150 held-out instances, 600 trajectories) | Complete — measured prospectively against a fixed-K=4 baseline; results informed the shift to the distillation approach below |
+| Cross-agent reliability comparison — Biomni, GenoMAS, AutoBA | Complete |
+| Trajectory-ensemble distillation pilot | Corpus and SFT stack built and validated; training run in preparation |
 
-These are hypotheses, not expectations. In a biomedical agent a longer trajectory
-may signal uncertainty *or* appropriate thoroughness; stated confidence may be
-miscalibrated; agreement may reflect correlated errors. A negative result is a
-result.
+The project's current direction is trajectory-ensemble distillation
+(preregistered in
+[reports/biomni_distillation_pilot_preregistration.md](reports/biomni_distillation_pilot_preregistration.md)),
+following from what the online-controller work in Phase 2B established about
+where a fixed repeated-sampling baseline is hard to beat. Full detail on
+that work, including the prospective result and the offline assessment of a
+proposed redesign, is in
+[reports/phase2_report.md](reports/phase2_report.md) and
+[reports/controller_v2_offline_assessment.md](reports/controller_v2_offline_assessment.md).
 
-## Design at a glance
+## Agents evaluated
 
-* **Condition A (standard)** — 1 unmodified Biomni trajectory per instance.
-* **Condition B (instrumented)** — 4 trajectories per instance with a final
-  confidence request and full telemetry.
-* 50 instances balanced across all 10 BiomniEval1 tasks → **250 trajectories**.
-* Local Biomni-R0-32B served with SGLang. No proprietary API is ever called.
+| Agent | Role |
+| --- | --- |
+| [Biomni](https://github.com/snap-stanford/Biomni) (Biomni-R0-32B) | Primary agent; full reliability characterization, online-controller and distillation experiments |
+| GenoMAS (pinned commit `d6365a7`) | K=4 cross-agent reliability pilot (12 tasks) |
+| AutoBA (pinned commit `a9f8f12`) | K=4 cross-agent reliability pilot (12 tasks, one task substitution — see [reports/autoba_k4_pilot_v1_preregistration.md](reports/autoba_k4_pilot_v1_preregistration.md)) |
 
----
+A fourth-agent expansion, additional agent panels, and controlled failure
+studies are explicitly out of scope until the current findings are acted on
+— see [reports/candidate_agent_audit.md](reports/candidate_agent_audit.md)
+for the full admission process and why other candidate agents were not
+selected.
 
-## Repository setup
+## Reliability Suite
+
+[reports/reliability_suite_v1.md](reports/reliability_suite_v1.md) is the
+frozen specification. In brief: every agent is wrapped by an adapter that
+runs it, canonicalizes its answer without access to ground truth, and scores
+it with the benchmark's own official evaluator — the suite never substitutes
+LLM judging for a native scorer. From K independently requested runs per
+task instance it reports Pass@1, plurality accuracy, Oracle@K, an
+agreement→correctness AUROC, confidence calibration (Brier/ECE) where
+available, and a four-state failure taxonomy (stable-correct, stable-wrong,
+unstable-recoverable, unstable-unrecoverable). All point estimates carry
+95% bootstrap confidence intervals resampled at the task-instance level.
+
+**Cross-agent comparison** (harmonized instance-level agreement→correctness
+AUROC; descriptive, not a leaderboard — the three agents use different
+native benchmarks and task counts, so raw accuracy is not directly
+comparable):
+
+| | Biomni-R0 | GenoMAS | AutoBA |
+| --- | ---: | ---: | ---: |
+| Agreement → correctness AUROC | 0.851 (n=116/120) | 0.529 | 0.542 (n=10) |
+
+Full detail and the methodological correction behind the harmonized numbers
+are in
+[reports/auroc_definition_methods_note.md](reports/auroc_definition_methods_note.md).
+An earlier published comparison mixed a trajectory-level AUROC definition
+for Biomni with an instance-level definition for GenoMAS/AutoBA; the table
+above uses the same instance-level definition for all three. The correction
+narrows Biomni's number (0.896 → 0.851) but does not change the qualitative
+conclusion that Biomni's self-consistency signal is substantially stronger
+than the other two agents' on the tasks tested.
+
+## Distillation experiment
+
+The central question: can fine-tuning on the correct trajectory from an
+ensemble of repeated runs improve a model that only gets to run once?
+
+- **Training corpus**: 200 task instances (50 from a uniform K=4 pilot, 150
+  from the online-controller run at K=2), 433 completed trajectories, 250
+  reward-positive. 126/200 instances (63%) have at least one officially
+  correct trajectory and so support the reward-positive objective.
+- **Arms**: a reward-positive ensemble-to-single SFT arm (the
+  lowest-index correct trajectory per instance) versus a vanilla-SFT control
+  on the same pool, trained on identical assistant-loss token exposure.
+- **Held-out evaluation**: the same 120-task set used for the cross-agent
+  comparison above, kept disjoint from every training instance.
+- **Status**: manifests are frozen, the base checkpoint and trajectory
+  representation are decided and verified against Biomni's own agent source
+  (not inferred from log formatting), and a real LoRA smoke test has run to
+  completion on the training hardware. Training has **not** been launched —
+  single-GPU memory sufficiency at this corpus's representative sequence
+  lengths (13K–31K tokens) is not yet demonstrated, and launching before
+  that is closed would risk an uninterpretable result.
+
+Full design: [reports/biomni_distillation_pilot_preregistration.md](reports/biomni_distillation_pilot_preregistration.md).
+
+## Repository structure
+
+```text
+src/          reliability suite, agent adapters, sampling, evaluation, policy/calibration library
+scripts/      experiment launchers, aggregation, analysis, and one-off audit tooling
+manifests/    frozen task manifests and per-trajectory run specs
+configs/      experiment configurations (a cluster.example.yaml template; the real cluster config is gitignored)
+reports/      preregistrations, results, and audits — see reports/README.md for where to start
+slurm/        cluster job scripts, parameterized by account/partition at submit time
+tests/        pytest suite (CPU-only, no data lake or GPU required)
+```
+
+See [reports/README.md](reports/README.md) for a curated entry point into
+the reports directory, [DECISIONS.md](DECISIONS.md) for why things are the
+way they are, and [PROJECT_STATUS.md](PROJECT_STATUS.md) for the full,
+chronological project log.
+
+## Reproducing the analysis
 
 ```bash
 git clone <this repo> biomni-uncertainty
 cd biomni-uncertainty
 python -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
-cp .env.example .env          # then edit; .env is gitignored
-cp configs/cluster.example.yaml configs/cluster.yaml   # then edit
-```
 
-### Biomni environment
-
-Biomni is used as a **pinned dependency**, never edited in place
-(see [DECISIONS.md](DECISIONS.md) D-01). Clone it at a recorded commit and
-install it editable into the same environment:
-
-```bash
-git clone https://github.com/snap-stanford/Biomni.git "$BIOMNI_SRC"
-git -C "$BIOMNI_SRC" checkout <PINNED_COMMIT>     # see external/BIOMNI_PIN.json
-pip install -e "$BIOMNI_SRC"
-```
-
-Biomni's own `biomni_env/setup.sh` builds the full E1 bioinformatics
-environment; it takes >10 h and >30 GB and is **not** required to run this
-pipeline. Tools whose Python dependencies are absent fail inside a trajectory and
-are recorded as tool failures — which is itself measured, and reported in the
-infrastructure section of the Phase-1 report rather than hidden.
-
-The data lake (~15 GB, 76 files) and benchmark files download once into
-`$BIOMNI_PATH/biomni_data/` and are shared read-only across trajectories.
-
-### Local Biomni-R0 setup
-
-```bash
-python -m venv "$SERVER_ENV"        # separate env: see DECISIONS.md D-05
-"$SERVER_ENV/bin/pip" install "sglang[all]"
-huggingface-cli download biomni/Biomni-R0-32B-Preview --revision <REVISION>
-```
-
-Two facts about this model drive the serving configuration and are **not**
-obvious from the model card (both in [DECISIONS.md](DECISIONS.md)):
-
-* the weights ship in **FP32 (131 GB)**, so `--dtype bfloat16` must be passed
-  explicitly (D-03);
-* Biomni's own system prompt is **larger than the model's native 40,960-token
-  context**, so the context ceiling has to be lifted (D-04).
-
----
-
-## Running the pipeline
-
-### 1. Inspect the environment
-
-```bash
-python -m biomni_uncertainty.cli inspect-env --output reports/environment.json
-```
-
-### 2. Freeze the manifest
-
-```bash
-python -m biomni_uncertainty.cli prepare-manifest --config configs/phase1.yaml
-python -m biomni_uncertainty.cli expand-runs --config configs/phase1.yaml \
-       --manifest manifests/phase1.jsonl
-```
-
-`prepare-manifest` prints the selection counts, prompt-length summary,
-exclusions and a stable manifest hash, and writes **two** files: the
-agent-visible manifest and a separate ground-truth file that is never passed to
-the agent.
-
-### 3. CPU / mock tests (no GPU, no data lake)
-
-```bash
+# CPU-only: no GPU, no data lake, no model calls
 pytest -q
 ruff check src tests && ruff format --check src tests
-python -m biomni_uncertainty.cli prepare-manifest --config configs/phase1.yaml --dry-run
+
+# Offline replay of the Phase-2A policy comparison (CPU, ~1 min)
+python scripts/phase2a_offline_replay.py \
+    --tables <output_root>/phase1_pooled/results/tables \
+    --out    <output_root>/phase2a/results
 ```
 
-### 4. GPU smoke test
+Running an actual agent trajectory requires a local Biomni checkout pinned
+to the commit in
+[external/BIOMNI_PIN.json](external/BIOMNI_PIN.json), a served model
+endpoint, and a cluster config — see
+[DECISIONS.md](DECISIONS.md) and `configs/cluster.example.yaml` for that
+setup. No proprietary LLM API is called anywhere in this project.
+Large trajectory artifacts and model checkpoints are not stored in Git;
+release/archival details will accompany the research output.
 
-Two instances from different task types, two instrumented trajectories each plus
-one standard trajectory — six runs, one endpoint, real evaluation, real plots.
+## Research status / limitations
 
-```bash
-scripts/run_smoke.sh configs/cluster.yaml configs/smoke.yaml     # interactive node
-# or
-sbatch --account=$A --partition=$P --nodes=1 --gres=gpu:4 --time=02:00:00 \
-       slurm/smoke.sbatch configs/cluster.yaml configs/smoke.yaml
-```
+- **Agent panel is uneven in scale.** Biomni's reliability characterization
+  draws on hundreds of instances; the GenoMAS and AutoBA pilots are 12
+  tasks each. The cross-agent AUROC comparison above should be read as
+  suggestive, not conclusive.
+- **One backbone model.** All Biomni results use a single fine-tuned
+  32B checkpoint; findings may not transfer to another backbone.
+- **Final-answer correctness only.** A correct answer reached through an
+  invalid workflow scores the same as a sound one; workflow validity is not
+  assessed.
+- **The online reliability controller was tested and did not work.**
+  Phase 2B failed both of its pre-registered co-primary hypotheses against
+  a fixed-K=4 baseline, and a proposed redesign was rejected offline
+  against a bar written down before the test. This project reports that
+  result rather than omitting it.
+- **Sampling is stochastic; seeds are requested, not guaranteed.** Whether
+  an endpoint honors a per-request seed is probed at run time and recorded,
+  never assumed.
+- **Oracle@K is an upper bound, not a deployable method** — it reads ground
+  truth and exists to characterize headroom, never to select an answer.
+- **The distillation pilot has not been trained yet.** Everything in the
+  "Distillation experiment" section above is corpus construction and
+  engineering validation; no result exists to report.
 
-**Do not launch the 50-instance pilot until this succeeds.**
+## Citation
 
-### 5. Two-node launch
+No paper has been published for this work yet. If you use this repository,
+please cite it by URL and commit hash until a citation is added here.
 
-```bash
-scripts/run_phase1.sh configs/cluster.yaml configs/phase1.yaml --dry-run  # inspect
-scripts/run_phase1.sh configs/cluster.yaml configs/phase1.yaml
-```
+## License
 
-The launcher inspects GPU memory and chooses **TP2 × 2 replicas per node** on
-≥70 GB GPUs (TP4 × 1 below that), binds each replica to explicit CUDA devices and
-distinct ports, waits until every replica answers `/v1/models`, and only then
-starts the dispatcher. See [slurm/README.md](slurm/README.md).
-
-### 6. Resumption
-
-Re-submit the same command. Runs with a *valid* `COMPLETE` marker are skipped;
-only transient infrastructure failures are re-queued. Substantive agent failures
-are preserved and never silently retried.
-
-```bash
-python -m biomni_uncertainty.cli status --config configs/phase1.yaml
-```
-
-### 7. Aggregation and analysis
-
-```bash
-scripts/aggregate_results.sh configs/phase1.yaml
-scripts/analyze_phase1.sh   configs/phase1.yaml
-```
-
----
-
-## Output locations
-
-```
-runs/<experiment_id>/
-  runs/<task>/i<instance>/<condition>/t<k>/
-      metadata.json      run record (identity, provenance, timing, statistics, output)
-      config.json        config snapshot
-      run_spec.json      exactly what was requested
-      events.jsonl       append-only trajectory event log (redacted)
-      final_response.txt raw final response, verbatim
-      parsed_answer.json confidence + solution-block + parsed answer, every stage
-      transcript.json    full message transcript
-      system_prompt.txt  the effective system prompt
-      llm_components.json effective model/endpoint for every LLM subcomponent
-      stdout.log / stderr.log
-      artifacts/         anything the agent wrote (its cwd during the run)
-      COMPLETE | FAILED  atomic completion marker
-  results/
-      tables/*.parquet, *.csv
-      figures/*.png      each with a matching tables/*.csv
-      analysis.json
-manifests/
-  phase1.jsonl              agent-visible: prompts, NO answers
-  phase1.groundtruth.jsonl  answers, evaluator only
-  phase1_runs.jsonl         one line per planned trajectory
-reports/
-  phase0_environment.md, phase1_protocol.md, phase1_report.md
-```
-
-## Limitations
-
-* **50 instances, 250 trajectories.** A pilot. Intervals are wide and per-task
-  cells hold ~5 instances. Nothing here supports a strong claim.
-* **One agent, one model.** Findings may not transfer to another biomedical
-  agent or another backbone.
-* **Final-answer correctness only.** A correct answer reached through an invalid
-  workflow scores the same as a sound one. Workflow validity is not assessed —
-  that needs the human expert annotation deferred to Phase 2.
-* **Final-only confidence.** Per-step confidence is not collected; the reason is
-  architectural, not an oversight (DECISIONS.md D-08). The SRLM-style selector is
-  therefore an approximation and is labelled as one everywhere.
-* **Sampling is stochastic; seeds are requested, not guaranteed.** Whether the
-  endpoint honours a per-request `seed` is probed at run time and stored as
-  `seed_supported`. We do not claim deterministic reproducibility.
-* **Oracle@K is an upper bound**, not a method. It reads ground truth.
-* **External databases.** Biomni tools query live biomedical databases, so a
-  trajectory's result can depend on when it ran. This is recorded separately
-  from LLM usage.
-
-## Security considerations
-
-* Only public benchmark data. No patient data, real or synthetic.
-* **No proprietary LLM API is called.** Every LLM path — the agent, the tool
-  retriever, database helpers — is pointed at the local endpoint, the effective
-  configuration is printed and stored per run (`llm_components.json`), and the
-  job scripts unset inherited provider keys. A run warns loudly if a provider key
-  is present in the environment.
-* Event logs are redacted: pattern-based secret removal, wholesale redaction of
-  secret-bearing keys, and literal removal of any credential-looking environment
-  value. No full environment dump is ever written into an event.
-* Ground truth lives in a separate file that is never handed to the agent, and is
-  never used to select pilot instances or to resolve an ambiguous prediction.
-* Generated biomedical code runs as the invoking user (never root), in a
-  per-trajectory working directory, under a configurable wall-clock timeout.
-* Model weights, the data lake, `.env` and `configs/cluster.yaml` are gitignored.
-
-## Repository layout
-
-| path | contents |
-| --- | --- |
-| `src/biomni_uncertainty/` | the package (config, benchmark, sampling, canonicalization, confidence, instrumentation, events, runner, dispatcher, evaluation, selectors, features, aggregation, analysis, plotting, provenance, cli) |
-| `configs/` | `base` / `smoke` / `phase1` experiment configs, `cluster.example.yaml` |
-| `scripts/` | environment inspection, manifest, server launch, health wait, smoke, pilot, aggregation, analysis |
-| `slurm/` | job scripts with no site-specific directives |
-| `tests/` | pytest suite (CPU-only, no data lake required) |
-| `reports/` | Phase-0 environment, frozen Phase-1 protocol, Phase-1 report |
-| `patches/` | upstream patches — **empty**, by design |
-
-See [DECISIONS.md](DECISIONS.md) for why things are the way they are, and
-[PROJECT_STATUS.md](PROJECT_STATUS.md) for current state.
+No license has been chosen yet for this repository.
